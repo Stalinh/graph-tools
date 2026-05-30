@@ -15,9 +15,10 @@
   --color-app-bg: #eef2f5;
   --color-panel-bg: #f8fafb;
   --color-surface: #ffffff;
-  --color-surface-muted: #f3f6fb;          /* 调浅 */
+  --color-surface-muted: #f3f6fb;
   --color-surface-raised: #edf3ff;
   --color-surface-selected: #e7efff;
+  --color-interactive-hover: rgba(0, 0, 0, 0.04);
   --color-border: #d6dee4;
   --color-border-strong: #b8c7dc;
   --color-border-active: #002fa7;
@@ -62,7 +63,6 @@
   --color-card-purple: #7c3aed;
   --color-card-teal: #0891b2;
   --graph-node-color-bar-width: 7px;
-  --color-minimap-node-stroke: #002fa7;
   --color-edge-label-bg: #ffffff;
   --color-edge-label-text: #31404b;
   --color-control-bg: #ffffff;
@@ -81,15 +81,14 @@
   color: var(--color-text);
   color-scheme: light;
 
-  /* 新增 */
-  --color-canvas-bg: #eef2f5;              /* 画布背景 */
-  --color-node-bg: #ffffff;                /* 卡片默认背景 */
-  --color-node-bg-dark: #1a1c23;           /* 暗色卡片背景 */
-  --color-node-bg-dark-selected: #22252e;  /* 暗色卡片选中背景 */
-  --color-node-border: rgba(148,163,184,0.24);/* 卡片环境光边框 */
-  --color-divider: rgba(0,0,0,0.10);        /* 工具栏分隔线 */
-  --color-inset-bg: rgba(0,0,0,0.04);       /* 输入框内凹背景 */
-  --color-inset-focus: rgba(0,0,0,0.06);    /* 输入框聚焦背景 */
+  --color-canvas-bg: #eef2f5;
+  --color-node-bg: #ffffff;
+  --color-node-bg-dark: #1a1c23;
+  --color-node-bg-dark-selected: #22252e;
+  --color-node-border: rgba(148,163,184,0.24);
+  --color-divider: rgba(0,0,0,0.10);
+  --color-inset-bg: rgba(0,0,0,0.04);
+  --color-inset-focus: rgba(0,0,0,0.06);
   --shadow-node-hover:
     0 2px 0 rgba(0,0,0,0.10),
     0 8px 20px rgba(0,0,0,0.10),
@@ -111,6 +110,7 @@
   --color-surface-muted: #0d1113;
   --color-surface-raised: #22252e;
   --color-surface-selected: #263743;
+  --color-interactive-hover: rgba(255, 255, 255, 0.06);
   --color-border: #2a3038;
   --color-border-strong: #3a4953;
   --color-border-active: #3d4754;
@@ -170,7 +170,6 @@
   --shadow-selected: 0 0 0 1.5px rgba(127, 166, 189, 0.28);
   color-scheme: dark;
 
-  /* 新增 */
   --color-canvas-bg: #0b0c0e;
   --color-node-bg: #1a1c23;
   --color-node-bg-selected: #22252e;
@@ -577,23 +576,15 @@ button {
 }
 
 .workspace-toolbar__icon-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 30px;
   min-width: 30px;
   height: 30px;
   padding: 0;
-  border: none;
-  border-radius: 6px;
+  border-color: transparent;
   background: transparent;
-  color: var(--color-control-icon);
-  cursor: pointer;
-  transition: background 0.12s, color 0.12s;
 }
 
 .workspace-toolbar__icon-button:hover:not(:disabled) {
-  background: var(--color-hover-bg, rgba(128,128,128,0.1));
   color: var(--color-text);
 }
 
@@ -1658,11 +1649,18 @@ button {
   background: var(--color-surface);
   cursor: pointer;
   font-size: 12px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .toolbar-button:hover:not(:disabled) {
   border-color: var(--color-border-active);
   background: var(--color-surface-raised);
+}
+
+.toolbar-button.is-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
+  color: var(--color-heading);
 }
 
 .toolbar-button:disabled {
@@ -2125,7 +2123,7 @@ button {
 }
 
 .danger-button:hover {
-  background: color-mix(in srgb, var(--color-danger, #c43d3d) 10%, transparent);
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
 }
 
 .danger-button:focus-visible {
@@ -2719,7 +2717,7 @@ button {
   min-width: 0;
 }
 
-/* ===== Search Highlight ===== */
+/* Search Highlight */
 .search-highlight {
   background: rgba(255, 213, 0, 0.45);
   border-radius: 2px;
@@ -2730,7 +2728,7 @@ button {
   background: rgba(255, 213, 0, 0.35);
 }
 
-/* ===== Filter Chips ===== */
+/* Filter Chips */
 .filter-chips {
   display: flex;
   align-items: center;
@@ -2762,7 +2760,7 @@ button {
 }
 
 .filter-chip:hover {
-  background: var(--color-hover-bg, rgba(0,0,0,0.04));
+  background: var(--color-interactive-hover);
   border-color: var(--color-primary);
 }
 
@@ -2782,9 +2780,9 @@ button {
 }
 
 .filter-chip--clear:hover {
-  color: #e74c3c;
-  border-color: #e74c3c;
-  background: rgba(231, 76, 60, 0.1);
+  color: var(--color-error);
+  border-color: var(--color-error);
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
 }
 
 .filter-chip__dot {
@@ -2801,7 +2799,7 @@ button {
   border-color: transparent;
 }
 
-/* ===== Filter Dropdown (shared by color and type) ===== */
+/* Filter Dropdown */
 .filter-chip--dropdown {
   position: relative;
 }
@@ -2817,7 +2815,7 @@ button {
   left: 0;
   margin-top: 4px;
   padding: 4px 0;
-  background: var(--color-bg-primary, #fff);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -2828,7 +2826,7 @@ button {
 }
 
 .app-shell[data-theme="dark"] .filter-dropdown {
-  background: var(--color-bg-secondary, #1e1e1e);
+  background: var(--color-surface-muted);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
@@ -2849,12 +2847,12 @@ button {
 
 .filter-dropdown__item:hover,
 .filter-dropdown__item.is-active {
-  background: var(--color-hover-bg, rgba(0,0,0,0.04));
+  background: var(--color-interactive-hover);
 }
 
 .app-shell[data-theme="dark"] .filter-dropdown__item:hover,
 .app-shell[data-theme="dark"] .filter-dropdown__item.is-active {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--color-interactive-hover);
 }
 
 .filter-dropdown__icon {
@@ -2923,7 +2921,7 @@ button {
   left: 0;
   right: 0;
   margin-top: 4px;
-  background: var(--color-bg-primary, #fff);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
@@ -2932,7 +2930,7 @@ button {
 }
 
 .app-shell[data-theme="dark"] .search-results-dropdown {
-  background: var(--color-bg-secondary, #1e1e1e);
+  background: var(--color-surface-muted);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
@@ -3040,7 +3038,7 @@ button {
   border-radius: 3px;
   font-family: inherit;
   font-size: 10px;
-  background: var(--color-hover-bg, rgba(0,0,0,0.04));
+  background: var(--color-interactive-hover);
 }
 
 /* ===== Tag Editor ===== */
@@ -3052,7 +3050,7 @@ button {
   padding: 6px 8px;
   border: 1px solid var(--color-border);
   border-radius: 6px;
-  background: var(--color-bg-primary);
+  background: var(--color-surface);
   min-height: 32px;
 }
 
@@ -3119,7 +3117,7 @@ button {
   display: inline-block;
   padding: 1px 5px;
   border-radius: 3px;
-  background: var(--color-hover-bg, rgba(0, 0, 0, 0.06));
+  background: var(--color-interactive-hover);
   color: var(--color-text-secondary);
   font-size: 10px;
   line-height: 1.5;
