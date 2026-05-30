@@ -13,43 +13,52 @@ import {
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useI18n } from "../../i18n";
 import "./ProjectSheetPage.css";
-import { PROJECT_COLUMNS, PROJECT_LEVEL_OPTIONS } from "./projectConfig";
+import { PROJECT_COLUMNS, PROJECT_LEVEL_OPTIONS, PROJECT_SUB_LINE_STATUS_OPTIONS } from "./projectConfig";
 import { projectFileManager } from "./projectFileSystem";
 import {
-  createProjectLine,
   createProjectRecord,
+  createProjectSubLine,
   normalizeProjectName,
   normalizeProjectProgress,
+  normalizeProjectSubLineStatus,
   sanitizeProjectRecords,
 } from "./projectModel";
 import { loadProjectDraftRecords, saveProjectDraftRecords } from "./projectStorage";
-import type { ProjectLine, ProjectRecord, ProjectRecordField } from "./projectTypes";
+import type {
+  ProjectLine,
+  ProjectRecord,
+  ProjectRecordField,
+  ProjectSubLine,
+  ProjectSubLineStatus,
+} from "./projectTypes";
 
-interface ProjectDetailState {
+interface ProjectDetailBaseState {
   mode: "create" | "edit";
-  lineType: "project" | "subLine";
-  parentId?: string;
-  record: ProjectLine;
   error: string;
 }
+
+interface ProjectDetailProjectState extends ProjectDetailBaseState {
+  lineType: "project";
+  record: ProjectLine;
+}
+
+interface ProjectDetailSubLineState extends ProjectDetailBaseState {
+  lineType: "subLine";
+  parentId: string;
+  record: ProjectSubLine;
+}
+
+type ProjectDetailState = ProjectDetailProjectState | ProjectDetailSubLineState;
 
 function getFieldValue(record: ProjectLine, field: ProjectRecordField) {
   return record[field];
 }
 
-function renderProjectCell(record: ProjectLine, field: ProjectRecordField, isZh: boolean) {
-  if (field !== "progress") {
-    return getFieldValue(record, field);
-  }
-
-  const progress = normalizeProjectProgress(record.progress);
+function renderProgressBar(progressValue: string, ariaLabel: string) {
+  const progress = normalizeProjectProgress(progressValue);
 
   return (
-    <div
-      className="project-progress"
-      aria-label={isZh ? `项目进度 ${progress}%` : `Project progress ${progress}%`}
-      title={`${progress}%`}
-    >
+    <div className="project-progress" aria-label={`${ariaLabel} ${progress}%`} title={`${progress}%`}>
       <div className="project-progress__bar" aria-hidden="true">
         <div className="project-progress__fill" style={{ width: `${progress}%` }} />
       </div>
@@ -58,14 +67,19 @@ function renderProjectCell(record: ProjectLine, field: ProjectRecordField, isZh:
   );
 }
 
+function renderProjectCell(record: ProjectLine, field: ProjectRecordField, isZh: boolean) {
+  if (field !== "progress") {
+    return getFieldValue(record, field);
+  }
+
+  return renderProgressBar(record.progress, isZh ? "项目进度" : "Project progress");
+}
+
 function getAllProjectNames(records: ProjectRecord[]) {
-  return records.flatMap((record) => [
-    { id: record.id, projectName: normalizeProjectName(record.projectName) },
-    ...record.subLines.map((subLine) => ({
-      id: subLine.id,
-      projectName: normalizeProjectName(subLine.projectName),
-    })),
-  ]);
+  return records.map((record) => ({
+    id: record.id,
+    projectName: normalizeProjectName(record.projectName),
+  }));
 }
 
 function createSavedProjectLine(record: ProjectLine, projectName: string): ProjectLine {
@@ -80,6 +94,25 @@ function createSavedProjectLine(record: ProjectLine, projectName: string): Proje
     schemeDesign: record.schemeDesign,
     projectManager: record.projectManager,
   };
+}
+
+function createSavedProjectSubLine(record: ProjectSubLine): ProjectSubLine {
+  return {
+    id: record.id,
+    progressRatio: normalizeProjectProgress(record.progressRatio),
+    status: normalizeProjectSubLineStatus(record.status),
+  };
+}
+
+function getSubLineStatusClassName(status: ProjectSubLineStatus) {
+  const classNameByStatus: Record<ProjectSubLineStatus, string> = {
+    未处理: "project-subline__status--pending",
+    设计中: "project-subline__status--designing",
+    待评审: "project-subline__status--review",
+    已下单: "project-subline__status--ordered",
+  };
+
+  return `project-subline__status ${classNameByStatus[status]}`;
 }
 
 export function ProjectSheetPage() {
@@ -239,12 +272,12 @@ export function ProjectSheetPage() {
       mode: "create",
       lineType: "subLine",
       parentId,
-      record: createProjectLine(),
+      record: createProjectSubLine(),
       error: "",
     });
   };
 
-  const openEditSubLineDetail = (parentId: string, subLine: ProjectLine) => {
+  const openEditSubLineDetail = (parentId: string, subLine: ProjectSubLine) => {
     setDetailState({
       mode: "edit",
       lineType: "subLine",
@@ -273,7 +306,22 @@ export function ProjectSheetPage() {
 
   const updateDetailRecord = (field: ProjectRecordField, value: string) => {
     setDetailState((currentState) =>
-      currentState
+      currentState?.lineType === "project"
+        ? {
+            ...currentState,
+            error: "",
+            record: {
+              ...currentState.record,
+              [field]: value,
+            },
+          }
+        : currentState
+    );
+  };
+
+  const updateSubLineDetailRecord = (field: keyof Omit<ProjectSubLine, "id">, value: string) => {
+    setDetailState((currentState) =>
+      currentState?.lineType === "subLine"
         ? {
             ...currentState,
             error: "",
@@ -288,6 +336,35 @@ export function ProjectSheetPage() {
 
   const saveDetailRecord = () => {
     if (!detailState) {
+      return;
+    }
+
+    if (detailState.lineType === "subLine") {
+      const savedSubLine = createSavedProjectSubLine(detailState.record);
+
+      setRecords((currentRecords) =>
+        sanitizeProjectRecords(
+          currentRecords.map((record) => {
+            if (record.id !== detailState.parentId) {
+              return record;
+            }
+
+            if (detailState.mode === "create") {
+              return { ...record, subLines: [...record.subLines, savedSubLine] };
+            }
+
+            return {
+              ...record,
+              subLines: record.subLines.map((subLine) =>
+                subLine.id === savedSubLine.id ? savedSubLine : subLine
+              ),
+            };
+          })
+        )
+      );
+      setExpandedProjectIds((currentIds) => new Set(currentIds).add(detailState.parentId));
+      setDirty(true);
+      setDetailState(null);
       return;
     }
 
@@ -322,41 +399,16 @@ export function ProjectSheetPage() {
     const savedLine = createSavedProjectLine(detailState.record, projectName);
 
     setRecords((currentRecords) => {
-      if (detailState.lineType === "project") {
-        if (detailState.mode === "create") {
-          return sanitizeProjectRecords([...currentRecords, { ...savedLine, subLines: [] }]);
-        }
-
-        return sanitizeProjectRecords(
-          currentRecords.map((record) =>
-            record.id === savedLine.id ? { ...record, ...savedLine } : record
-          )
-        );
+      if (detailState.mode === "create") {
+        return sanitizeProjectRecords([...currentRecords, { ...savedLine, subLines: [] }]);
       }
 
       return sanitizeProjectRecords(
-        currentRecords.map((record) => {
-          if (record.id !== detailState.parentId) {
-            return record;
-          }
-
-          if (detailState.mode === "create") {
-            return { ...record, subLines: [...record.subLines, savedLine] };
-          }
-
-          return {
-            ...record,
-            subLines: record.subLines.map((subLine) =>
-              subLine.id === savedLine.id ? savedLine : subLine
-            ),
-          };
-        })
+        currentRecords.map((record) =>
+          record.id === savedLine.id ? { ...record, ...savedLine } : record
+        )
       );
     });
-    if (detailState.lineType === "subLine" && detailState.parentId) {
-      const parentId = detailState.parentId;
-      setExpandedProjectIds((currentIds) => new Set(currentIds).add(parentId));
-    }
     setDirty(true);
     setDetailState(null);
   };
@@ -583,9 +635,25 @@ export function ProjectSheetPage() {
                               </span>
                             </div>
                           </th>
-                          {PROJECT_COLUMNS.map((column) => (
-                            <td key={column.field}>{renderProjectCell(subLine, column.field, isZh)}</td>
-                          ))}
+                          <td colSpan={PROJECT_COLUMNS.length}>
+                            <div className="project-subline">
+                              <span className="project-subline__label">
+                                {isZh ? "进度占比" : "Progress share"}
+                              </span>
+                              <div className="project-subline__progress">
+                                {renderProgressBar(
+                                  subLine.progressRatio,
+                                  isZh ? "子行进度占比" : "Subline progress share"
+                                )}
+                              </div>
+                              <span className="project-subline__label">
+                                {isZh ? "状态" : "Status"}
+                              </span>
+                              <span className={getSubLineStatusClassName(subLine.status)}>
+                                {subLine.status}
+                              </span>
+                            </div>
+                          </td>
                           <td>
                             <div className="project-sheet__row-actions">
                               <button
@@ -651,53 +719,86 @@ export function ProjectSheetPage() {
                 saveDetailRecord();
               }}
             >
-              <div className="project-detail-form__grid">
-                {PROJECT_COLUMNS.map((column) => {
-                  const label = isZh ? column.labelZh : column.labelEn;
-                  const value = getFieldValue(detailState.record, column.field);
+              {detailState.lineType === "project" ? (
+                <div className="project-detail-form__grid">
+                  {PROJECT_COLUMNS.map((column) => {
+                    const label = isZh ? column.labelZh : column.labelEn;
+                    const value = getFieldValue(detailState.record, column.field);
 
-                  return (
-                    <label key={column.field} className="project-detail-form__field">
-                      <span>
-                        {label}
-                        {column.field === "projectName" ? <strong aria-hidden="true">*</strong> : null}
-                      </span>
-                      {column.field === "projectLevel" ? (
-                        <select
-                          value={value}
-                          onChange={(event) => updateDetailRecord(column.field, event.target.value)}
-                        >
-                          <option value="">{isZh ? "未定" : "Unset"}</option>
-                          {PROJECT_LEVEL_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      ) : column.field === "progress" ? (
-                        <div className="project-detail-form__progress-control">
+                    return (
+                      <label key={column.field} className="project-detail-form__field">
+                        <span>
+                          {label}
+                          {column.field === "projectName" ? <strong aria-hidden="true">*</strong> : null}
+                        </span>
+                        {column.field === "projectLevel" ? (
+                          <select
+                            value={value}
+                            onChange={(event) => updateDetailRecord(column.field, event.target.value)}
+                          >
+                            <option value="">{isZh ? "未定" : "Unset"}</option>
+                            {PROJECT_LEVEL_OPTIONS.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                        ) : column.field === "progress" ? (
+                          <div className="project-detail-form__progress-control">
+                            <input
+                              inputMode="numeric"
+                              min={0}
+                              max={100}
+                              step={1}
+                              type="number"
+                              value={value}
+                              onChange={(event) => updateDetailRecord(column.field, event.target.value)}
+                            />
+                            <span aria-hidden="true">%</span>
+                          </div>
+                        ) : (
                           <input
-                            inputMode="numeric"
-                            min={0}
-                            max={100}
-                            step={1}
-                            type="number"
+                            inputMode={column.inputMode ?? "text"}
                             value={value}
                             onChange={(event) => updateDetailRecord(column.field, event.target.value)}
                           />
-                          <span aria-hidden="true">%</span>
-                        </div>
-                      ) : (
-                        <input
-                          inputMode={column.inputMode ?? "text"}
-                          value={value}
-                          onChange={(event) => updateDetailRecord(column.field, event.target.value)}
-                        />
-                      )}
-                    </label>
-                  );
-                })}
-              </div>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="project-detail-form__grid project-detail-form__grid--subline">
+                  <label className="project-detail-form__field">
+                    <span>{isZh ? "进度占比" : "Progress share"}</span>
+                    <div className="project-detail-form__progress-control">
+                      <input
+                        inputMode="numeric"
+                        min={0}
+                        max={100}
+                        step={1}
+                        type="number"
+                        value={detailState.record.progressRatio}
+                        onChange={(event) => updateSubLineDetailRecord("progressRatio", event.target.value)}
+                      />
+                      <span aria-hidden="true">%</span>
+                    </div>
+                  </label>
+                  <label className="project-detail-form__field">
+                    <span>{isZh ? "状态" : "Status"}</span>
+                    <select
+                      value={detailState.record.status}
+                      onChange={(event) => updateSubLineDetailRecord("status", event.target.value)}
+                    >
+                      {PROJECT_SUB_LINE_STATUS_OPTIONS.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              )}
               {detailState.error ? (
                 <div className="project-detail-form__error" role="alert">
                   {detailState.error}

@@ -1,5 +1,8 @@
 import { PROJECT_COLUMNS } from "./projectConfig";
-import type { ProjectLine, ProjectRecord } from "./projectTypes";
+import type { ProjectLine, ProjectRecord, ProjectSubLine, ProjectSubLineStatus } from "./projectTypes";
+
+const DEFAULT_PROJECT_SUB_LINE_STATUS: ProjectSubLineStatus = "未处理";
+const PROJECT_SUB_LINE_STATUSES: ProjectSubLineStatus[] = ["未处理", "设计中", "待评审", "已下单"];
 
 function createProjectId() {
   return (
@@ -24,11 +27,19 @@ export function createProjectLine(values: Partial<Omit<ProjectLine, "id">> = {})
 }
 
 export function createProjectRecord(
-  values: Partial<Omit<ProjectLine, "id">> & { subLines?: ProjectLine[] } = {}
+  values: Partial<Omit<ProjectLine, "id">> & { subLines?: ProjectSubLine[] } = {}
 ): ProjectRecord {
   return {
     ...createProjectLine(values),
     subLines: values.subLines ?? [],
+  };
+}
+
+export function createProjectSubLine(values: Partial<Omit<ProjectSubLine, "id">> = {}): ProjectSubLine {
+  return {
+    id: createProjectId(),
+    progressRatio: normalizeProjectProgress(values.progressRatio ?? "0"),
+    status: normalizeProjectSubLineStatus(values.status),
   };
 }
 
@@ -56,7 +67,7 @@ export function isProjectRecord(value: unknown): value is ProjectRecord {
   }
 
   const record = value as Partial<ProjectRecord>;
-  return record.subLines === undefined || (Array.isArray(record.subLines) && record.subLines.every(isProjectLine));
+  return record.subLines === undefined || Array.isArray(record.subLines);
 }
 
 export function normalizeProjectName(projectName: string) {
@@ -71,6 +82,12 @@ export function normalizeProjectProgress(progress: string | undefined) {
 
   const clampedProgress = Math.min(100, Math.max(0, Math.round(numericProgress)));
   return String(clampedProgress);
+}
+
+export function normalizeProjectSubLineStatus(status: unknown): ProjectSubLineStatus {
+  return PROJECT_SUB_LINE_STATUSES.includes(status as ProjectSubLineStatus)
+    ? (status as ProjectSubLineStatus)
+    : DEFAULT_PROJECT_SUB_LINE_STATUS;
 }
 
 export function sanitizeProjectLine(record: ProjectLine): ProjectLine | null {
@@ -96,10 +113,27 @@ export function sanitizeProjectRecord(record: ProjectRecord): ProjectRecord | nu
     ...sanitizedRecord,
     subLines: Array.isArray(record.subLines)
       ? record.subLines.flatMap((subLine) => {
-          const sanitizedSubLine = sanitizeProjectLine(subLine);
+          const sanitizedSubLine = sanitizeProjectSubLine(subLine);
           return sanitizedSubLine ? [sanitizedSubLine] : [];
         })
       : [],
+  };
+}
+
+export function sanitizeProjectSubLine(value: unknown): ProjectSubLine | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Partial<ProjectSubLine> & Partial<ProjectLine>;
+  if (typeof record.id !== "string") {
+    return null;
+  }
+
+  return {
+    id: record.id,
+    progressRatio: normalizeProjectProgress(record.progressRatio ?? record.progress),
+    status: normalizeProjectSubLineStatus(record.status),
   };
 }
 
@@ -119,20 +153,8 @@ export function sanitizeProjectRecords(records: ProjectRecord[]) {
     }
 
     knownProjectNames.add(projectName);
-    const sanitizedSubLines: ProjectLine[] = [];
-    for (const subLine of sanitizedRecord.subLines) {
-      const subLineProjectName = normalizeProjectName(subLine.projectName);
-      if (knownProjectNames.has(subLineProjectName)) {
-        continue;
-      }
-
-      knownProjectNames.add(subLineProjectName);
-      sanitizedSubLines.push(subLine);
-    }
-
     sanitizedRecords.push({
       ...sanitizedRecord,
-      subLines: sanitizedSubLines,
     });
   }
 

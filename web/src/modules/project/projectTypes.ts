@@ -10,8 +10,16 @@ export interface ProjectLine {
   projectManager: string;
 }
 
+export type ProjectSubLineStatus = "未处理" | "设计中" | "待评审" | "已下单";
+
+export interface ProjectSubLine {
+  id: string;
+  progressRatio: string;
+  status: ProjectSubLineStatus;
+}
+
 export interface ProjectRecord extends ProjectLine {
-  subLines: ProjectLine[];
+  subLines: ProjectSubLine[];
 }
 
 export type ProjectRecordField = Exclude<keyof ProjectLine, "id">;

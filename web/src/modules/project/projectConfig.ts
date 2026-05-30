@@ -1,4 +1,4 @@
-import type { ProjectColumn } from "./projectTypes";
+import type { ProjectColumn, ProjectSubLineStatus } from "./projectTypes";
 
 export const PROJECT_COLUMNS: ProjectColumn[] = [
   { field: "projectName", labelZh: "项目名称", labelEn: "Project Name", width: "220px" },
@@ -18,3 +18,9 @@ export const PROJECT_COLUMNS: ProjectColumn[] = [
 ];
 
 export const PROJECT_LEVEL_OPTIONS = ["V", "K", "R", "N"];
+export const PROJECT_SUB_LINE_STATUS_OPTIONS: ProjectSubLineStatus[] = [
+  "未处理",
+  "设计中",
+  "待评审",
+  "已下单",
+];

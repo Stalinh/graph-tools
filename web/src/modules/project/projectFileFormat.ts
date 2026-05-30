@@ -5,8 +5,8 @@ export const PROJECT_FILE_EXTENSION = ".project";
 export const PROJECT_FILE_NAME = "project-management.project";
 export const PROJECT_FILE_DESCRIPTION = "Project Management File";
 export const PROJECT_FILE_MODULE = "project-management";
-export const PROJECT_FILE_SCHEMA_VERSION = 3;
-const SUPPORTED_PROJECT_FILE_SCHEMA_VERSIONS = [1, 2, 3];
+export const PROJECT_FILE_SCHEMA_VERSION = 4;
+const SUPPORTED_PROJECT_FILE_SCHEMA_VERSIONS = [1, 2, 3, 4];
 export const PROJECT_OPEN_ACCEPT = {
   "application/json": [PROJECT_FILE_EXTENSION],
 };

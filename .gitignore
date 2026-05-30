@@ -28,3 +28,6 @@ Thumbs.db
 .vscode/
 CLAUDE.md
 .claude/
+
+## Local code indexes
+.codegraph/
