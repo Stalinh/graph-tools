@@ -106,6 +106,8 @@ const EMPTY_NODE_SIZES: Record<string, NodeSize> = {};
 const MIDDLE_BUTTON = 1;
 const MIDDLE_DOUBLE_CLICK_DELAY = 400;
 const MIDDLE_DOUBLE_CLICK_DISTANCE = 8;
+const DRAG_AUTO_PAN_EDGE_THRESHOLD = 24;
+const DRAG_AUTO_PAN_STEP = 24;
 type ContextMenuEvent = MouseEvent | ReactMouseEvent<Element>;
 interface ScreenPoint {
   x: number;
@@ -145,6 +147,16 @@ function containsRect(container: ScreenRect, target: ScreenRect) {
 
 function intersectsRect(a: ScreenRect, b: ScreenRect) {
   return a.left <= b.right && a.right >= b.left && a.top <= b.bottom && a.bottom >= b.top;
+}
+
+function getAutoPanDelta(pointer: number, min: number, max: number, threshold: number, step: number) {
+  if (pointer <= min + threshold) {
+    return -step;
+  }
+  if (pointer >= max - threshold) {
+    return step;
+  }
+  return 0;
 }
 
 function getNodeRect(position: CanvasPosition, size: NodeSize) {
@@ -383,6 +395,7 @@ export function GraphCanvas({
   const lastMiddleClickRef = useRef<{ time: number; x: number; y: number } | null>(null);
   const nodeDragStartPositions = useRef<Record<string, { x: number; y: number }>>({});
   const nodeDragStartTimeRef = useRef<Record<string, number>>({});
+  const dragAutoPanFrameRef = useRef<number | null>(null);
   const hasJustDraggedRef = useRef(false);
   const lastFocusedNodeIdRef = useRef<string | null>(null);
   const onSelectNodeRef = useRef(onSelectNode);
@@ -766,6 +779,109 @@ export function GraphCanvas({
     setNodes(nextNodes);
   }, [graph.nodes, nodeSizes]);
 
+  const stopDragAutoPan = useCallback(() => {
+    if (dragAutoPanFrameRef.current !== null) {
+      cancelAnimationFrame(dragAutoPanFrameRef.current);
+      dragAutoPanFrameRef.current = null;
+    }
+  }, []);
+
+  const handleNodeDrag = useCallback(
+    (event: ReactMouseEvent, node: Node) => {
+      const container = containerRef.current;
+      const instance = reactFlowInstanceRef.current;
+      if (!container || !instance) {
+        return;
+      }
+
+      stopDragAutoPan();
+
+      const bounds = container.getBoundingClientRect();
+      const pointerDeltaX = getAutoPanDelta(
+        event.clientX,
+        bounds.left,
+        bounds.right,
+        DRAG_AUTO_PAN_EDGE_THRESHOLD,
+        DRAG_AUTO_PAN_STEP
+      );
+      const pointerDeltaY = getAutoPanDelta(
+        event.clientY,
+        bounds.top,
+        bounds.bottom,
+        DRAG_AUTO_PAN_EDGE_THRESHOLD,
+        DRAG_AUTO_PAN_STEP
+      );
+
+      if (pointerDeltaX === 0 && pointerDeltaY === 0) {
+        return;
+      }
+
+      const draggedNodeIds =
+        selectedNodeIds.length > 1 && selectedNodeIds.includes(node.id) ? selectedNodeIds : [node.id];
+      const draggedElements = draggedNodeIds
+        .map((nodeId) => container.querySelector<HTMLElement>(`.react-flow__node[data-id="${nodeId}"]`))
+        .filter((element): element is HTMLElement => element !== null);
+
+      if (draggedElements.length === 0) {
+        return;
+      }
+
+      const draggedRect = draggedElements.reduce<ScreenRect>((combined, element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          top: Math.min(combined.top, rect.top),
+          right: Math.max(combined.right, rect.right),
+          bottom: Math.max(combined.bottom, rect.bottom),
+          left: Math.min(combined.left, rect.left),
+        };
+      }, {
+        top: Number.POSITIVE_INFINITY,
+        right: Number.NEGATIVE_INFINITY,
+        bottom: Number.NEGATIVE_INFINITY,
+        left: Number.POSITIVE_INFINITY,
+      });
+
+      const nodeDeltaX =
+        pointerDeltaX < 0
+          ? draggedRect.left <= bounds.left + DRAG_AUTO_PAN_EDGE_THRESHOLD
+            ? pointerDeltaX
+            : 0
+          : pointerDeltaX > 0
+            ? draggedRect.right >= bounds.right - DRAG_AUTO_PAN_EDGE_THRESHOLD
+              ? pointerDeltaX
+              : 0
+            : 0;
+      const nodeDeltaY =
+        pointerDeltaY < 0
+          ? draggedRect.top <= bounds.top + DRAG_AUTO_PAN_EDGE_THRESHOLD
+            ? pointerDeltaY
+            : 0
+          : pointerDeltaY > 0
+            ? draggedRect.bottom >= bounds.bottom - DRAG_AUTO_PAN_EDGE_THRESHOLD
+              ? pointerDeltaY
+              : 0
+            : 0;
+
+      if (nodeDeltaX === 0 && nodeDeltaY === 0) {
+        return;
+      }
+
+      dragAutoPanFrameRef.current = requestAnimationFrame(() => {
+        dragAutoPanFrameRef.current = null;
+        const currentViewport = instance.getViewport();
+        void instance.setViewport(
+          {
+            ...currentViewport,
+            x: currentViewport.x - nodeDeltaX,
+            y: currentViewport.y - nodeDeltaY,
+          },
+          { duration: 0 }
+        );
+      });
+    },
+    [selectedNodeIds, stopDragAutoPan]
+  );
+
   const handleCanvasAuxClick = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
     const target = event.target;
 
@@ -1016,6 +1132,7 @@ export function GraphCanvas({
         nodeTypes={NODE_TYPES}
         nodesDraggable
         nodesFocusable={false}
+        autoPanOnNodeDrag={false}
         panOnDrag={[1]}
         selectionMode={selectionMode}
         selectionOnDrag
@@ -1027,7 +1144,9 @@ export function GraphCanvas({
         onMoveEnd={(_, nextViewport) => onViewportChange?.(nextViewport)}
         onNodeContextMenu={handleNodeContextMenu}
         onNodeClick={handleNodeClick}
+        onNodeDrag={handleNodeDrag}
         onNodeDragStart={(_, node) => {
+          stopDragAutoPan();
           const currentNodes = nodesRef.current;
           if (selectedNodeIds.length > 1 && selectedNodeIds.includes(node.id)) {
             selectedNodeIds.forEach((selectedNodeId) => {
@@ -1044,6 +1163,7 @@ export function GraphCanvas({
           nodeDragStartTimeRef.current[node.id] = Date.now();
         }}
         onNodeDragStop={(_, node) => {
+          stopDragAutoPan();
           const from = nodeDragStartPositions.current[node.id] ?? node.position;
           const currentNodes = nodesRef.current;
           const resolvedNode =
