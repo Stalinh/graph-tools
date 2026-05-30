@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useI18n } from "../i18n";
+import { isReferenceableNode } from "../lib/graphConstraints";
 import type { BacklinkItem, GraphNode } from "../types";
 
 interface ReferencesPanelProps {
@@ -81,6 +82,7 @@ function ReferencesSection({
     return allNodes.filter(
       (n) =>
         n.id !== node.id &&
+        isReferenceableNode(n) &&
         !existingTargetIds.has(n.id) &&
         (n.title.toLowerCase().includes(q) || n.id.toLowerCase().includes(q))
     );

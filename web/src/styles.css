@@ -807,6 +807,10 @@ button {
   filter: saturate(0.56) brightness(0.96);
 }
 
+.graph-node.is-citation-disabled {
+  pointer-events: none;
+}
+
 .graph-node.is-locked::before {
   content: "";
   position: absolute;
@@ -4081,4 +4085,14 @@ button {
   outline: none !important;
   translate: 0 0 !important;
   scale: 1 !important;
+}
+
+.graph-node--group.graph-node.is-citation-disabled .group-node-container {
+  border-color: color-mix(in srgb, var(--group-color) 16%, transparent);
+  background: color-mix(in srgb, var(--group-color) 5%, transparent);
+  box-shadow: none;
+}
+
+.graph-node--group.graph-node.is-citation-disabled .group-node__header {
+  opacity: 0.7;
 }

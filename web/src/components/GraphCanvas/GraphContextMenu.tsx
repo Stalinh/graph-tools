@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Image as ImageIcon, Link2, Lock, LockOpen, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useI18n } from "../../i18n";
+import { isReferenceableNode } from "../../lib/graphConstraints";
 import type {
   CanvasPosition,
   EdgeDirection,
@@ -37,7 +38,7 @@ export function GraphContextMenu({
   const targetNode = targetNodeId
     ? graph.nodes.find((node) => node.id === targetNodeId)
     : undefined;
-  const canStartCitation = graph.nodes.length >= 2;
+  const canStartCitation = graph.nodes.filter(isReferenceableNode).length >= 2;
   const isEditDisabled = !targetNode || targetNode.type === "group";
 
   const containerRef = useRef<HTMLDivElement>(null);

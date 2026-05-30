@@ -1,5 +1,6 @@
 import type { Node } from "@xyflow/react";
 import type { CSSProperties } from "react";
+import { isReferenceableNode } from "../../lib/graphConstraints";
 import type { EntityType, GraphNode } from "../../types";
 import { nodeMatchesSearch } from "../../lib/searchUtils";
 
@@ -8,6 +9,7 @@ interface GraphFlowNodeData extends Record<string, unknown> {
   imageBlob?: Blob;
   isQuickEditing: boolean;
   isSelected: boolean;
+  isCitationSelectionActive: boolean;
   node: GraphNode;
   onNodeMouseDown?: (event: React.MouseEvent, nodeId: string) => void;
   onNodeResizeEnd?: (nodeId: string, size: { width: number; height: number }) => void;
@@ -44,6 +46,7 @@ export function createGraphNodes(
   images: Map<string, Blob> = new Map(),
   nodeFilter: EntityType | "locked" | "all" = "all",
   selectedEdgeActive = false,
+  citationSelectionActive = false,
   onNodeMouseDown?: (event: React.MouseEvent, nodeId: string) => void,
   matchingNodeIds: Set<string> | null = null,
   onQuickAddChild?: (parentId: string) => void,
@@ -87,13 +90,22 @@ export function createGraphNodes(
     const filterOpacity = isVisibleByFilter ? 1 : 0.14;
     const searchOpacity = isMatch ? 1 : 0.3;
     const edgeSelectionOpacity = selectedEdgeActive ? (isConnected ? 1 : 0.14) : 1;
-    const nodeOpacity = (node.opacity ?? 1) * searchOpacity * filterOpacity * edgeSelectionOpacity;
+    const citationSelectionOpacity =
+      citationSelectionActive && !isReferenceableNode(node) ? 0.3 : 1;
+    const nodeOpacity =
+      (node.opacity ?? 1) *
+      searchOpacity *
+      filterOpacity *
+      edgeSelectionOpacity *
+      citationSelectionOpacity;
     const isSelected = selectedNodeIdSet.has(node.id);
+    const isReferenceDisabled = citationSelectionActive && !isReferenceableNode(node);
     const classNames = [
       "graph-node",
       `graph-node--${node.type}`,
       node.locked ? "is-locked" : "",
       isSelected ? "is-selected" : "",
+      isReferenceDisabled ? "is-citation-disabled" : "",
       isConnected ? "is-edge-connected" : "",
       !isVisibleByFilter ? "is-filter-dimmed" : "",
       matchingNodeIds ? (isMatch ? "is-search-match" : "is-search-dimmed") : "",
@@ -106,6 +118,7 @@ export function createGraphNodes(
       parentId: node.parentId,
       type: rfNodeType,
       selected: isSelected,
+      selectable: !isReferenceDisabled,
       draggable: !node.locked,
       style: {
         opacity: nodeOpacity,
@@ -125,6 +138,7 @@ export function createGraphNodes(
       position,
       data: {
         isSelected,
+        isCitationSelectionActive: citationSelectionActive,
         isQuickEditing: quickEditingNodeId === node.id,
         node,
         onReferenceSelect: onSelectNode,
@@ -150,6 +164,7 @@ export function createGraphNodes(
         previousNode.position?.y !== nextNode.position.y;
       const dataChanged =
         previousData.isSelected !== nextNode.data.isSelected ||
+        previousData.isCitationSelectionActive !== nextNode.data.isCitationSelectionActive ||
         previousData.isQuickEditing !== nextNode.data.isQuickEditing ||
         previousData.node !== nextNode.data.node ||
         previousData.imageBlob !== nextNode.data.imageBlob ||
@@ -162,6 +177,7 @@ export function createGraphNodes(
         previousData.onNodeResizeEnd !== nextNode.data.onNodeResizeEnd;
       const otherChanged =
         previousNode.selected !== nextNode.selected ||
+        previousNode.selectable !== nextNode.selectable ||
         previousNode.draggable !== nextNode.draggable ||
         previousNode.className !== nextNode.className ||
         previousNode.type !== nextNode.type;

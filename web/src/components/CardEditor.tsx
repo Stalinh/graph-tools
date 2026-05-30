@@ -508,15 +508,17 @@ export function CardEditor({
         </section>
       )}
 
-      <ReferencesPanel
-        node={node}
-        allNodes={allNodes}
-        backlinks={backlinks}
-        onReferenceSelect={onReferenceSelect}
-        onCreateCitation={onCreateCitation}
-        onDeleteCitation={onDeleteCitation}
-        onReorderReferences={onReorderReferences}
-      />
+      {node.type !== "group" ? (
+        <ReferencesPanel
+          node={node}
+          allNodes={allNodes}
+          backlinks={backlinks}
+          onReferenceSelect={onReferenceSelect}
+          onCreateCitation={onCreateCitation}
+          onDeleteCitation={onDeleteCitation}
+          onReorderReferences={onReorderReferences}
+        />
+      ) : null}
     </div>
   );
 }

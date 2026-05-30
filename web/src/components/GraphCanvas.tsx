@@ -23,6 +23,7 @@ import {
   useState,
 } from "react";
 import { useI18n } from "../i18n";
+import { isReferenceableNode } from "../lib/graphConstraints";
 import type {
   CanvasPosition,
   CanvasViewport,
@@ -442,6 +443,7 @@ export function GraphCanvas({
       images,
       "all",
       false,
+      false,
       (event, nodeId) => handleNodeMouseDownRef.current?.(event, nodeId),
       null,
       handleQuickAddChild,
@@ -474,6 +476,7 @@ export function GraphCanvas({
         images,
         nodeFilter,
         Boolean(selectedEdgeId),
+        Boolean(pendingCitation),
         (event, nodeId) => handleNodeMouseDownRef.current?.(event, nodeId),
         matchingNodeIds ?? null,
         handleQuickAddChild,
@@ -492,6 +495,7 @@ export function GraphCanvas({
     searchQuery,
     selectedNodeIds,
     matchingNodeIds,
+    pendingCitation,
     handleQuickAddChild,
     onNodeResizeEnd,
   ]);
@@ -668,6 +672,16 @@ export function GraphCanvas({
       }
       onCloseContextMenu();
       if (pendingCitation) {
+        const graphNode = graph.nodes.find((graphNodeItem) => graphNodeItem.id === node.id);
+        if (!graphNode || !isReferenceableNode(graphNode)) {
+          setPendingCitation({
+            ...pendingCitation,
+            message: isZh
+              ? "分组节点不能参与引用，请选择卡片或图片节点"
+              : "Group nodes cannot be linked. Choose a card or image node.",
+          });
+          return;
+        }
         if (!pendingCitation.sourceId) {
           setPendingCitation({
             ...pendingCitation,

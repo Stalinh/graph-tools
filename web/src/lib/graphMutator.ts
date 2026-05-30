@@ -1,5 +1,6 @@
 import type { EdgeDirection, EdgeStyle, GraphData, GraphEdge, GraphNode } from "../types";
 
+import { isReferenceableNode, sanitizeReferences } from "./graphConstraints";
 import { normalizeEdgeColor, normalizeNodeColor } from "./nodeColors";
 
 function makeEdgeId(sourceId: string, targetId: string) {
@@ -97,6 +98,9 @@ export function addCitation(
   const targetNode = graph.nodes.find((node) => node.id === targetId);
 
   if (!sourceNode || !targetNode) {
+    return graph;
+  }
+  if (!isReferenceableNode(sourceNode) || !isReferenceableNode(targetNode)) {
     return graph;
   }
 
@@ -248,6 +252,14 @@ export function updateEdgeDirection(
 
   const sourceNode = graph.nodes.find((n) => n.id === edge.sourceId);
   const targetNode = graph.nodes.find((n) => n.id === edge.targetId);
+  if (
+    !sourceNode ||
+    !targetNode ||
+    !isReferenceableNode(sourceNode) ||
+    !isReferenceableNode(targetNode)
+  ) {
+    return graph;
+  }
 
   const nextEdges = graph.edges.map((e) => (e.id === edgeId ? { ...e, direction } : e));
 
@@ -324,11 +336,15 @@ export function reorderReferences(
   const reordered = newOrder
     .map((id) => refsById.get(id))
     .filter((ref): ref is NonNullable<GraphNode["references"]>[number] => ref !== undefined);
+  const referenceableNodeIds = new Set(
+    graph.nodes.filter(isReferenceableNode).map((node) => node.id)
+  );
+  const sanitizedReferences = sanitizeReferences(reordered, referenceableNodeIds) ?? [];
 
   return {
     ...graph,
     nodes: graph.nodes.map((node) =>
-      node.id === sourceId ? { ...node, references: reordered } : node
+      node.id === sourceId ? { ...node, references: sanitizedReferences } : node
     ),
   };
 }

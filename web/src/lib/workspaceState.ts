@@ -1,5 +1,6 @@
 import type { EdgeDirection, GraphData, GraphEdge, GraphNode, WorkspaceState } from "../types";
 
+import { sanitizeReferenceGraph, sanitizeReferences } from "./graphConstraints";
 import { normalizeEdgeColor, normalizeNodeColor } from "./nodeColors";
 
 export type RemoveMeta = {
@@ -87,9 +88,10 @@ export function generateNextId(nodes: GraphNode[]): string {
 }
 
 export function normalizeWorkspaceState(workspace: WorkspaceState): WorkspaceState {
-  const nodeIds = new Set(workspace.graph.nodes.map((node) => node.id));
+  const sanitizedGraph = sanitizeReferenceGraph(workspace.graph);
+  const nodeIds = new Set(sanitizedGraph.nodes.map((node) => node.id));
   const groupIds = new Set(
-    workspace.graph.nodes.filter((node) => node.type === "group").map((node) => node.id)
+    sanitizedGraph.nodes.filter((node) => node.type === "group").map((node) => node.id)
   );
 
   const nodePositions: Record<string, { x: number; y: number }> = {};
@@ -109,20 +111,28 @@ export function normalizeWorkspaceState(workspace: WorkspaceState): WorkspaceSta
     }
   }
 
-  const normalizedNodes = workspace.graph.nodes.map((node) => {
+  const referenceableNodeIds = new Set(
+    sanitizedGraph.nodes.filter((node) => node.type !== "group").map((node) => node.id)
+  );
+
+  const normalizedNodes = sanitizedGraph.nodes.map((node) => {
     const currentNode = removeDeprecatedNodeFields(node);
+    const sanitizedNode = {
+      ...currentNode,
+      references: sanitizeReferences(currentNode.references, referenceableNodeIds),
+    };
     if (!currentNode.parentId) {
-      return currentNode;
+      return sanitizedNode;
     }
     if (currentNode.type === "group" || !groupIds.has(currentNode.parentId)) {
-      const nodeWithoutParent = { ...currentNode };
+      const nodeWithoutParent = { ...sanitizedNode };
       delete nodeWithoutParent.parentId;
       return nodeWithoutParent;
     }
-    return currentNode;
+    return sanitizedNode;
   });
 
-  const normalizedEdges = workspace.graph.edges.map((edge) => ({
+  const normalizedEdges = sanitizedGraph.edges.map((edge) => ({
     ...edge,
     color: normalizeEdgeColor(edge.color),
   }));
