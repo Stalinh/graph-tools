@@ -1,5 +1,5 @@
 import { useMemo, useRef } from "react";
-import { Moon, Sun } from "lucide-react";
+import { Moon, PanelRightClose, PanelRightOpen, Sun } from "lucide-react";
 import { useI18n } from "../i18n";
 import type { BacklinkItem, EdgeDirection, EdgeStyle, GraphEdge, GraphNode } from "../types";
 import { CardEditor } from "./CardEditor";
@@ -17,6 +17,7 @@ interface InspectorProps {
   node: InspectorNode | null;
   selectedNodes?: InspectorNode[];
   autoFocusContent?: boolean;
+  isCollapsed?: boolean;
   theme?: "light" | "dark";
   themeToggleLabel?: string;
   edge?: InspectorEdge | null;
@@ -26,6 +27,7 @@ interface InspectorProps {
   allEdges?: InspectorEdge[];
   allNodes?: InspectorNode[];
   onToggleTheme?: () => void;
+  onCollapseToggle?: () => void;
   onAutoFocusContentHandled?: () => void;
   onSelectNode?: (nodeId: string) => void;
   onEdgeDirectionChange?: (edgeId: string, direction: InspectorEdgeDirection) => void;
@@ -50,6 +52,7 @@ export function Inspector({
   node,
   selectedNodes = [],
   autoFocusContent = false,
+  isCollapsed = false,
   theme = "light",
   themeToggleLabel,
   edge,
@@ -59,6 +62,7 @@ export function Inspector({
   allEdges = [],
   allNodes = [],
   onToggleTheme,
+  onCollapseToggle,
   onAutoFocusContentHandled,
   onSelectNode,
   onEdgeDirectionChange,
@@ -80,6 +84,8 @@ export function Inspector({
 }: InspectorProps) {
   const { isZh } = useI18n();
   const nextTheme = theme === "dark" ? "light" : "dark";
+  const collapseLabel = isZh ? "收起检查器" : "Collapse inspector";
+  const expandLabel = isZh ? "展开检查器" : "Expand inspector";
 
   const nodeRef = useRef(node);
   nodeRef.current = node;
@@ -174,11 +180,14 @@ export function Inspector({
   }, [nodeId]);
 
   return (
-    <aside className="inspector" aria-label={isZh ? "检查器" : "Inspector"}>
+    <aside
+      className={`inspector ${isCollapsed ? "is-collapsed" : ""}`}
+      aria-label={isZh ? "检查器" : "Inspector"}
+    >
       <div className="inspector__header">
-        <span>{isZh ? "检查器" : "Inspector"}</span>
-        {themeToggleLabel && onToggleTheme ? (
-          <div className="inspector__actions">
+        <span className="inspector__title">{isZh ? "检查器" : "Inspector"}</span>
+        <div className="inspector__actions">
+          {themeToggleLabel && onToggleTheme ? (
             <button
               className="icon-button"
               type="button"
@@ -188,69 +197,82 @@ export function Inspector({
             >
               {nextTheme === "dark" ? <Moon size={18} /> : <Sun size={18} />}
             </button>
-          </div>
-        ) : null}
+          ) : null}
+          {onCollapseToggle ? (
+            <button
+              className="icon-button"
+              type="button"
+              aria-label={isCollapsed ? expandLabel : collapseLabel}
+              title={isCollapsed ? expandLabel : collapseLabel}
+              onClick={onCollapseToggle}
+            >
+              {isCollapsed ? <PanelRightOpen size={18} /> : <PanelRightClose size={18} />}
+            </button>
+          ) : null}
+        </div>
       </div>
-      {selectedNodes.length > 1 ? (
-        <MultiSelectInspector
-          nodes={selectedNodes}
-          onBatchColorChange={onBatchColorChange}
-          onBatchDelete={onBatchDelete}
-          onBatchLockChange={onBatchLockChange}
-          onBatchOpacityPreview={onBatchOpacityPreview}
-          onBatchOpacityCommit={onBatchOpacityCommit}
-        />
-      ) : edge ? (
-        <div className="inspector__body">
-          <EdgeEditor
-            edge={edge}
-            sourceNode={sourceNode ?? undefined}
-            targetNode={targetNode ?? undefined}
-            onDelete={onDeleteEdge}
-            onColorChange={onEdgeColorChange ?? (() => {})}
-            onDirectionChange={onEdgeDirectionChange ?? (() => {})}
-            onStyleChange={onEdgeStyleChange ?? (() => {})}
+      <div className="inspector__content" aria-hidden={isCollapsed}>
+        {selectedNodes.length > 1 ? (
+          <MultiSelectInspector
+            nodes={selectedNodes}
+            onBatchColorChange={onBatchColorChange}
+            onBatchDelete={onBatchDelete}
+            onBatchLockChange={onBatchLockChange}
+            onBatchOpacityPreview={onBatchOpacityPreview}
+            onBatchOpacityCommit={onBatchOpacityCommit}
           />
-        </div>
-      ) : node === null ? (
-        <GraphLegend isZh={isZh} />
-      ) : node.type === "image" ? (
-        <div className="inspector__body">
-          <ImageEditor
-            allNodes={allNodes}
-            backlinks={backlinks}
-            node={node}
-            onColorChange={memoizedCallbacks.onColorChange}
-            onOpacityPreview={memoizedCallbacks.onOpacityPreview}
-            onOpacityCommit={memoizedCallbacks.onOpacityCommit}
-            onCreateCitation={memoizedCallbacks.onCreateCitation}
-            onDeleteCitation={memoizedCallbacks.onDeleteCitation}
-            onReferenceSelect={onSelectNode}
-            onReorderReferences={memoizedCallbacks.onReorderReferences}
-            onTitleCommit={memoizedCallbacks.onTitleCommit}
-          />
-        </div>
-      ) : (
-        <div className="inspector__body">
-          <CardEditor
-            allNodes={allNodes}
-            autoFocusContent={autoFocusContent}
-            backlinks={backlinks}
-            node={node}
-            onAutoFocusContentHandled={onAutoFocusContentHandled}
-            onContentCommit={memoizedCallbacks.onContentCommit}
-            onTitleCommit={memoizedCallbacks.onTitleCommit}
-            onTagsChange={memoizedCallbacks.onTagsChange}
-            onColorChange={memoizedCallbacks.onColorChange}
-            onOpacityPreview={memoizedCallbacks.onOpacityPreview}
-            onOpacityCommit={memoizedCallbacks.onOpacityCommit}
-            onCreateCitation={memoizedCallbacks.onCreateCitation}
-            onDeleteCitation={memoizedCallbacks.onDeleteCitation}
-            onReferenceSelect={onSelectNode}
-            onReorderReferences={memoizedCallbacks.onReorderReferences}
-          />
-        </div>
-      )}
+        ) : edge ? (
+          <div className="inspector__body">
+            <EdgeEditor
+              edge={edge}
+              sourceNode={sourceNode ?? undefined}
+              targetNode={targetNode ?? undefined}
+              onDelete={onDeleteEdge}
+              onColorChange={onEdgeColorChange ?? (() => {})}
+              onDirectionChange={onEdgeDirectionChange ?? (() => {})}
+              onStyleChange={onEdgeStyleChange ?? (() => {})}
+            />
+          </div>
+        ) : node === null ? (
+          <GraphLegend isZh={isZh} />
+        ) : node.type === "image" ? (
+          <div className="inspector__body">
+            <ImageEditor
+              allNodes={allNodes}
+              backlinks={backlinks}
+              node={node}
+              onColorChange={memoizedCallbacks.onColorChange}
+              onOpacityPreview={memoizedCallbacks.onOpacityPreview}
+              onOpacityCommit={memoizedCallbacks.onOpacityCommit}
+              onCreateCitation={memoizedCallbacks.onCreateCitation}
+              onDeleteCitation={memoizedCallbacks.onDeleteCitation}
+              onReferenceSelect={onSelectNode}
+              onReorderReferences={memoizedCallbacks.onReorderReferences}
+              onTitleCommit={memoizedCallbacks.onTitleCommit}
+            />
+          </div>
+        ) : (
+          <div className="inspector__body">
+            <CardEditor
+              allNodes={allNodes}
+              autoFocusContent={autoFocusContent}
+              backlinks={backlinks}
+              node={node}
+              onAutoFocusContentHandled={onAutoFocusContentHandled}
+              onContentCommit={memoizedCallbacks.onContentCommit}
+              onTitleCommit={memoizedCallbacks.onTitleCommit}
+              onTagsChange={memoizedCallbacks.onTagsChange}
+              onColorChange={memoizedCallbacks.onColorChange}
+              onOpacityPreview={memoizedCallbacks.onOpacityPreview}
+              onOpacityCommit={memoizedCallbacks.onOpacityCommit}
+              onCreateCitation={memoizedCallbacks.onCreateCitation}
+              onDeleteCitation={memoizedCallbacks.onDeleteCitation}
+              onReferenceSelect={onSelectNode}
+              onReorderReferences={memoizedCallbacks.onReorderReferences}
+            />
+          </div>
+        )}
+      </div>
     </aside>
   );
 }

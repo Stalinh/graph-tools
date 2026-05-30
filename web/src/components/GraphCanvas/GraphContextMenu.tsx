@@ -38,6 +38,7 @@ export function GraphContextMenu({
     ? graph.nodes.find((node) => node.id === targetNodeId)
     : undefined;
   const canStartCitation = graph.nodes.length >= 2;
+  const isEditDisabled = !targetNode || targetNode.type === "group";
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [adjustedPosition, setAdjustedPosition] = useState({ x: contextMenu.x, y: contextMenu.y });
@@ -186,7 +187,7 @@ export function GraphContextMenu({
       <button
         type="button"
         role="menuitem"
-        disabled={!targetNodeId}
+        disabled={isEditDisabled}
         onClick={() => {
           if (!targetNodeId) {
             return;

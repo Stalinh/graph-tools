@@ -38,6 +38,7 @@ export function KnowledgeBase({ theme, themeToggleLabel, onToggleTheme }: Knowle
   const [nodeFilter, setNodeFilter] = useState<WorkspaceNodeFilter>("all");
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null);
   const [draftSaveFailed, setDraftSaveFailed] = useState(false);
+  const [isInspectorCollapsed, setIsInspectorCollapsed] = useState(false);
 
   const searchFilters = useSearchFilters();
 
@@ -286,7 +287,7 @@ export function KnowledgeBase({ theme, themeToggleLabel, onToggleTheme }: Knowle
 
   return (
     <section
-      className="knowledge-base"
+      className={`knowledge-base ${isInspectorCollapsed ? "is-inspector-collapsed" : ""}`}
       aria-label={isZh ? "知识图谱工作区" : "Knowledge graph workspace"}
     >
       <div className="graph-zone">
@@ -395,10 +396,12 @@ export function KnowledgeBase({ theme, themeToggleLabel, onToggleTheme }: Knowle
         }
         allEdges={nodes.graph.edges}
         edge={selection.selectedEdge}
+        isCollapsed={isInspectorCollapsed}
         node={selection.selectedNode}
         selectedNodes={selection.selectedNodes}
         theme={theme}
         themeToggleLabel={themeToggleLabel}
+        onCollapseToggle={() => setIsInspectorCollapsed((current) => !current)}
         onBatchColorChange={(color) =>
           nodes.updateGraphNodesColor(selection.selectedNodeIds, color)
         }
