@@ -30,6 +30,18 @@ interface UpdateGraphNodeOptions {
   pushToHistory?: boolean;
 }
 
+interface CanvasPosition {
+  x: number;
+  y: number;
+}
+
+interface NodeSize {
+  width: number;
+  height: number;
+}
+
+const DEFAULT_GROUP_SIZE: NodeSize = { width: 450, height: 350 };
+
 export function useGraphNodes({
   locale = "zh-CN",
   pushCommand,
@@ -111,7 +123,15 @@ export function useGraphNodes({
         }
       }
 
-      if (resolvedParentId) {
+      if (type === "group") {
+        resolvedPosition = findAvailableGroupPosition(
+          id,
+          resolvedPosition,
+          graphRef.current.nodes,
+          nodePositionsRef.current,
+          nodeSizesRef.current
+        );
+      } else if (resolvedParentId) {
         const parentPosition = nodePositionsRef.current[resolvedParentId] ?? { x: 0, y: 0 };
         resolvedPosition = {
           x: position.x - parentPosition.x,
@@ -559,6 +579,25 @@ export function useGraphNodes({
 
       // Group nodes cannot be nested in other groups
       if (node.type === "group") {
+        if (
+          isGroupPlacementBlocked(
+            node.id,
+            to,
+            nodeSizesRef.current[node.id] ?? DEFAULT_GROUP_SIZE,
+            currentNodes,
+            nodePositionsRef.current,
+            nodeSizesRef.current
+          )
+        ) {
+          const revertedPositions = {
+            ...nodePositionsRef.current,
+            [nodeId]: from,
+          };
+          nodePositionsRef.current = revertedPositions;
+          setNodePositions(revertedPositions);
+          return;
+        }
+
         if (from.x !== to.x || from.y !== to.y) {
           setNodePositions((currentPositions) => ({
             ...currentPositions,
@@ -729,6 +768,12 @@ export function useGraphNodes({
       let afterGraph = beforeGraph;
       const finalMoves: typeof moves = [];
       const updatedPositions: Record<string, { x: number; y: number }> = {};
+      const resolvedGroupPositions = resolveGroupMoveTargets(
+        meaningfulMoves,
+        beforeGraph.nodes,
+        nodePositionsRef.current,
+        nodeSizesRef.current
+      );
 
       meaningfulMoves.forEach((move) => {
         const { nodeId, from, to } = move;
@@ -740,8 +785,15 @@ export function useGraphNodes({
         }
 
         if (node.type === "group") {
-          finalMoves.push(move);
-          updatedPositions[nodeId] = to;
+          const resolvedPosition = resolvedGroupPositions[nodeId] ?? to;
+          updatedPositions[nodeId] = resolvedPosition;
+          if (from.x !== resolvedPosition.x || from.y !== resolvedPosition.y) {
+            finalMoves.push({
+              nodeId,
+              from,
+              to: resolvedPosition,
+            });
+          }
           return;
         }
 
@@ -969,6 +1021,28 @@ export function useGraphNodes({
       if (!node) return;
 
       const before = nodeSizesRef.current[nodeId];
+      const fallbackBefore = before ?? estimateNodeSize(node);
+
+      if (
+        node.type === "group" &&
+        isGroupPlacementBlocked(
+          nodeId,
+          nodePositionsRef.current[nodeId] ?? { x: 0, y: 0 },
+          finalSize,
+          graphRef.current.nodes,
+          nodePositionsRef.current,
+          nodeSizesRef.current
+        )
+      ) {
+        const revertedSizes = {
+          ...nodeSizesRef.current,
+          [nodeId]: fallbackBefore,
+        };
+        nodeSizesRef.current = revertedSizes;
+        setNodeSizes(revertedSizes);
+        return;
+      }
+
       let nextSizes = {
         ...nodeSizesRef.current,
         [nodeId]: finalSize,
@@ -1092,11 +1166,142 @@ function detachChildrenFromGroup(
 function adjustGroupSizeAndPosition(
   _groupId: string,
   _currentNodes: GraphNode[],
-  positions: Record<string, { x: number; y: number }>,
-  sizes: Record<string, { width: number; height: number }>
+  positions: Record<string, CanvasPosition>,
+  sizes: Record<string, NodeSize>
 ) {
   // Group auto-sizing is intentionally disabled. Keep this wrapper so creation,
   // deletion, drag, and resize flows can share one extension point if the feature
   // is reintroduced without changing those call sites again.
   return { positions, sizes };
+}
+
+function resolveGroupMoveTargets(
+  moves: { nodeId: string; from: CanvasPosition; to: CanvasPosition }[],
+  currentNodes: GraphNode[],
+  positions: Record<string, CanvasPosition>,
+  sizes: Record<string, NodeSize>
+) {
+  const groupMoves = moves.filter((move) =>
+    currentNodes.some((node) => node.id === move.nodeId && node.type === "group")
+  );
+  const nextPositions: Record<string, CanvasPosition> = { ...positions };
+
+  groupMoves.forEach((move) => {
+    nextPositions[move.nodeId] = move.to;
+  });
+
+  let didChange = true;
+  while (didChange) {
+    didChange = false;
+
+    for (const move of groupMoves) {
+      const candidatePosition = nextPositions[move.nodeId] ?? move.to;
+      const size = sizes[move.nodeId] ?? DEFAULT_GROUP_SIZE;
+      if (
+        isGroupPlacementBlocked(
+          move.nodeId,
+          candidatePosition,
+          size,
+          currentNodes,
+          nextPositions,
+          sizes
+        ) &&
+        (candidatePosition.x !== move.from.x || candidatePosition.y !== move.from.y)
+      ) {
+        nextPositions[move.nodeId] = move.from;
+        didChange = true;
+      }
+    }
+  }
+
+  return nextPositions;
+}
+
+function findAvailableGroupPosition(
+  groupId: string,
+  preferredPosition: CanvasPosition,
+  currentNodes: GraphNode[],
+  positions: Record<string, CanvasPosition>,
+  sizes: Record<string, NodeSize>
+) {
+  if (
+    !isGroupPlacementBlocked(
+      groupId,
+      preferredPosition,
+      DEFAULT_GROUP_SIZE,
+      currentNodes,
+      positions,
+      sizes
+    )
+  ) {
+    return preferredPosition;
+  }
+
+  const step = 40;
+  const maxRadius = 12;
+
+  for (let radius = 1; radius <= maxRadius; radius += 1) {
+    for (let offsetY = -radius; offsetY <= radius; offsetY += 1) {
+      for (let offsetX = -radius; offsetX <= radius; offsetX += 1) {
+        if (Math.abs(offsetX) !== radius && Math.abs(offsetY) !== radius) {
+          continue;
+        }
+
+        const candidate = {
+          x: preferredPosition.x + offsetX * step,
+          y: preferredPosition.y + offsetY * step,
+        };
+
+        if (
+          !isGroupPlacementBlocked(groupId, candidate, DEFAULT_GROUP_SIZE, currentNodes, positions, sizes)
+        ) {
+          return candidate;
+        }
+      }
+    }
+  }
+
+  return preferredPosition;
+}
+
+function isGroupPlacementBlocked(
+  groupId: string,
+  position: CanvasPosition,
+  size: NodeSize,
+  currentNodes: GraphNode[],
+  positions: Record<string, CanvasPosition>,
+  sizes: Record<string, NodeSize>
+) {
+  const nextRect = toRect(position, size);
+
+  return currentNodes.some((node) => {
+    if (node.id === groupId || node.type !== "group") {
+      return false;
+    }
+
+    const otherPosition = positions[node.id] ?? { x: 0, y: 0 };
+    const otherSize = sizes[node.id] ?? DEFAULT_GROUP_SIZE;
+    return doRectsOverlap(nextRect, toRect(otherPosition, otherSize));
+  });
+}
+
+function toRect(position: CanvasPosition, size: NodeSize) {
+  return {
+    left: position.x,
+    right: position.x + size.width,
+    top: position.y,
+    bottom: position.y + size.height,
+  };
+}
+
+function doRectsOverlap(
+  left: ReturnType<typeof toRect>,
+  right: ReturnType<typeof toRect>
+) {
+  return (
+    left.left < right.right &&
+    left.right > right.left &&
+    left.top < right.bottom &&
+    left.bottom > right.top
+  );
 }

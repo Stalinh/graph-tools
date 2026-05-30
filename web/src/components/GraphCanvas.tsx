@@ -147,6 +147,200 @@ function intersectsRect(a: ScreenRect, b: ScreenRect) {
   return a.left <= b.right && a.right >= b.left && a.top <= b.bottom && a.bottom >= b.top;
 }
 
+function getNodeRect(position: CanvasPosition, size: NodeSize) {
+  return {
+    left: position.x,
+    right: position.x + size.width,
+    top: position.y,
+    bottom: position.y + size.height,
+  };
+}
+
+function doRectsOverlap(
+  left: ReturnType<typeof getNodeRect>,
+  right: ReturnType<typeof getNodeRect>
+) {
+  return (
+    left.left < right.right &&
+    left.right > right.left &&
+    left.top < right.bottom &&
+    left.bottom > right.top
+  );
+}
+
+function rangesOverlap(startA: number, endA: number, startB: number, endB: number) {
+  return startA < endB && endA > startB;
+}
+
+function resolveGroupDragPosition(
+  nodeId: string,
+  from: CanvasPosition,
+  to: CanvasPosition,
+  size: NodeSize,
+  graphNodes: GraphNode[],
+  currentCanvasNodes: Node[],
+  nodeSizes: Record<string, NodeSize>,
+  resolvedPositions: Map<string, CanvasPosition>,
+  movingGroupIds: Set<string>
+) {
+  const staticGroups = graphNodes.filter(
+    (node) => node.type === "group" && node.id !== nodeId && !movingGroupIds.has(node.id)
+  );
+  const canvasNodeMap = new Map(currentCanvasNodes.map((node) => [node.id, node]));
+  const currentRect = getNodeRect(from, size);
+
+  let nextX = to.x;
+  if (nextX !== from.x) {
+    const movingRight = nextX > from.x;
+
+    staticGroups.forEach((otherNode) => {
+      const otherCanvasNode = canvasNodeMap.get(otherNode.id);
+      if (!otherCanvasNode) {
+        return;
+      }
+
+      const otherPosition = resolvedPositions.get(otherNode.id) ?? otherCanvasNode.position;
+      const otherSize = nodeSizes[otherNode.id] ?? {
+        width: otherCanvasNode.measured?.width ?? otherCanvasNode.width ?? otherCanvasNode.initialWidth ?? 450,
+        height:
+          otherCanvasNode.measured?.height ??
+          otherCanvasNode.height ??
+          otherCanvasNode.initialHeight ??
+          350,
+      };
+      const otherRect = getNodeRect(otherPosition, otherSize);
+
+      if (
+        !rangesOverlap(currentRect.top, currentRect.bottom, otherRect.top, otherRect.bottom)
+      ) {
+        return;
+      }
+
+      if (
+        movingRight &&
+        currentRect.right <= otherRect.left &&
+        nextX + size.width > otherRect.left
+      ) {
+        nextX = Math.min(nextX, otherRect.left - size.width);
+      } else if (
+        !movingRight &&
+        currentRect.left >= otherRect.right &&
+        nextX < otherRect.right
+      ) {
+        nextX = Math.max(nextX, otherRect.right);
+      }
+    });
+  }
+
+  let nextY = to.y;
+  if (nextY !== from.y) {
+    const movingDown = nextY > from.y;
+    const xResolvedRect = getNodeRect({ x: nextX, y: from.y }, size);
+
+    staticGroups.forEach((otherNode) => {
+      const otherCanvasNode = canvasNodeMap.get(otherNode.id);
+      if (!otherCanvasNode) {
+        return;
+      }
+
+      const otherPosition = resolvedPositions.get(otherNode.id) ?? otherCanvasNode.position;
+      const otherSize = nodeSizes[otherNode.id] ?? {
+        width: otherCanvasNode.measured?.width ?? otherCanvasNode.width ?? otherCanvasNode.initialWidth ?? 450,
+        height:
+          otherCanvasNode.measured?.height ??
+          otherCanvasNode.height ??
+          otherCanvasNode.initialHeight ??
+          350,
+      };
+      const otherRect = getNodeRect(otherPosition, otherSize);
+
+      if (
+        !rangesOverlap(xResolvedRect.left, xResolvedRect.right, otherRect.left, otherRect.right)
+      ) {
+        return;
+      }
+
+      if (
+        movingDown &&
+        xResolvedRect.bottom <= otherRect.top &&
+        nextY + size.height > otherRect.top
+      ) {
+        nextY = Math.min(nextY, otherRect.top - size.height);
+      } else if (
+        !movingDown &&
+        xResolvedRect.top >= otherRect.bottom &&
+        nextY < otherRect.bottom
+      ) {
+        nextY = Math.max(nextY, otherRect.bottom);
+      }
+    });
+  }
+
+  return { x: nextX, y: nextY };
+}
+
+function normalizeGroupCollisionChanges(
+  changes: NodeChange[],
+  graphNodes: GraphNode[],
+  currentCanvasNodes: Node[],
+  nodeSizes: Record<string, NodeSize>
+) {
+  const graphNodeMap = new Map(graphNodes.map((node) => [node.id, node]));
+  const currentCanvasNodeMap = new Map(currentCanvasNodes.map((node) => [node.id, node]));
+  const movingGroupIds = new Set(
+    changes
+      .flatMap((change) =>
+        change.type === "position" &&
+        "id" in change &&
+        typeof change.id === "string" &&
+        Boolean(change.position)
+          ? [change.id]
+          : []
+      )
+      .filter((id) => graphNodeMap.get(id)?.type === "group")
+  );
+  const resolvedPositions = new Map<string, CanvasPosition>();
+
+  return changes.map((change) => {
+    if (change.type !== "position" || !change.position) {
+      return change;
+    }
+
+    if (graphNodeMap.get(change.id)?.type !== "group") {
+      return change;
+    }
+
+    const currentCanvasNode = currentCanvasNodeMap.get(change.id);
+    if (!currentCanvasNode) {
+      return change;
+    }
+
+    const currentPosition = currentCanvasNode.position;
+    const candidateSize = nodeSizes[change.id] ?? {
+      width: currentCanvasNode.measured?.width ?? currentCanvasNode.width ?? currentCanvasNode.initialWidth ?? 450,
+      height:
+        currentCanvasNode.measured?.height ?? currentCanvasNode.height ?? currentCanvasNode.initialHeight ?? 350,
+    };
+    const resolvedPosition = resolveGroupDragPosition(
+      change.id,
+      currentPosition,
+      change.position,
+      candidateSize,
+      graphNodes,
+      currentCanvasNodes,
+      nodeSizes,
+      resolvedPositions,
+      movingGroupIds
+    );
+
+    resolvedPositions.set(change.id, resolvedPosition);
+    return {
+      ...change,
+      position: resolvedPosition,
+    };
+  });
+}
+
 export function GraphCanvas({
   graph,
   contextMenu,
@@ -561,10 +755,16 @@ export function GraphCanvas({
       return;
     }
 
-    const nextNodes = applyNodeChanges(stableChanges, nodesRef.current);
+    const normalizedChanges = normalizeGroupCollisionChanges(
+      stableChanges,
+      graph.nodes,
+      nodesRef.current,
+      nodeSizes
+    );
+    const nextNodes = applyNodeChanges(normalizedChanges, nodesRef.current);
     nodesRef.current = nextNodes;
     setNodes(nextNodes);
-  }, []);
+  }, [graph.nodes, nodeSizes]);
 
   const handleCanvasAuxClick = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
     const target = event.target;
@@ -845,9 +1045,12 @@ export function GraphCanvas({
         }}
         onNodeDragStop={(_, node) => {
           const from = nodeDragStartPositions.current[node.id] ?? node.position;
+          const currentNodes = nodesRef.current;
+          const resolvedNode =
+            currentNodes.find((canvasNode) => canvasNode.id === node.id) ?? node;
           const startTime = nodeDragStartTimeRef.current[node.id];
-          const dx = Math.abs(node.position.x - from.x);
-          const dy = Math.abs(node.position.y - from.y);
+          const dx = Math.abs(resolvedNode.position.x - from.x);
+          const dy = Math.abs(resolvedNode.position.y - from.y);
           const distanceMoved = Math.sqrt(dx * dx + dy * dy);
           const timeElapsed = startTime ? Date.now() - startTime : 0;
 
@@ -855,7 +1058,6 @@ export function GraphCanvas({
             hasJustDraggedRef.current = true;
           }
           if (selectedNodeIds.length > 1 && selectedNodeIds.includes(node.id)) {
-            const currentNodes = nodesRef.current;
             const moves = selectedNodeIds
               .map((selectedNodeId) => {
                 const currentNode = currentNodes.find(
@@ -887,7 +1089,7 @@ export function GraphCanvas({
               delete nodeDragStartPositions.current[selectedNodeId];
             });
           } else {
-            onNodeDragEnd?.(node.id, from, { ...node.position });
+            onNodeDragEnd?.(node.id, from, { ...resolvedNode.position });
             delete nodeDragStartPositions.current[node.id];
           }
           delete nodeDragStartPositions.current[node.id];
