@@ -132,14 +132,19 @@ export function CitationEdge({
     startArrowTip !== null
       ? createArrowheadPath(startArrowTip.x, startArrowTip.y, edgeAngle + Math.PI, ARROW_SIZE)
       : null;
-  const visiblePath = `M${visibleSource.x},${visibleSource.y} C${control1.x},${control1.y} ${control2.x},${control2.y} ${targetLineEnd.x},${targetLineEnd.y}`;
+  const visiblePath =
+    `M${visibleSource.x},${visibleSource.y} C${control1.x},${control1.y} ` +
+    `${control2.x},${control2.y} ${targetLineEnd.x},${targetLineEnd.y}`;
   const sketchPaths = getSketchPaths(id, visiblePath);
   const strokeDasharray = edgeStyle === "note-dash" ? "15 7 3 6" : undefined;
 
   return (
     <>
       <g
-        className={`react-flow__edge graph-edge graph-edge--citation graph-edge--style-${edgeStyle}${direction === "bidirectional" ? " graph-edge--bidirectional" : ""}`}
+        className={
+          `react-flow__edge graph-edge graph-edge--citation graph-edge--style-${edgeStyle}` +
+          `${direction === "bidirectional" ? " graph-edge--bidirectional" : ""}`
+        }
         opacity={opacity}
       >
         <path
@@ -412,7 +417,9 @@ export function getCitationEdgeGeometry(
   const wy = Math.sin(wobbleAngle) * wobble;
   const control1 = { x: cx1 + wx, y: cy1 + wy };
   const control2 = { x: cx2 - wx, y: cy2 - wy };
-  const hitPath = `M${sourceBorder.x},${sourceBorder.y} C${control1.x},${control1.y} ${control2.x},${control2.y} ${targetBorder.x},${targetBorder.y}`;
+  const hitPath =
+    `M${sourceBorder.x},${sourceBorder.y} C${control1.x},${control1.y} ` +
+    `${control2.x},${control2.y} ${targetBorder.x},${targetBorder.y}`;
 
   return {
     control1,

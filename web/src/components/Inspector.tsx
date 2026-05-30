@@ -7,38 +7,32 @@ import { EdgeEditor } from "./EdgeEditor";
 import { ImageEditor } from "./ImageEditor";
 import { MultiSelectInspector } from "./MultiSelectInspector";
 
-type InspectorNode = GraphNode;
-type InspectorEdge = GraphEdge;
-type InspectorBacklink = BacklinkItem;
-type InspectorEdgeDirection = EdgeDirection;
-type InspectorEdgeStyle = EdgeStyle;
-
 interface InspectorProps {
-  node: InspectorNode | null;
-  selectedNodes?: InspectorNode[];
+  node: GraphNode | null;
+  selectedNodes?: GraphNode[];
   autoFocusContent?: boolean;
   isCollapsed?: boolean;
   theme?: "light" | "dark";
   themeToggleLabel?: string;
-  edge?: InspectorEdge | null;
-  sourceNode?: InspectorNode | null;
-  targetNode?: InspectorNode | null;
-  backlinks?: InspectorBacklink[];
-  allEdges?: InspectorEdge[];
-  allNodes?: InspectorNode[];
+  edge?: GraphEdge | null;
+  sourceNode?: GraphNode | null;
+  targetNode?: GraphNode | null;
+  backlinks?: BacklinkItem[];
+  allEdges?: GraphEdge[];
+  allNodes?: GraphNode[];
   onToggleTheme?: () => void;
   onCollapseToggle?: () => void;
   onAutoFocusContentHandled?: () => void;
   onSelectNode?: (nodeId: string) => void;
-  onEdgeDirectionChange?: (edgeId: string, direction: InspectorEdgeDirection) => void;
-  onEdgeStyleChange?: (edgeId: string, style: InspectorEdgeStyle) => void;
+  onEdgeDirectionChange?: (edgeId: string, direction: EdgeDirection) => void;
+  onEdgeStyleChange?: (edgeId: string, style: EdgeStyle) => void;
   onEdgeColorChange?: (edgeId: string, color: string) => void;
-  onDeleteEdge?: (edge: InspectorEdge) => void;
+  onDeleteEdge?: (edge: GraphEdge) => void;
   onColorChange?: (nodeId: string, color: string) => void;
   onDeleteCitation?: (sourceId: string, targetId: string) => void;
   onReorderReferences?: (sourceId: string, newOrder: string[]) => void;
   onCreateCitation?: (sourceId: string, targetId: string) => void;
-  onCommitNode?: (node: InspectorNode) => void;
+  onCommitNode?: (node: GraphNode) => void;
   onBatchDelete?: () => void;
   onBatchColorChange?: (color: string) => void;
   onBatchLockChange?: (locked: boolean) => void;
@@ -99,7 +93,7 @@ export function Inspector({
 
   const nodeId = node?.id;
 
-  const backlinks = useMemo<InspectorBacklink[]>(() => {
+  const backlinks = useMemo<BacklinkItem[]>(() => {
     if (backlinksProp !== undefined) {
       return backlinksProp;
     }

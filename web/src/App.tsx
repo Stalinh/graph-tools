@@ -16,14 +16,20 @@ const SketchTestPage = lazy(async () => {
 
 type Page = "knowledge-base" | "sketch-test";
 
+interface PageContentProps extends AppShellThemeProps {
+  page: Page;
+}
+
+interface AppLoadingFallbackProps {
+  locale: Locale;
+}
+
 function PageContent({
   page,
   theme,
   themeToggleLabel,
   onToggleTheme,
-}: {
-  page: Page;
-} & AppShellThemeProps) {
+}: PageContentProps) {
   switch (page) {
     case "sketch-test":
       return <SketchTestPage />;
@@ -38,7 +44,7 @@ function PageContent({
   }
 }
 
-function AppLoadingFallback({ locale }: { locale: Locale }) {
+function AppLoadingFallback({ locale }: AppLoadingFallbackProps) {
   return (
     <div className="app-loading-fallback" role="status">
       {locale === "zh-CN" ? "正在加载..." : "Loading..."}
@@ -46,7 +52,7 @@ function AppLoadingFallback({ locale }: { locale: Locale }) {
   );
 }
 
-export default function App() {
+export function App() {
   const [page, setPage] = useState<Page>("knowledge-base");
   const [locale, setLocale] = useState<Locale>(getStoredLocale);
 

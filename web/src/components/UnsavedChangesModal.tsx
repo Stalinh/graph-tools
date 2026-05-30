@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, type KeyboardEvent } from "react";
 import { useI18n } from "../i18n";
 
 interface UnsavedChangesModalProps {
@@ -18,7 +18,7 @@ export function UnsavedChangesModal({
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
   const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
+    (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onCancel();
       }

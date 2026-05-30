@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
 import { Image as ImageIcon, Link2, Lock, LockOpen, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useI18n } from "../../i18n";
 import { isReferenceableNode } from "../../lib/graphConstraints";
 import type {
@@ -86,7 +86,7 @@ export function GraphContextMenu({
     };
   }, [onClose]);
 
-  function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") {
       event.preventDefault();
       onClose();

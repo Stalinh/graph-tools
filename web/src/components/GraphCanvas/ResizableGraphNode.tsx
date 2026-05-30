@@ -1,6 +1,6 @@
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { Lock } from "lucide-react";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { useI18n } from "../../i18n";
 import type { GraphNode } from "../../types";
 import { renderCardContent } from "./GraphNodeContent";
@@ -17,7 +17,7 @@ interface ResizableFlowNodeData {
     options?: { focusInspectorContent?: boolean }
   ) => void;
   onReferenceSelect: (nodeId: string | null) => void;
-  onNodeMouseDown?: (event: React.MouseEvent, nodeId: string) => void;
+  onNodeMouseDown?: (event: MouseEvent, nodeId: string) => void;
 }
 
 export function ResizableGraphNode({ data }: NodeProps<Node<ResizableFlowNodeData>>) {

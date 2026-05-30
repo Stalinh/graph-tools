@@ -1,6 +1,6 @@
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { Lock } from "lucide-react";
-import { type CSSProperties, useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties, type MouseEvent } from "react";
 import { useI18n } from "../../i18n";
 import type { GraphNode } from "../../types";
 
@@ -9,7 +9,7 @@ interface ImageFlowNodeData {
   isSelected: boolean;
   node: GraphNode;
   imageBlob?: Blob;
-  onNodeMouseDown?: (event: React.MouseEvent, nodeId: string) => void;
+  onNodeMouseDown?: (event: MouseEvent, nodeId: string) => void;
 }
 
 export function ImageGraphNode({ data }: NodeProps<Node<ImageFlowNodeData>>) {

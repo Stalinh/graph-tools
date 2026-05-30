@@ -1,6 +1,6 @@
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { Lock, Plus } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { getDefaultGroupTitle, useI18n } from "../../i18n";
 import type { GraphNode } from "../../types";
 
@@ -15,7 +15,7 @@ interface GroupNodeData {
     title: string,
     options?: { focusInspectorContent?: boolean }
   ) => void;
-  onNodeMouseDown?: (event: React.MouseEvent, nodeId: string) => void;
+  onNodeMouseDown?: (event: MouseEvent, nodeId: string) => void;
   childCount?: number;
   onQuickAddChild?: (parentId: string) => void;
   onNodeResizeEnd?: (nodeId: string, size: { width: number; height: number }) => void;

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { Locale } from "../../i18n";
 import type { GraphNode, ReferenceItem } from "../../types";
 
@@ -120,7 +120,7 @@ export function renderCardContent(
     : null;
 }
 
-function parseInlineStyle(style: string): React.CSSProperties {
+function parseInlineStyle(style: string): CSSProperties {
   const result: Record<string, string> = {};
   const allowedProperties = new Set([
     "color",

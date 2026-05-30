@@ -1,9 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, type RefObject } from "react";
 
 interface UseKeyboardShortcutsOptions {
   undo: () => void;
   redo: () => void;
-  searchInputRef: React.RefObject<HTMLInputElement | null>;
+  searchInputRef: RefObject<HTMLInputElement | null>;
   setSearchQuery: (query: string) => void;
   onDeleteSelection: () => void;
 }

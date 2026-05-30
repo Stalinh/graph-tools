@@ -1,8 +1,8 @@
 import type { Node } from "@xyflow/react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, MouseEvent } from "react";
 import { isReferenceableNode } from "../../lib/graphConstraints";
-import type { EntityType, GraphNode } from "../../types";
 import { nodeMatchesSearch } from "../../lib/searchUtils";
+import type { EntityType, GraphNode } from "../../types";
 
 interface GraphFlowNodeData extends Record<string, unknown> {
   childCount: number;
@@ -11,7 +11,7 @@ interface GraphFlowNodeData extends Record<string, unknown> {
   isSelected: boolean;
   isCitationSelectionActive: boolean;
   node: GraphNode;
-  onNodeMouseDown?: (event: React.MouseEvent, nodeId: string) => void;
+  onNodeMouseDown?: (event: MouseEvent, nodeId: string) => void;
   onNodeResizeEnd?: (nodeId: string, size: { width: number; height: number }) => void;
   onQuickAddChild?: (parentId: string) => void;
   onQuickEditSubmit: (
@@ -47,7 +47,7 @@ export function createGraphNodes(
   nodeFilter: EntityType | "locked" | "all" = "all",
   selectedEdgeActive = false,
   citationSelectionActive = false,
-  onNodeMouseDown?: (event: React.MouseEvent, nodeId: string) => void,
+  onNodeMouseDown?: (event: MouseEvent, nodeId: string) => void,
   matchingNodeIds: Set<string> | null = null,
   onQuickAddChild?: (parentId: string) => void,
   onNodeResizeEnd?: (nodeId: string, size: { width: number; height: number }) => void

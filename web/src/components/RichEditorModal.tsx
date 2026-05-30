@@ -33,7 +33,15 @@ import {
   Eraser,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
 import { getDefaultCardTitle, useI18n } from "../i18n";
 
 interface RichEditorModalProps {
@@ -557,7 +565,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
     };
   }, []);
 
-  const handleKeyDownCapture = useCallback((event: React.KeyboardEvent) => {
+  const handleKeyDownCapture = useCallback((event: KeyboardEvent) => {
     if (slashMenuRef.current.isOpen) {
       const { activeIndex, filteredCommands, pos, query } = slashMenuRef.current;
 
@@ -779,7 +787,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
   }, [handleSave]);
 
   const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
+    (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         if (isHelpOpen) {
           event.preventDefault();
@@ -815,7 +823,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
   );
 
   const handleTitleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLInputElement>) => {
+    (event: KeyboardEvent<HTMLInputElement>) => {
       if (event.key === "Escape") {
         event.preventDefault();
         handleCloseAttempt();
@@ -842,7 +850,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
   );
 
   const handleBodyMouseDown = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
+    (event: MouseEvent<HTMLDivElement>) => {
       const target = event.target;
       if (target instanceof HTMLElement && target.closest(".ProseMirror")) {
         return;

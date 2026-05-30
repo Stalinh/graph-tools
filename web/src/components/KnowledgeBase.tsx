@@ -4,15 +4,15 @@ import { useFileOperations } from "../hooks/useFileOperations";
 import { useGraphState } from "../hooks/useGraphState";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { useSearchFilters } from "../hooks/useSearchFilters";
+import { useI18n } from "../i18n";
 import { getMatchingNodes } from "../lib/searchUtils";
 import { loadWorkspaceDraft, saveWorkspaceDraft } from "../lib/workspaceDraftStorage";
 import { migrateWorkspaceIds } from "../lib/workspaceState";
-import { useI18n } from "../i18n";
+import type { WorkspaceNodeFilter, WorkspaceState } from "../types";
 import { GraphCanvas } from "./GraphCanvas";
 import { Inspector } from "./Inspector";
 import { UnsavedChangesModal } from "./UnsavedChangesModal";
 import { WorkspaceToolbar } from "./WorkspaceToolbar";
-import type { WorkspaceNodeFilter, WorkspaceState } from "../types";
 
 const RichEditorModal = lazy(async () => {
   const module = await import("./RichEditorModal");
@@ -327,15 +327,26 @@ export function KnowledgeBase({ theme, themeToggleLabel, onToggleTheme }: Knowle
         {draftSaveFailed ? (
           <div className="graph-message" role="alert">
             {isZh
-              ? "本地草稿保存失败。请使用“另存为”导出 .graph 文件，避免刷新后丢失未保存内容。"
-              : "Saving the local draft failed. Use Save As to export a .graph file so unsaved work is not lost on refresh."}
+              ? [
+                  "本地草稿保存失败。",
+                  "请使用“另存为”导出 .graph 文件，避免刷新后丢失未保存内容。",
+                ].join("")
+              : [
+                  "Saving the local draft failed. ",
+                  "Use Save As to export a .graph file so unsaved work is not lost on refresh.",
+                ].join("")}
           </div>
         ) : null}
         {missingImageAssetCount > 0 ? (
           <div className="graph-message" role="alert">
             {isZh
-              ? `${missingImageAssetCount} 个图片资源缺失。请打开原 .graph 文件或重新拖入图片后再保存。`
-              : `${missingImageAssetCount} image asset${missingImageAssetCount === 1 ? "" : "s"} missing. Open the original .graph file or drop the image again before saving.`}
+              ? [
+                  `${missingImageAssetCount} 个图片资源缺失。`,
+                  "请打开原 .graph 文件或重新拖入图片后再保存。",
+                ].join("")
+              : `${missingImageAssetCount} image asset${
+                  missingImageAssetCount === 1 ? "" : "s"
+                } missing. Open the original .graph file or drop the image again before saving.`}
           </div>
         ) : null}
         {status.errorMessage ? (

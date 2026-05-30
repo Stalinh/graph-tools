@@ -1,29 +1,28 @@
-import { useCallback, useRef, useState } from "react";
-import type React from "react";
-import type { CanvasViewport, GraphData, GraphNode } from "../types";
-import type { CanvasCommand, RemoveManyMeta, RemoveMeta } from "./useCanvasHistory";
-import { generateNextId, EMPTY_GRAPH } from "../lib/workspaceState";
+import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { deleteContentCacheEntry } from "../components/GraphCanvas/GraphNodeContent";
+import { estimateNodeSize } from "../components/GraphCanvas/graphUtils";
 import { getDefaultCardTitle, getDefaultGroupTitle, type Locale } from "../i18n";
 import {
   addNode,
   removeNode,
   updateNodeColor,
+  updateNodeFields,
   updateNodeLocked,
   updateNodeOpacity,
-  updateNodeFields,
 } from "../lib/graphMutator";
-import { estimateNodeSize } from "../components/GraphCanvas/graphUtils";
-import { deleteContentCacheEntry } from "../components/GraphCanvas/GraphNodeContent";
+import { EMPTY_GRAPH, generateNextId } from "../lib/workspaceState";
+import type { CanvasViewport, GraphData, GraphNode } from "../types";
+import type { CanvasCommand, RemoveManyMeta, RemoveMeta } from "./useCanvasHistory";
 
 interface UseGraphNodesOptions {
   locale?: Locale;
   pushCommand: (cmd: CanvasCommand) => void;
   setDirty: (dirty: boolean) => void;
-  setSelectedNodeId: React.Dispatch<React.SetStateAction<string | null>>;
-  setSelectedNodeIds: React.Dispatch<React.SetStateAction<string[]>>;
-  setEditingNodeId: React.Dispatch<React.SetStateAction<string | null>>;
-  setQuickEditingNodeId: React.Dispatch<React.SetStateAction<string | null>>;
-  setPendingInspectorContentFocusNodeId: React.Dispatch<React.SetStateAction<string | null>>;
+  setSelectedNodeId: Dispatch<SetStateAction<string | null>>;
+  setSelectedNodeIds: Dispatch<SetStateAction<string[]>>;
+  setEditingNodeId: Dispatch<SetStateAction<string | null>>;
+  setQuickEditingNodeId: Dispatch<SetStateAction<string | null>>;
+  setPendingInspectorContentFocusNodeId: Dispatch<SetStateAction<string | null>>;
 }
 
 interface UpdateGraphNodeOptions {

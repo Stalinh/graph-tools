@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import type { Locale } from "../i18n";
-import type { CanvasCommand } from "./useCanvasHistory";
-import { useGraphNodes } from "./useGraphNodes";
 import { useGraphEdges } from "./useGraphEdges";
-import { useGraphSelection } from "./useGraphSelection";
-import { useGraphSearch } from "./useGraphSearch";
+import { useGraphNodes } from "./useGraphNodes";
 import { useGraphPersistence } from "./useGraphPersistence";
+import { useGraphSearch } from "./useGraphSearch";
+import { useGraphSelection } from "./useGraphSelection";
+import type { CanvasCommand } from "./useCanvasHistory";
 import { useSelectionState } from "./useSelectionState";
 import { useWorkspaceStatusState } from "./useWorkspaceStatusState";
 
@@ -25,7 +25,7 @@ export interface GraphState {
   search: SearchState;
   images: {
     images: Map<string, Blob>;
-    setImages: React.Dispatch<React.SetStateAction<Map<string, Blob>>>;
+    setImages: Dispatch<SetStateAction<Map<string, Blob>>>;
   };
   status: StatusState;
 }

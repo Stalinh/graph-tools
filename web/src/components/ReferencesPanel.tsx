@@ -13,6 +13,17 @@ interface ReferencesPanelProps {
   onReorderReferences?: (newOrder: string[]) => void;
 }
 
+interface ReferencesSectionProps {
+  isZh: boolean;
+  node: GraphNode;
+  allNodes: GraphNode[];
+  backlinks: BacklinkItem[];
+  onReferenceSelect?: (nodeId: string) => void;
+  onDeleteCitation?: (targetId: string) => void;
+  onReorderReferences?: (newOrder: string[]) => void;
+  onCreateCitation?: (targetId: string) => void;
+}
+
 export function ReferencesPanel({
   node,
   allNodes,
@@ -48,16 +59,7 @@ function ReferencesSection({
   onDeleteCitation,
   onReorderReferences,
   onCreateCitation,
-}: {
-  isZh: boolean;
-  node: GraphNode;
-  allNodes: GraphNode[];
-  backlinks: BacklinkItem[];
-  onReferenceSelect?: (nodeId: string) => void;
-  onDeleteCitation?: (targetId: string) => void;
-  onReorderReferences?: (newOrder: string[]) => void;
-  onCreateCitation?: (targetId: string) => void;
-}) {
+}: ReferencesSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);

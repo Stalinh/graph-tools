@@ -1,6 +1,7 @@
 import { FilePlus, FolderOpen, RotateCcw, RotateCw, Save, SaveAll, Search, X } from "lucide-react";
-import type { GraphNode, WorkspaceNodeFilter } from "../types";
+import type { RefObject } from "react";
 import { useI18n } from "../i18n";
+import type { GraphNode, WorkspaceNodeFilter } from "../types";
 import { FilterChips } from "./FilterChips";
 import { SearchResultsDropdown } from "./SearchResultsDropdown";
 
@@ -9,7 +10,7 @@ interface WorkspaceToolbarProps {
   edgeCount: number;
   searchQuery: string;
   onSearchChange: (value: string) => void;
-  searchInputRef: React.RefObject<HTMLInputElement>;
+  searchInputRef: RefObject<HTMLInputElement>;
   onNew: () => void;
   onOpen: () => void;
   onSave: () => void;
