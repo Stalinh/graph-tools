@@ -4,7 +4,6 @@ import { ListTodo, Plus } from "lucide-react";
 import { getColorLabel, getNodeTypeLabel, useI18n } from "../i18n";
 import { SUPPORTED_NODE_COLORS } from "../lib/nodeColors";
 import type { BacklinkItem, GraphNode } from "../types";
-import { NodeOpacityControl } from "./NodeOpacityControl";
 import { ReferencesPanel } from "./ReferencesPanel";
 
 interface CardEditorProps {
@@ -18,8 +17,6 @@ interface CardEditorProps {
   onTitleCommit?: (title: string) => void;
   onTagsChange?: (tags: string[]) => void;
   onColorChange?: (color: string) => void;
-  onOpacityPreview?: (opacity: number) => void;
-  onOpacityCommit?: (from: number, to: number) => void;
   onDeleteCitation?: (targetId: string) => void;
   onReorderReferences?: (newOrder: string[]) => void;
   onCreateCitation?: (targetId: string) => void;
@@ -36,8 +33,6 @@ export function CardEditor({
   onTitleCommit,
   onTagsChange,
   onColorChange,
-  onOpacityPreview,
-  onOpacityCommit,
   onDeleteCitation,
   onReorderReferences,
   onCreateCitation,
@@ -46,7 +41,6 @@ export function CardEditor({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState(node.title);
   const titleInputRef = useRef<HTMLTextAreaElement | null>(null);
-  const opacityStartRef = useRef(node.opacity ?? 1);
   const tagInputRef = useRef<HTMLInputElement | null>(null);
 
   interface SidebarTaskItem {
@@ -335,15 +329,6 @@ export function CardEditor({
           ))}
         </div>
       </section>
-
-      <NodeOpacityControl
-        value={node.opacity}
-        onChangePreview={(opacity: number) => {
-          opacityStartRef.current = node.opacity ?? 1;
-          onOpacityPreview?.(opacity);
-        }}
-        onChangeCommit={(opacity: number) => onOpacityCommit?.(opacityStartRef.current, opacity)}
-      />
 
       <section className="field-section">
         <h3 className="field-label">{isZh ? "标签" : "Tags"}</h3>

@@ -383,6 +383,10 @@ button {
   box-shadow: 0 10px 24px rgba(24, 39, 52, 0.08);
 }
 
+.app-shell[data-theme="dark"] .sidebar__footer {
+  background: var(--color-surface-muted);
+}
+
 .sidebar__footer-copy {
   display: grid;
   gap: 3px;
@@ -1583,25 +1587,6 @@ button {
   font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
-}
-
-.field-heading-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.opacity-control__value {
-  color: var(--color-muted);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  font-weight: 800;
-}
-
-.opacity-control__slider {
-  width: 100%;
-  accent-color: var(--color-accent);
 }
 
 .title-input {

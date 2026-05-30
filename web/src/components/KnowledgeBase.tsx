@@ -409,15 +409,7 @@ export function KnowledgeBase({ theme, themeToggleLabel, onToggleTheme }: Knowle
         onBatchLockChange={(locked) =>
           nodes.updateGraphNodesLocked(selection.selectedNodeIds, locked)
         }
-        onBatchOpacityPreview={(opacity) =>
-          nodes.updateGraphNodesOpacity(selection.selectedNodeIds, opacity)
-        }
-        onBatchOpacityCommit={(from, to) =>
-          nodes.commitGraphNodesOpacity(selection.selectedNodeIds, from, to)
-        }
         onColorChange={nodes.updateGraphNodeColor}
-        onOpacityPreview={nodes.updateGraphNodeOpacity}
-        onOpacityCommit={nodes.commitGraphNodeOpacity}
         onCreateCitation={edges.createCitation}
         onAutoFocusContentHandled={() => selection.setPendingInspectorContentFocusNodeId(null)}
         onDeleteCitation={edges.deleteCitation}

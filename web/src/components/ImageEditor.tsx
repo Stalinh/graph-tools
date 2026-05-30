@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { getColorLabel, useI18n } from "../i18n";
 import { SUPPORTED_NODE_COLORS } from "../lib/nodeColors";
 import type { BacklinkItem, GraphNode } from "../types";
-import { NodeOpacityControl } from "./NodeOpacityControl";
 import { ReferencesPanel } from "./ReferencesPanel";
 
 interface ImageEditorProps {
@@ -11,8 +10,6 @@ interface ImageEditorProps {
   backlinks?: BacklinkItem[];
   onTitleCommit?: (title: string) => void;
   onColorChange?: (color: string) => void;
-  onOpacityPreview?: (opacity: number) => void;
-  onOpacityCommit?: (from: number, to: number) => void;
   onReferenceSelect?: (nodeId: string) => void;
   onCreateCitation?: (targetId: string) => void;
   onDeleteCitation?: (targetId: string) => void;
@@ -25,8 +22,6 @@ export function ImageEditor({
   backlinks = [],
   onTitleCommit,
   onColorChange,
-  onOpacityPreview,
-  onOpacityCommit,
   onReferenceSelect,
   onCreateCitation,
   onDeleteCitation,
@@ -34,15 +29,10 @@ export function ImageEditor({
 }: ImageEditorProps) {
   const { isZh, locale } = useI18n();
   const [draftTitle, setDraftTitle] = useState(node.title);
-  const [opacityStart, setOpacityStart] = useState(node.opacity ?? 1);
 
   useEffect(() => {
     setDraftTitle(node.title);
   }, [node.id, node.title]);
-
-  useEffect(() => {
-    setOpacityStart(node.opacity ?? 1);
-  }, [node.id]);
 
   return (
     <div className="editor-panel">
@@ -106,15 +96,6 @@ export function ImageEditor({
           ))}
         </div>
       </section>
-
-      <NodeOpacityControl
-        value={node.opacity}
-        onChangePreview={(opacity) => {
-          setOpacityStart(node.opacity ?? 1);
-          onOpacityPreview?.(opacity);
-        }}
-        onChangeCommit={(opacity) => onOpacityCommit?.(opacityStart, opacity)}
-      />
 
       <ReferencesPanel
         node={node}

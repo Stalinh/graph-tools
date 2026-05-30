@@ -35,16 +35,12 @@ interface InspectorProps {
   onEdgeColorChange?: (edgeId: string, color: string) => void;
   onDeleteEdge?: (edge: InspectorEdge) => void;
   onColorChange?: (nodeId: string, color: string) => void;
-  onOpacityPreview?: (nodeId: string, opacity: number) => void;
-  onOpacityCommit?: (nodeId: string, from: number, to: number) => void;
   onDeleteCitation?: (sourceId: string, targetId: string) => void;
   onReorderReferences?: (sourceId: string, newOrder: string[]) => void;
   onCreateCitation?: (sourceId: string, targetId: string) => void;
   onCommitNode?: (node: InspectorNode) => void;
   onBatchDelete?: () => void;
   onBatchColorChange?: (color: string) => void;
-  onBatchOpacityPreview?: (opacity: number) => void;
-  onBatchOpacityCommit?: (from: number, to: number) => void;
   onBatchLockChange?: (locked: boolean) => void;
 }
 
@@ -70,16 +66,12 @@ export function Inspector({
   onEdgeColorChange,
   onDeleteEdge,
   onColorChange,
-  onOpacityPreview,
-  onOpacityCommit,
   onDeleteCitation,
   onReorderReferences,
   onCreateCitation,
   onCommitNode,
   onBatchDelete,
   onBatchColorChange,
-  onBatchOpacityPreview,
-  onBatchOpacityCommit,
   onBatchLockChange,
 }: InspectorProps) {
   const { isZh } = useI18n();
@@ -92,8 +84,6 @@ export function Inspector({
 
   const propsRef = useRef({
     onColorChange,
-    onOpacityPreview,
-    onOpacityCommit,
     onCreateCitation,
     onDeleteCitation,
     onReorderReferences,
@@ -101,8 +91,6 @@ export function Inspector({
   });
   propsRef.current = {
     onColorChange,
-    onOpacityPreview,
-    onOpacityCommit,
     onCreateCitation,
     onDeleteCitation,
     onReorderReferences,
@@ -130,16 +118,6 @@ export function Inspector({
       onColorChange: (color: string) => {
         if (nodeId) {
           propsRef.current.onColorChange?.(nodeId, color);
-        }
-      },
-      onOpacityPreview: (opacity: number) => {
-        if (nodeId) {
-          propsRef.current.onOpacityPreview?.(nodeId, opacity);
-        }
-      },
-      onOpacityCommit: (from: number, to: number) => {
-        if (nodeId) {
-          propsRef.current.onOpacityCommit?.(nodeId, from, to);
         }
       },
       onCreateCitation: (targetId: string) => {
@@ -218,8 +196,6 @@ export function Inspector({
             onBatchColorChange={onBatchColorChange}
             onBatchDelete={onBatchDelete}
             onBatchLockChange={onBatchLockChange}
-            onBatchOpacityPreview={onBatchOpacityPreview}
-            onBatchOpacityCommit={onBatchOpacityCommit}
           />
         ) : edge ? (
           <div className="inspector__body">
@@ -242,8 +218,6 @@ export function Inspector({
               backlinks={backlinks}
               node={node}
               onColorChange={memoizedCallbacks.onColorChange}
-              onOpacityPreview={memoizedCallbacks.onOpacityPreview}
-              onOpacityCommit={memoizedCallbacks.onOpacityCommit}
               onCreateCitation={memoizedCallbacks.onCreateCitation}
               onDeleteCitation={memoizedCallbacks.onDeleteCitation}
               onReferenceSelect={onSelectNode}
@@ -263,8 +237,6 @@ export function Inspector({
               onTitleCommit={memoizedCallbacks.onTitleCommit}
               onTagsChange={memoizedCallbacks.onTagsChange}
               onColorChange={memoizedCallbacks.onColorChange}
-              onOpacityPreview={memoizedCallbacks.onOpacityPreview}
-              onOpacityCommit={memoizedCallbacks.onOpacityCommit}
               onCreateCitation={memoizedCallbacks.onCreateCitation}
               onDeleteCitation={memoizedCallbacks.onDeleteCitation}
               onReferenceSelect={onSelectNode}

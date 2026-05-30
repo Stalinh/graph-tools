@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import { Lock, LockOpen, Trash2, Layers } from "lucide-react";
 import {
   getColorLabel,
@@ -9,14 +8,11 @@ import {
 } from "../i18n";
 import { SUPPORTED_NODE_COLORS } from "../lib/nodeColors";
 import type { GraphNode } from "../types";
-import { NodeOpacityControl } from "./NodeOpacityControl";
 
 interface MultiSelectInspectorProps {
   nodes: GraphNode[];
   onBatchDelete?: () => void;
   onBatchColorChange?: (color: string) => void;
-  onBatchOpacityPreview?: (opacity: number) => void;
-  onBatchOpacityCommit?: (from: number, to: number) => void;
   onBatchLockChange?: (locked: boolean) => void;
 }
 
@@ -24,12 +20,9 @@ export function MultiSelectInspector({
   nodes,
   onBatchDelete,
   onBatchColorChange,
-  onBatchOpacityPreview,
-  onBatchOpacityCommit,
   onBatchLockChange,
 }: MultiSelectInspectorProps) {
   const { isZh, locale } = useI18n();
-  const opacityStartRef = useRef(nodes[0]?.opacity ?? 1);
 
   const cardsCount = nodes.filter((n) => n.type === "card").length;
   const imagesCount = nodes.filter((n) => n.type === "image").length;
@@ -138,16 +131,6 @@ export function MultiSelectInspector({
             ))}
           </div>
         </section>
-
-        {/* Opacity control section */}
-        <NodeOpacityControl
-          value={nodes[0]?.opacity ?? 1}
-          onChangePreview={(opacity) => {
-            opacityStartRef.current = nodes[0]?.opacity ?? 1;
-            onBatchOpacityPreview?.(opacity);
-          }}
-          onChangeCommit={(opacity) => onBatchOpacityCommit?.(opacityStartRef.current, opacity)}
-        />
 
         {/* Lock status control section */}
         <section className="field-section">
