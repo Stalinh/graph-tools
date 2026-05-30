@@ -1,0 +1,17 @@
+{
+  "name": "local-knowledge-graph",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/shared",
+    "web"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w web\" \"npm run build -w @local-kg/shared -- --watch --preserveWatchOutput\"",
+    "build": "npm run build -w @local-kg/shared && npm run build -w web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.5.0"
+  }
+}

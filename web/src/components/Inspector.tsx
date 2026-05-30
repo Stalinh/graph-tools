@@ -1,0 +1,344 @@
+import { useMemo, useRef } from "react";
+import { Moon, Sun } from "lucide-react";
+import { useI18n } from "../i18n";
+import type { BacklinkItem, EdgeDirection, EdgeStyle, GraphEdge, GraphNode } from "../types";
+import { CardEditor } from "./CardEditor";
+import { EdgeEditor } from "./EdgeEditor";
+import { ImageEditor } from "./ImageEditor";
+import { MultiSelectInspector } from "./MultiSelectInspector";
+
+type InspectorNode = GraphNode;
+type InspectorEdge = GraphEdge;
+type InspectorBacklink = BacklinkItem;
+type InspectorEdgeDirection = EdgeDirection;
+type InspectorEdgeStyle = EdgeStyle;
+
+interface InspectorProps {
+  node: InspectorNode | null;
+  selectedNodes?: InspectorNode[];
+  autoFocusContent?: boolean;
+  theme?: "light" | "dark";
+  themeToggleLabel?: string;
+  edge?: InspectorEdge | null;
+  sourceNode?: InspectorNode | null;
+  targetNode?: InspectorNode | null;
+  backlinks?: InspectorBacklink[];
+  allEdges?: InspectorEdge[];
+  allNodes?: InspectorNode[];
+  onToggleTheme?: () => void;
+  onAutoFocusContentHandled?: () => void;
+  onSelectNode?: (nodeId: string) => void;
+  onEdgeDirectionChange?: (edgeId: string, direction: InspectorEdgeDirection) => void;
+  onEdgeStyleChange?: (edgeId: string, style: InspectorEdgeStyle) => void;
+  onEdgeColorChange?: (edgeId: string, color: string) => void;
+  onDeleteEdge?: (edge: InspectorEdge) => void;
+  onColorChange?: (nodeId: string, color: string) => void;
+  onOpacityPreview?: (nodeId: string, opacity: number) => void;
+  onOpacityCommit?: (nodeId: string, from: number, to: number) => void;
+  onDeleteCitation?: (sourceId: string, targetId: string) => void;
+  onReorderReferences?: (sourceId: string, newOrder: string[]) => void;
+  onCreateCitation?: (sourceId: string, targetId: string) => void;
+  onCommitNode?: (node: InspectorNode) => void;
+  onBatchDelete?: () => void;
+  onBatchColorChange?: (color: string) => void;
+  onBatchOpacityPreview?: (opacity: number) => void;
+  onBatchOpacityCommit?: (from: number, to: number) => void;
+  onBatchLockChange?: (locked: boolean) => void;
+}
+
+export function Inspector({
+  node,
+  selectedNodes = [],
+  autoFocusContent = false,
+  theme = "light",
+  themeToggleLabel,
+  edge,
+  sourceNode,
+  targetNode,
+  backlinks: backlinksProp,
+  allEdges = [],
+  allNodes = [],
+  onToggleTheme,
+  onAutoFocusContentHandled,
+  onSelectNode,
+  onEdgeDirectionChange,
+  onEdgeStyleChange,
+  onEdgeColorChange,
+  onDeleteEdge,
+  onColorChange,
+  onOpacityPreview,
+  onOpacityCommit,
+  onDeleteCitation,
+  onReorderReferences,
+  onCreateCitation,
+  onCommitNode,
+  onBatchDelete,
+  onBatchColorChange,
+  onBatchOpacityPreview,
+  onBatchOpacityCommit,
+  onBatchLockChange,
+}: InspectorProps) {
+  const { isZh } = useI18n();
+  const nextTheme = theme === "dark" ? "light" : "dark";
+
+  const nodeRef = useRef(node);
+  nodeRef.current = node;
+
+  const propsRef = useRef({
+    onColorChange,
+    onOpacityPreview,
+    onOpacityCommit,
+    onCreateCitation,
+    onDeleteCitation,
+    onReorderReferences,
+    onCommitNode,
+  });
+  propsRef.current = {
+    onColorChange,
+    onOpacityPreview,
+    onOpacityCommit,
+    onCreateCitation,
+    onDeleteCitation,
+    onReorderReferences,
+    onCommitNode,
+  };
+
+  const nodeId = node?.id;
+
+  const backlinks = useMemo<InspectorBacklink[]>(() => {
+    if (backlinksProp !== undefined) {
+      return backlinksProp;
+    }
+    if (!nodeId || !allNodes || !allEdges) return [];
+    const nodesById = new Map(allNodes.map((n) => [n.id, n]));
+    return allEdges
+      .filter((edge) => edge.targetId === nodeId)
+      .map((edge) => {
+        const sourceNode = nodesById.get(edge.sourceId);
+        return { id: edge.sourceId, title: sourceNode?.title ?? edge.sourceId };
+      });
+  }, [backlinksProp, allNodes, allEdges, nodeId]);
+
+  const memoizedCallbacks = useMemo(() => {
+    return {
+      onColorChange: (color: string) => {
+        if (nodeId) {
+          propsRef.current.onColorChange?.(nodeId, color);
+        }
+      },
+      onOpacityPreview: (opacity: number) => {
+        if (nodeId) {
+          propsRef.current.onOpacityPreview?.(nodeId, opacity);
+        }
+      },
+      onOpacityCommit: (from: number, to: number) => {
+        if (nodeId) {
+          propsRef.current.onOpacityCommit?.(nodeId, from, to);
+        }
+      },
+      onCreateCitation: (targetId: string) => {
+        if (nodeId) {
+          propsRef.current.onCreateCitation?.(nodeId, targetId);
+        }
+      },
+      onDeleteCitation: (targetId: string) => {
+        if (nodeId) {
+          propsRef.current.onDeleteCitation?.(nodeId, targetId);
+        }
+      },
+      onReorderReferences: (newOrder: string[]) => {
+        if (nodeId) {
+          propsRef.current.onReorderReferences?.(nodeId, newOrder);
+        }
+      },
+
+      onContentCommit: (contentHtml: string) => {
+        const currentNode = nodeRef.current;
+        if (currentNode) {
+          propsRef.current.onCommitNode?.({ ...currentNode, contentHtml });
+        }
+      },
+      onTitleCommit: (title: string) => {
+        const currentNode = nodeRef.current;
+        if (currentNode) {
+          propsRef.current.onCommitNode?.({ ...currentNode, title });
+        }
+      },
+      onTagsChange: (tags: string[]) => {
+        const currentNode = nodeRef.current;
+        if (currentNode) {
+          propsRef.current.onCommitNode?.({ ...currentNode, tags });
+        }
+      },
+    };
+  }, [nodeId]);
+
+  return (
+    <aside className="inspector" aria-label={isZh ? "检查器" : "Inspector"}>
+      <div className="inspector__header">
+        <span>{isZh ? "检查器" : "Inspector"}</span>
+        {themeToggleLabel && onToggleTheme ? (
+          <div className="inspector__actions">
+            <button
+              className="icon-button"
+              type="button"
+              aria-label={themeToggleLabel}
+              title={themeToggleLabel}
+              onClick={onToggleTheme}
+            >
+              {nextTheme === "dark" ? <Moon size={18} /> : <Sun size={18} />}
+            </button>
+          </div>
+        ) : null}
+      </div>
+      {selectedNodes.length > 1 ? (
+        <MultiSelectInspector
+          nodes={selectedNodes}
+          onBatchColorChange={onBatchColorChange}
+          onBatchDelete={onBatchDelete}
+          onBatchLockChange={onBatchLockChange}
+          onBatchOpacityPreview={onBatchOpacityPreview}
+          onBatchOpacityCommit={onBatchOpacityCommit}
+        />
+      ) : edge ? (
+        <div className="inspector__body">
+          <EdgeEditor
+            edge={edge}
+            sourceNode={sourceNode ?? undefined}
+            targetNode={targetNode ?? undefined}
+            onDelete={onDeleteEdge}
+            onColorChange={onEdgeColorChange ?? (() => {})}
+            onDirectionChange={onEdgeDirectionChange ?? (() => {})}
+            onStyleChange={onEdgeStyleChange ?? (() => {})}
+          />
+        </div>
+      ) : node === null ? (
+        <GraphLegend isZh={isZh} />
+      ) : node.type === "image" ? (
+        <div className="inspector__body">
+          <ImageEditor
+            allNodes={allNodes}
+            backlinks={backlinks}
+            node={node}
+            onColorChange={memoizedCallbacks.onColorChange}
+            onOpacityPreview={memoizedCallbacks.onOpacityPreview}
+            onOpacityCommit={memoizedCallbacks.onOpacityCommit}
+            onCreateCitation={memoizedCallbacks.onCreateCitation}
+            onDeleteCitation={memoizedCallbacks.onDeleteCitation}
+            onReferenceSelect={onSelectNode}
+            onReorderReferences={memoizedCallbacks.onReorderReferences}
+            onTitleCommit={memoizedCallbacks.onTitleCommit}
+          />
+        </div>
+      ) : (
+        <div className="inspector__body">
+          <CardEditor
+            allNodes={allNodes}
+            autoFocusContent={autoFocusContent}
+            backlinks={backlinks}
+            node={node}
+            onAutoFocusContentHandled={onAutoFocusContentHandled}
+            onContentCommit={memoizedCallbacks.onContentCommit}
+            onTitleCommit={memoizedCallbacks.onTitleCommit}
+            onTagsChange={memoizedCallbacks.onTagsChange}
+            onColorChange={memoizedCallbacks.onColorChange}
+            onOpacityPreview={memoizedCallbacks.onOpacityPreview}
+            onOpacityCommit={memoizedCallbacks.onOpacityCommit}
+            onCreateCitation={memoizedCallbacks.onCreateCitation}
+            onDeleteCitation={memoizedCallbacks.onDeleteCitation}
+            onReferenceSelect={onSelectNode}
+            onReorderReferences={memoizedCallbacks.onReorderReferences}
+          />
+        </div>
+      )}
+    </aside>
+  );
+}
+
+function GraphLegend({ isZh }: { isZh: boolean }) {
+  return (
+    <div className="inspector__body graph-legend" aria-label={isZh ? "图例" : "Graph legend"}>
+      <section className="legend-section" aria-labelledby="legend-nodes">
+        <h2 id="legend-nodes">{isZh ? "节点类型" : "Node types"}</h2>
+        <div className="legend-list">
+          <div className="legend-item">
+            <span className="legend-node legend-node--card" aria-hidden="true" />
+            <div>
+              <strong>{isZh ? "卡片" : "Card"}</strong>
+              <p>
+                {isZh
+                  ? "知识卡片，用来保存观点、摘录和整理后的内容。"
+                  : "Knowledge cards for ideas, excerpts, and refined notes."}
+              </p>
+            </div>
+          </div>
+          <div className="legend-item">
+            <span className="legend-node legend-node--image" aria-hidden="true" />
+            <div>
+              <strong>{isZh ? "图片" : "Image"}</strong>
+              <p>
+                {isZh
+                  ? "图片资料，支持拖拽或粘贴插入。"
+                  : "Image references that support drag-and-drop or paste."}
+              </p>
+            </div>
+          </div>
+          <div className="legend-item">
+            <span className="legend-node legend-node--locked" aria-hidden="true" />
+            <div>
+              <strong>{isZh ? "已锁定" : "Locked"}</strong>
+              <p>
+                {isZh
+                  ? "虚线边框和锁标记表示该节点已锁定，不能拖动。"
+                  : "Dashed borders and a lock badge mean the node cannot be dragged."}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="legend-section" aria-labelledby="legend-edges">
+        <h2 id="legend-edges">{isZh ? "连线样式" : "Edge styles"}</h2>
+        <div className="legend-list">
+          <div className="legend-item">
+            <span className="legend-edge legend-edge--citation" aria-hidden="true" />
+            <div>
+              <strong>{isZh ? "单向引用" : "One-way link"}</strong>
+              <p>
+                {isZh
+                  ? "开放箭头表示先选节点指向后选节点。"
+                  : "An open arrow means the first selected node points to the second."}
+              </p>
+            </div>
+          </div>
+          <div className="legend-item">
+            <span className="legend-edge legend-edge--bidirectional" aria-hidden="true" />
+            <div>
+              <strong>{isZh ? "双向引用" : "Two-way link"}</strong>
+              <p>
+                {isZh
+                  ? "无箭头连线表示两个节点互相关联。"
+                  : "A line without arrowheads means the two nodes reference each other."}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="legend-section" aria-labelledby="legend-selection">
+        <h2 id="legend-selection">{isZh ? "选中状态" : "Selection"}</h2>
+        <div className="legend-item">
+          <span className="legend-node legend-node--selected" aria-hidden="true" />
+          <div>
+            <strong>{isZh ? "当前选中" : "Selected"}</strong>
+            <p>
+              {isZh
+                ? "高亮边框表示当前右侧正在查看或编辑的节点。"
+                : "A highlighted border marks the node currently being viewed or edited."}
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
