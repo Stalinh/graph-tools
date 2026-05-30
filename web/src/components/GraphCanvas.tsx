@@ -185,6 +185,22 @@ function rangesOverlap(startA: number, endA: number, startB: number, endB: numbe
   return startA < endB && endA > startB;
 }
 
+function rangesOverlapDuringMove(
+  fromStart: number,
+  fromEnd: number,
+  toStart: number,
+  toEnd: number,
+  obstacleStart: number,
+  obstacleEnd: number
+) {
+  return rangesOverlap(
+    Math.min(fromStart, toStart),
+    Math.max(fromEnd, toEnd),
+    obstacleStart,
+    obstacleEnd
+  );
+}
+
 function resolveGroupDragPosition(
   nodeId: string,
   from: CanvasPosition,
@@ -201,6 +217,7 @@ function resolveGroupDragPosition(
   );
   const canvasNodeMap = new Map(currentCanvasNodes.map((node) => [node.id, node]));
   const currentRect = getNodeRect(from, size);
+  const targetRect = getNodeRect(to, size);
 
   let nextX = to.x;
   if (nextX !== from.x) {
@@ -224,7 +241,14 @@ function resolveGroupDragPosition(
       const otherRect = getNodeRect(otherPosition, otherSize);
 
       if (
-        !rangesOverlap(currentRect.top, currentRect.bottom, otherRect.top, otherRect.bottom)
+        !rangesOverlapDuringMove(
+          currentRect.top,
+          currentRect.bottom,
+          targetRect.top,
+          targetRect.bottom,
+          otherRect.top,
+          otherRect.bottom
+        )
       ) {
         return;
       }
@@ -268,7 +292,14 @@ function resolveGroupDragPosition(
       const otherRect = getNodeRect(otherPosition, otherSize);
 
       if (
-        !rangesOverlap(xResolvedRect.left, xResolvedRect.right, otherRect.left, otherRect.right)
+        !rangesOverlapDuringMove(
+          currentRect.left,
+          currentRect.right,
+          xResolvedRect.left,
+          xResolvedRect.right,
+          otherRect.left,
+          otherRect.right
+        )
       ) {
         return;
       }
@@ -289,7 +320,28 @@ function resolveGroupDragPosition(
     });
   }
 
-  return { x: nextX, y: nextY };
+  const resolvedPosition = { x: nextX, y: nextY };
+  const resolvedRect = getNodeRect(resolvedPosition, size);
+  const isStillBlocked = staticGroups.some((otherNode) => {
+    const otherCanvasNode = canvasNodeMap.get(otherNode.id);
+    if (!otherCanvasNode) {
+      return false;
+    }
+
+    const otherPosition = resolvedPositions.get(otherNode.id) ?? otherCanvasNode.position;
+    const otherSize = nodeSizes[otherNode.id] ?? {
+      width: otherCanvasNode.measured?.width ?? otherCanvasNode.width ?? otherCanvasNode.initialWidth ?? 450,
+      height:
+        otherCanvasNode.measured?.height ??
+        otherCanvasNode.height ??
+        otherCanvasNode.initialHeight ??
+        350,
+    };
+
+    return doRectsOverlap(resolvedRect, getNodeRect(otherPosition, otherSize));
+  });
+
+  return isStillBlocked ? from : resolvedPosition;
 }
 
 function normalizeGroupCollisionChanges(

@@ -1,7 +1,9 @@
 import { Suspense, lazy, useState } from "react";
+import { BookOpen } from "lucide-react";
 import { AppShell } from "./components/AppShell";
 import { KnowledgeBase } from "./components/KnowledgeBase";
 import { getStoredLocale, I18nProvider, type Locale } from "./i18n";
+import { PROJECT_NAV_ITEM, PROJECT_PAGE_ID } from "./modules/project/projectModule";
 
 interface AppShellThemeProps {
   theme: "light" | "dark";
@@ -9,12 +11,24 @@ interface AppShellThemeProps {
   onToggleTheme: () => void;
 }
 
-const SketchTestPage = lazy(async () => {
-  const { SketchTestPage } = await import("./components/SketchTestPage");
-  return { default: SketchTestPage };
+const ProjectSheetPage = lazy(async () => {
+  const { ProjectSheetPage } = await import("./modules/project");
+  return { default: ProjectSheetPage };
 });
 
-type Page = "knowledge-base" | "sketch-test";
+const KNOWLEDGE_BASE_PAGE_ID = "knowledge-base";
+
+const APP_NAV_ITEMS = [
+  {
+    page: KNOWLEDGE_BASE_PAGE_ID,
+    labelZh: "知识图谱",
+    labelEn: "Knowledge Graph",
+    icon: BookOpen,
+  },
+  PROJECT_NAV_ITEM,
+];
+
+type Page = (typeof APP_NAV_ITEMS)[number]["page"];
 
 interface PageContentProps extends AppShellThemeProps {
   page: Page;
@@ -31,8 +45,8 @@ function PageContent({
   onToggleTheme,
 }: PageContentProps) {
   switch (page) {
-    case "sketch-test":
-      return <SketchTestPage />;
+    case PROJECT_PAGE_ID:
+      return <ProjectSheetPage />;
     default:
       return (
         <KnowledgeBase
@@ -58,7 +72,7 @@ export function App() {
 
   return (
     <I18nProvider locale={locale} setLocale={setLocale}>
-      <AppShell currentPage={page} onNavigate={setPage}>
+      <AppShell currentPage={page} navItems={APP_NAV_ITEMS} onNavigate={setPage}>
         {({ theme, themeToggleLabel, onToggleTheme }: AppShellThemeProps) => (
           <Suspense fallback={<AppLoadingFallback locale={locale} />}>
             <PageContent

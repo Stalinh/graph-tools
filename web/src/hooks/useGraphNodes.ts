@@ -579,8 +579,9 @@ export function useGraphNodes({
       // Group nodes cannot be nested in other groups
       if (node.type === "group") {
         if (
-          isGroupPlacementBlocked(
+          isGroupMovementBlocked(
             node.id,
+            from,
             to,
             nodeSizesRef.current[node.id] ?? DEFAULT_GROUP_SIZE,
             currentNodes,
@@ -1183,6 +1184,7 @@ function resolveGroupMoveTargets(
   const groupMoves = moves.filter((move) =>
     currentNodes.some((node) => node.id === move.nodeId && node.type === "group")
   );
+  const movingGroupIds = new Set(groupMoves.map((move) => move.nodeId));
   const nextPositions: Record<string, CanvasPosition> = { ...positions };
 
   groupMoves.forEach((move) => {
@@ -1197,13 +1199,15 @@ function resolveGroupMoveTargets(
       const candidatePosition = nextPositions[move.nodeId] ?? move.to;
       const size = sizes[move.nodeId] ?? DEFAULT_GROUP_SIZE;
       if (
-        isGroupPlacementBlocked(
+        isGroupMovementBlocked(
           move.nodeId,
+          move.from,
           candidatePosition,
           size,
           currentNodes,
           nextPositions,
-          sizes
+          sizes,
+          movingGroupIds
         ) &&
         (candidatePosition.x !== move.from.x || candidatePosition.y !== move.from.y)
       ) {
@@ -1284,6 +1288,61 @@ function isGroupPlacementBlocked(
   });
 }
 
+function isGroupMovementBlocked(
+  groupId: string,
+  from: CanvasPosition,
+  to: CanvasPosition,
+  size: NodeSize,
+  currentNodes: GraphNode[],
+  positions: Record<string, CanvasPosition>,
+  sizes: Record<string, NodeSize>,
+  ignoredSweepGroupIds = new Set<string>()
+) {
+  if (isGroupPlacementBlocked(groupId, to, size, currentNodes, positions, sizes)) {
+    return true;
+  }
+
+  const fromRect = toRect(from, size);
+  const toRectValue = toRect(to, size);
+
+  return currentNodes.some((node) => {
+    if (node.id === groupId || node.type !== "group" || ignoredSweepGroupIds.has(node.id)) {
+      return false;
+    }
+
+    const otherPosition = positions[node.id] ?? { x: 0, y: 0 };
+    const otherSize = sizes[node.id] ?? DEFAULT_GROUP_SIZE;
+    const otherRect = toRect(otherPosition, otherSize);
+    const sweepsAcrossX =
+      (to.x > from.x && fromRect.right <= otherRect.left && toRectValue.right > otherRect.left) ||
+      (to.x < from.x && fromRect.left >= otherRect.right && toRectValue.left < otherRect.right);
+    const sweepsAcrossY =
+      (to.y > from.y && fromRect.bottom <= otherRect.top && toRectValue.bottom > otherRect.top) ||
+      (to.y < from.y && fromRect.top >= otherRect.bottom && toRectValue.top < otherRect.bottom);
+
+    return (
+      (sweepsAcrossX &&
+        rangesOverlapDuringMove(
+          fromRect.top,
+          fromRect.bottom,
+          toRectValue.top,
+          toRectValue.bottom,
+          otherRect.top,
+          otherRect.bottom
+        )) ||
+      (sweepsAcrossY &&
+        rangesOverlapDuringMove(
+          fromRect.left,
+          fromRect.right,
+          toRectValue.left,
+          toRectValue.right,
+          otherRect.left,
+          otherRect.right
+        ))
+    );
+  });
+}
+
 function toRect(position: CanvasPosition, size: NodeSize) {
   return {
     left: position.x,
@@ -1302,5 +1361,25 @@ function doRectsOverlap(
     left.right > right.left &&
     left.top < right.bottom &&
     left.bottom > right.top
+  );
+}
+
+function rangesOverlap(startA: number, endA: number, startB: number, endB: number) {
+  return startA < endB && endA > startB;
+}
+
+function rangesOverlapDuringMove(
+  fromStart: number,
+  fromEnd: number,
+  toStart: number,
+  toEnd: number,
+  obstacleStart: number,
+  obstacleEnd: number
+) {
+  return rangesOverlap(
+    Math.min(fromStart, toStart),
+    Math.max(fromEnd, toEnd),
+    obstacleStart,
+    obstacleEnd
   );
 }

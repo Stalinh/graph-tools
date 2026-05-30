@@ -1,6 +1,13 @@
-import { BookOpen, PanelLeftClose, PanelLeftOpen, Pencil } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, type LucideIcon } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { LOCALE_STORAGE_KEY, useI18n } from "../i18n";
+
+export interface AppShellNavItem<PageId extends string = string> {
+  page: PageId;
+  labelZh: string;
+  labelEn: string;
+  icon: LucideIcon;
+}
 
 interface AppShellProps {
   children: (themeProps: {
@@ -8,8 +15,9 @@ interface AppShellProps {
     themeToggleLabel: string;
     onToggleTheme: () => void;
   }) => ReactNode;
-  currentPage: "knowledge-base" | "sketch-test";
-  onNavigate: (page: "knowledge-base" | "sketch-test") => void;
+  currentPage: string;
+  navItems: AppShellNavItem[];
+  onNavigate: (page: string) => void;
 }
 
 type Theme = "light" | "dark";
@@ -24,7 +32,7 @@ function getStoredTheme(): Theme {
   }
 }
 
-export function AppShell({ children, currentPage, onNavigate }: AppShellProps) {
+export function AppShell({ children, currentPage, navItems, onNavigate }: AppShellProps) {
   const { isZh, locale, setLocale } = useI18n();
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
   const [theme, setTheme] = useState<Theme>(getStoredTheme);
@@ -54,8 +62,6 @@ export function AppShell({ children, currentPage, onNavigate }: AppShellProps) {
   const navAriaLabel = isZh ? "主导航" : "Primary navigation";
   const collapseLabel = isZh ? "收起导航" : "Collapse navigation";
   const expandLabel = isZh ? "展开导航" : "Expand navigation";
-  const graphLabel = isZh ? "知识图谱" : "Knowledge Graph";
-  const sketchLabel = isZh ? "草图实验" : "Sketch Lab";
   const languageLabel = isZh ? "界面语言" : "Interface language";
   const languageHint = isZh ? "统一切换全部界面文案" : "Switch all interface copy";
 
@@ -86,24 +92,24 @@ export function AppShell({ children, currentPage, onNavigate }: AppShellProps) {
           </div>
         </div>
         <nav className="sidebar__nav">
-          <button
-            className={`nav-button ${currentPage === "knowledge-base" ? "is-active" : ""}`}
-            type="button"
-            aria-current={currentPage === "knowledge-base" ? "page" : undefined}
-            onClick={() => onNavigate("knowledge-base")}
-          >
-            <BookOpen size={18} />
-            <span className="nav-button__label">{graphLabel}</span>
-          </button>
-          <button
-            className={`nav-button ${currentPage === "sketch-test" ? "is-active" : ""}`}
-            type="button"
-            aria-current={currentPage === "sketch-test" ? "page" : undefined}
-            onClick={() => onNavigate("sketch-test")}
-          >
-            <Pencil size={18} />
-            <span className="nav-button__label">{sketchLabel}</span>
-          </button>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const label = isZh ? item.labelZh : item.labelEn;
+            const isActive = currentPage === item.page;
+
+            return (
+              <button
+                key={item.page}
+                className={`nav-button ${isActive ? "is-active" : ""}`}
+                type="button"
+                aria-current={isActive ? "page" : undefined}
+                onClick={() => onNavigate(item.page)}
+              >
+                <Icon size={18} />
+                <span className="nav-button__label">{label}</span>
+              </button>
+            );
+          })}
         </nav>
         <div className="sidebar__footer">
           <div className="sidebar__footer-copy">
