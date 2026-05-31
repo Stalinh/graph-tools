@@ -21,10 +21,9 @@ export const PROJECT_COLUMNS: ProjectColumn[] = [
 export const PROJECT_LEVEL_OPTIONS = ["V", "K", "R", "N"];
 export const PROJECT_SUB_LINE_STATUS_OPTIONS: ProjectSubLineStatus[] = [
   "未处理",
-  "设计中",
-  "待评审",
-  "已提资",
-  "已下单",
+  "待处理",
+  "等待中",
+  "已提资/已完成",
 ];
 
 export const PROJECT_DEFAULT_SUB_LINE_TASK_NAMES = [

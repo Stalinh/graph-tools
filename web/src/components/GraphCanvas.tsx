@@ -125,6 +125,7 @@ const MIDDLE_DOUBLE_CLICK_DISTANCE = 8;
 const DRAG_AUTO_PAN_EDGE_THRESHOLD = 24;
 const DRAG_AUTO_PAN_STEP = 24;
 const ALIGNMENT_GUIDE_THRESHOLD = 5;
+const GROUP_COLLISION_TOLERANCE = 0.5;
 type ContextMenuEvent = MouseEvent | ReactMouseEvent<Element>;
 interface ScreenPoint {
   x: number;
@@ -149,6 +150,11 @@ interface AlignmentGuide {
 interface AlignmentAnchor {
   coordinate: number;
   key: "center" | "end" | "start";
+}
+
+interface AlignmentGuideCandidate extends AlignmentGuide {
+  anchorKey: AlignmentAnchor["key"];
+  distance: number;
 }
 
 const NODE_TYPES: NodeTypes = {
@@ -231,10 +237,59 @@ function getNodeElement(container: HTMLDivElement, nodeId: string) {
   );
 }
 
+function getAlignmentNodeType(
+  draggedNodeIds: string[],
+  nodeTypeById: ReadonlyMap<string, GraphNode["type"]>
+) {
+  let alignmentType: GraphNode["type"] | null = null;
+
+  for (const nodeId of draggedNodeIds) {
+    const nodeType = nodeTypeById.get(nodeId);
+    if (!nodeType) {
+      return null;
+    }
+    if (alignmentType && alignmentType !== nodeType) {
+      return null;
+    }
+    alignmentType = nodeType;
+  }
+
+  return alignmentType;
+}
+
+function selectAlignmentGuides(candidates: AlignmentGuideCandidate[]) {
+  const bestByAnchorKey = new Map<AlignmentAnchor["key"], AlignmentGuideCandidate>();
+
+  candidates.forEach((candidate) => {
+    const previous = bestByAnchorKey.get(candidate.anchorKey);
+    if (!previous || candidate.distance < previous.distance) {
+      bestByAnchorKey.set(candidate.anchorKey, candidate);
+    }
+  });
+
+  const selectedCandidates = [bestByAnchorKey.get("start"), bestByAnchorKey.get("end")].filter(
+    (candidate): candidate is AlignmentGuideCandidate => candidate !== undefined
+  );
+  const centerCandidate = bestByAnchorKey.get("center");
+  if (centerCandidate && selectedCandidates.length < 2) {
+    selectedCandidates.push(centerCandidate);
+  }
+
+  return selectedCandidates
+    .map(({ anchorKey: _anchorKey, distance: _distance, ...guide }) => guide)
+    .filter((guide) => guide.end > guide.start);
+}
+
 function createAlignmentGuides(
   container: HTMLDivElement,
-  draggedNodeIds: string[]
+  draggedNodeIds: string[],
+  nodeTypeById: ReadonlyMap<string, GraphNode["type"]>
 ): AlignmentGuide[] {
+  const alignmentNodeType = getAlignmentNodeType(draggedNodeIds, nodeTypeById);
+  if (!alignmentNodeType) {
+    return [];
+  }
+
   const draggedIdSet = new Set(draggedNodeIds);
   const draggedElements = draggedNodeIds
     .map((nodeId) => getNodeElement(container, nodeId))
@@ -256,14 +311,12 @@ function createAlignmentGuides(
     { coordinate: (draggedRect.top + draggedRect.bottom) / 2, key: "center" },
     { coordinate: draggedRect.bottom, key: "end" },
   ];
-  let bestVerticalDistance = Infinity;
-  let bestVerticalGuide: AlignmentGuide | null = null;
-  let bestHorizontalDistance = Infinity;
-  let bestHorizontalGuide: AlignmentGuide | null = null;
+  const verticalCandidates: AlignmentGuideCandidate[] = [];
+  const horizontalCandidates: AlignmentGuideCandidate[] = [];
 
   for (const element of container.querySelectorAll<HTMLElement>(".react-flow__node[data-id]")) {
     const nodeId = element.getAttribute("data-id");
-    if (!nodeId || draggedIdSet.has(nodeId)) {
+    if (!nodeId || draggedIdSet.has(nodeId) || nodeTypeById.get(nodeId) !== alignmentNodeType) {
       continue;
     }
 
@@ -286,12 +339,13 @@ function createAlignmentGuides(
     for (const draggedAnchor of draggedVerticalAnchors) {
       for (const otherAnchor of otherVerticalAnchors) {
         const distance = Math.abs(draggedAnchor.coordinate - otherAnchor.coordinate);
-        if (distance > ALIGNMENT_GUIDE_THRESHOLD || distance >= bestVerticalDistance) {
+        if (distance > ALIGNMENT_GUIDE_THRESHOLD) {
           continue;
         }
 
-        bestVerticalDistance = distance;
-        bestVerticalGuide = {
+        verticalCandidates.push({
+          anchorKey: draggedAnchor.key,
+          distance,
           id: `v-${nodeId}-${draggedAnchor.key}-${otherAnchor.key}`,
           orientation: "vertical",
           offset: clampGuideCoordinate(otherAnchor.coordinate - bounds.left, 0, bounds.width),
@@ -305,19 +359,20 @@ function createAlignmentGuides(
             0,
             bounds.height
           ),
-        };
+        });
       }
     }
 
     for (const draggedAnchor of draggedHorizontalAnchors) {
       for (const otherAnchor of otherHorizontalAnchors) {
         const distance = Math.abs(draggedAnchor.coordinate - otherAnchor.coordinate);
-        if (distance > ALIGNMENT_GUIDE_THRESHOLD || distance >= bestHorizontalDistance) {
+        if (distance > ALIGNMENT_GUIDE_THRESHOLD) {
           continue;
         }
 
-        bestHorizontalDistance = distance;
-        bestHorizontalGuide = {
+        horizontalCandidates.push({
+          anchorKey: draggedAnchor.key,
+          distance,
           id: `h-${nodeId}-${draggedAnchor.key}-${otherAnchor.key}`,
           orientation: "horizontal",
           offset: clampGuideCoordinate(otherAnchor.coordinate - bounds.top, 0, bounds.height),
@@ -331,14 +386,15 @@ function createAlignmentGuides(
             0,
             bounds.width
           ),
-        };
+        });
       }
     }
   }
 
-  return [bestVerticalGuide, bestHorizontalGuide].filter(
-    (guide): guide is AlignmentGuide => guide !== null && guide.end > guide.start
-  );
+  return [
+    ...selectAlignmentGuides(verticalCandidates),
+    ...selectAlignmentGuides(horizontalCandidates),
+  ];
 }
 
 function getNodeRect(position: CanvasPosition, size: NodeSize) {
@@ -355,15 +411,15 @@ function doRectsOverlap(
   right: ReturnType<typeof getNodeRect>
 ) {
   return (
-    left.left < right.right &&
-    left.right > right.left &&
-    left.top < right.bottom &&
-    left.bottom > right.top
+    left.left < right.right - GROUP_COLLISION_TOLERANCE &&
+    left.right > right.left + GROUP_COLLISION_TOLERANCE &&
+    left.top < right.bottom - GROUP_COLLISION_TOLERANCE &&
+    left.bottom > right.top + GROUP_COLLISION_TOLERANCE
   );
 }
 
 function rangesOverlap(startA: number, endA: number, startB: number, endB: number) {
-  return startA < endB && endA > startB;
+  return startA < endB - GROUP_COLLISION_TOLERANCE && endA > startB + GROUP_COLLISION_TOLERANCE;
 }
 
 function rangesOverlapDuringMove(
@@ -681,6 +737,10 @@ export function GraphCanvas({
   const [pendingCitation, setPendingCitation] = useState<PendingCitation | null>(null);
   const [selectionMode, setSelectionMode] = useState<SelectionMode>(SelectionMode.Full);
   const [alignmentGuides, setAlignmentGuides] = useState<AlignmentGuide[]>([]);
+  const graphNodeTypeById = useMemo(
+    () => new Map(graph.nodes.map((node) => [node.id, node.type])),
+    [graph.nodes]
+  );
 
   const clearAlignmentGuides = useCallback(() => {
     if (alignmentGuideFrameRef.current !== null) {
@@ -697,8 +757,8 @@ export function GraphCanvas({
       return;
     }
 
-    setAlignmentGuides(createAlignmentGuides(container, nodeIds));
-  }, []);
+    setAlignmentGuides(createAlignmentGuides(container, nodeIds, graphNodeTypeById));
+  }, [graphNodeTypeById]);
 
   const handleGroupNodeResize = useCallback(
     (nodeId: string) => {
@@ -1123,7 +1183,7 @@ export function GraphCanvas({
         selectedNodeIds.length > 1 && selectedNodeIds.includes(node.id)
           ? selectedNodeIds
           : [node.id];
-      setAlignmentGuides(createAlignmentGuides(container, draggedNodeIds));
+      setAlignmentGuides(createAlignmentGuides(container, draggedNodeIds, graphNodeTypeById));
       stopDragAutoPan();
 
       const bounds = container.getBoundingClientRect();
@@ -1193,7 +1253,7 @@ export function GraphCanvas({
         );
       });
     },
-    [selectedNodeIds, stopDragAutoPan]
+    [graphNodeTypeById, selectedNodeIds, stopDragAutoPan]
   );
 
   const handleCanvasAuxClick = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {

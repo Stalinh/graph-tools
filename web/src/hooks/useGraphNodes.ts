@@ -45,6 +45,8 @@ interface NodeSize {
   height: number;
 }
 
+const GROUP_COLLISION_TOLERANCE = 0.5;
+
 export function useGraphNodes({
   locale = "zh-CN",
   pushCommand,
@@ -583,18 +585,18 @@ export function useGraphNodes({
 
       // Group nodes cannot be nested in other groups
       if (node.type === "group") {
-        const finalTo = snapPositionToGrid(to);
-        if (
-          isGroupMovementBlocked(
-            node.id,
-            from,
-            finalTo,
-            nodeSizesRef.current[node.id] ?? DEFAULT_GROUP_SIZE,
-            currentNodes,
-            nodePositionsRef.current,
-            nodeSizesRef.current
-          )
-        ) {
+        const candidateTo = snapPositionToGrid(to);
+        const finalTo = resolveGroupMoveTarget(
+          node.id,
+          from,
+          candidateTo,
+          nodeSizesRef.current[node.id] ?? DEFAULT_GROUP_SIZE,
+          currentNodes,
+          nodePositionsRef.current,
+          nodeSizesRef.current
+        );
+
+        if (finalTo.x === from.x && finalTo.y === from.y) {
           const revertedPositions = {
             ...nodePositionsRef.current,
             [nodeId]: from,
@@ -1279,26 +1281,117 @@ function resolveGroupMoveTargets(
     for (const move of groupMoves) {
       const candidatePosition = nextPositions[move.nodeId] ?? move.to;
       const size = sizes[move.nodeId] ?? DEFAULT_GROUP_SIZE;
+      const resolvedPosition = resolveGroupMoveTarget(
+        move.nodeId,
+        move.from,
+        candidatePosition,
+        size,
+        currentNodes,
+        nextPositions,
+        sizes,
+        movingGroupIds
+      );
+
       if (
-        isGroupMovementBlocked(
-          move.nodeId,
-          move.from,
-          candidatePosition,
-          size,
-          currentNodes,
-          nextPositions,
-          sizes,
-          movingGroupIds
-        ) &&
+        (resolvedPosition.x !== candidatePosition.x ||
+          resolvedPosition.y !== candidatePosition.y) &&
         (candidatePosition.x !== move.from.x || candidatePosition.y !== move.from.y)
       ) {
-        nextPositions[move.nodeId] = move.from;
+        nextPositions[move.nodeId] = resolvedPosition;
         didChange = true;
       }
     }
   }
 
   return nextPositions;
+}
+
+function resolveGroupMoveTarget(
+  groupId: string,
+  from: CanvasPosition,
+  to: CanvasPosition,
+  size: NodeSize,
+  currentNodes: GraphNode[],
+  positions: Record<string, CanvasPosition>,
+  sizes: Record<string, NodeSize>,
+  ignoredGroupIds = new Set<string>()
+) {
+  const staticGroups = currentNodes.filter(
+    (node) => node.type === "group" && node.id !== groupId && !ignoredGroupIds.has(node.id)
+  );
+  const fromRect = toRect(from, size);
+  const targetRect = toRect(to, size);
+
+  let nextX = to.x;
+  if (nextX !== from.x) {
+    const movingRight = nextX > from.x;
+
+    staticGroups.forEach((node) => {
+      const otherPosition = positions[node.id] ?? { x: 0, y: 0 };
+      const otherSize = sizes[node.id] ?? DEFAULT_GROUP_SIZE;
+      const otherRect = toRect(otherPosition, otherSize);
+
+      if (
+        !rangesOverlapDuringMove(
+          fromRect.top,
+          fromRect.bottom,
+          targetRect.top,
+          targetRect.bottom,
+          otherRect.top,
+          otherRect.bottom
+        )
+      ) {
+        return;
+      }
+
+      if (movingRight && fromRect.right <= otherRect.left && nextX + size.width > otherRect.left) {
+        nextX = Math.min(nextX, otherRect.left - size.width);
+      } else if (!movingRight && fromRect.left >= otherRect.right && nextX < otherRect.right) {
+        nextX = Math.max(nextX, otherRect.right);
+      }
+    });
+  }
+
+  let nextY = to.y;
+  if (nextY !== from.y) {
+    const movingDown = nextY > from.y;
+    const xResolvedRect = toRect({ x: nextX, y: from.y }, size);
+
+    staticGroups.forEach((node) => {
+      const otherPosition = positions[node.id] ?? { x: 0, y: 0 };
+      const otherSize = sizes[node.id] ?? DEFAULT_GROUP_SIZE;
+      const otherRect = toRect(otherPosition, otherSize);
+
+      if (
+        !rangesOverlapDuringMove(
+          fromRect.left,
+          fromRect.right,
+          xResolvedRect.left,
+          xResolvedRect.right,
+          otherRect.left,
+          otherRect.right
+        )
+      ) {
+        return;
+      }
+
+      if (movingDown && xResolvedRect.bottom <= otherRect.top && nextY + size.height > otherRect.top) {
+        nextY = Math.min(nextY, otherRect.top - size.height);
+      } else if (!movingDown && xResolvedRect.top >= otherRect.bottom && nextY < otherRect.bottom) {
+        nextY = Math.max(nextY, otherRect.bottom);
+      }
+    });
+  }
+
+  const resolvedPosition = { x: nextX, y: nextY };
+  const resolvedRect = toRect(resolvedPosition, size);
+  const isStillBlocked = staticGroups.some((node) => {
+    const otherPosition = positions[node.id] ?? { x: 0, y: 0 };
+    const otherSize = sizes[node.id] ?? DEFAULT_GROUP_SIZE;
+    return doRectsOverlap(resolvedRect, toRect(otherPosition, otherSize));
+  });
+
+  return isStillBlocked ? from : resolvedPosition;
 }
 
 function findAvailableGroupPosition(
@@ -1369,61 +1462,6 @@ function isGroupPlacementBlocked(
   });
 }
 
-function isGroupMovementBlocked(
-  groupId: string,
-  from: CanvasPosition,
-  to: CanvasPosition,
-  size: NodeSize,
-  currentNodes: GraphNode[],
-  positions: Record<string, CanvasPosition>,
-  sizes: Record<string, NodeSize>,
-  ignoredSweepGroupIds = new Set<string>()
-) {
-  if (isGroupPlacementBlocked(groupId, to, size, currentNodes, positions, sizes)) {
-    return true;
-  }
-
-  const fromRect = toRect(from, size);
-  const toRectValue = toRect(to, size);
-
-  return currentNodes.some((node) => {
-    if (node.id === groupId || node.type !== "group" || ignoredSweepGroupIds.has(node.id)) {
-      return false;
-    }
-
-    const otherPosition = positions[node.id] ?? { x: 0, y: 0 };
-    const otherSize = sizes[node.id] ?? DEFAULT_GROUP_SIZE;
-    const otherRect = toRect(otherPosition, otherSize);
-    const sweepsAcrossX =
-      (to.x > from.x && fromRect.right <= otherRect.left && toRectValue.right > otherRect.left) ||
-      (to.x < from.x && fromRect.left >= otherRect.right && toRectValue.left < otherRect.right);
-    const sweepsAcrossY =
-      (to.y > from.y && fromRect.bottom <= otherRect.top && toRectValue.bottom > otherRect.top) ||
-      (to.y < from.y && fromRect.top >= otherRect.bottom && toRectValue.top < otherRect.bottom);
-
-    return (
-      (sweepsAcrossX &&
-        rangesOverlapDuringMove(
-          fromRect.top,
-          fromRect.bottom,
-          toRectValue.top,
-          toRectValue.bottom,
-          otherRect.top,
-          otherRect.bottom
-        )) ||
-      (sweepsAcrossY &&
-        rangesOverlapDuringMove(
-          fromRect.left,
-          fromRect.right,
-          toRectValue.left,
-          toRectValue.right,
-          otherRect.left,
-          otherRect.right
-        ))
-    );
-  });
-}
-
 function toRect(position: CanvasPosition, size: NodeSize) {
   return {
     left: position.x,
@@ -1438,15 +1476,15 @@ function doRectsOverlap(
   right: ReturnType<typeof toRect>
 ) {
   return (
-    left.left < right.right &&
-    left.right > right.left &&
-    left.top < right.bottom &&
-    left.bottom > right.top
+    left.left < right.right - GROUP_COLLISION_TOLERANCE &&
+    left.right > right.left + GROUP_COLLISION_TOLERANCE &&
+    left.top < right.bottom - GROUP_COLLISION_TOLERANCE &&
+    left.bottom > right.top + GROUP_COLLISION_TOLERANCE
   );
 }
 
 function rangesOverlap(startA: number, endA: number, startB: number, endB: number) {
-  return startA < endB && endA > startB;
+  return startA < endB - GROUP_COLLISION_TOLERANCE && endA > startB + GROUP_COLLISION_TOLERANCE;
 }
 
 function rangesOverlapDuringMove(

@@ -1,4 +1,5 @@
 import {
+  Check,
   ChevronDown,
   ChevronRight,
   Eye,
@@ -40,7 +41,7 @@ import type {
   ProjectSubLineStatus,
 } from "./projectTypes";
 
-const PROJECT_SUB_LINE_TRAILING_COL_SPAN = PROJECT_COLUMNS.length - 4;
+const PROJECT_SUB_LINE_TRAILING_COL_SPAN = PROJECT_COLUMNS.length - 5;
 type ProjectSubLineField = keyof Omit<ProjectSubLine, "id">;
 
 function getFieldValue(record: ProjectLine, field: ProjectRecordField) {
@@ -68,13 +69,6 @@ function renderProjectCell(record: ProjectLine, field: ProjectRecordField, isZh:
   return renderProgressBar(record.progress, isZh ? "项目进度" : "Project progress");
 }
 
-function getAllProjectNames(records: ProjectRecord[]) {
-  return records.map((record) => ({
-    id: record.id,
-    projectName: normalizeProjectName(record.projectName),
-  }));
-}
-
 function createSavedProjectLine(record: ProjectLine, projectName: string): ProjectLine {
   return {
     id: record.id,
@@ -96,7 +90,6 @@ function createSavedProjectSubLine(record: ProjectSubLine): ProjectSubLine {
     id: record.id,
     lineNo: normalizeProjectLineNo(record.lineNo),
     taskName: normalizeProjectSubLineTaskName(record.taskName),
-    progressRatio: normalizeProjectProgress(record.progressRatio),
     status: normalizeProjectSubLineStatus(record.status),
     detailDesign: record.detailDesign,
   };
@@ -104,14 +97,117 @@ function createSavedProjectSubLine(record: ProjectSubLine): ProjectSubLine {
 
 function getSubLineStatusClassName(status: ProjectSubLineStatus) {
   const classNameByStatus: Record<ProjectSubLineStatus, string> = {
-    未处理: "project-subline__status--pending",
-    设计中: "project-subline__status--designing",
-    待评审: "project-subline__status--review",
-    已提资: "project-subline__status--provided",
-    已下单: "project-subline__status--ordered",
+    未处理: "project-subline__status--unprocessed",
+    待处理: "project-subline__status--todo",
+    等待中: "project-subline__status--waiting",
+    "已提资/已完成": "project-subline__status--done",
   };
 
   return `project-subline__status ${classNameByStatus[status]}`;
+}
+
+function getSubLineStatusToneClassName(status: string) {
+  const classNameByStatus: Record<ProjectSubLineStatus, string> = {
+    未处理: "project-sheet__custom-select-tone--unprocessed",
+    待处理: "project-sheet__custom-select-tone--todo",
+    等待中: "project-sheet__custom-select-tone--waiting",
+    "已提资/已完成": "project-sheet__custom-select-tone--done",
+  };
+
+  return classNameByStatus[normalizeProjectSubLineStatus(status)];
+}
+
+interface ProjectInlineSelectOption {
+  value: string;
+  label: string;
+}
+
+interface ProjectInlineSelectProps {
+  ariaLabel: string;
+  className?: string;
+  getOptionToneClassName?: (value: string) => string;
+  onChange: (value: string) => void;
+  options: ProjectInlineSelectOption[];
+  value: string;
+}
+
+function ProjectInlineSelect({
+  ariaLabel,
+  className = "",
+  getOptionToneClassName,
+  onChange,
+  options,
+  value,
+}: ProjectInlineSelectProps) {
+  const [open, setOpen] = useState(false);
+  const selectedOption = options.find((option) => option.value === value);
+  const selectedLabel = selectedOption?.label || value || "—";
+  const selectedToneClassName = getOptionToneClassName?.(value) ?? "";
+
+  return (
+    <div
+      className={`project-sheet__custom-select ${open ? "is-open" : ""} ${className}`}
+      onBlur={(event) => {
+        const nextTarget = event.relatedTarget;
+        if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
+          setOpen(false);
+        }
+      }}
+    >
+      <button
+        className={`project-sheet__custom-select-button ${selectedToneClassName}`}
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-label={ariaLabel}
+        onClick={() => setOpen((currentOpen) => !currentOpen)}
+      >
+        {selectedToneClassName ? (
+          <span
+            className={`project-sheet__custom-select-indicator ${selectedToneClassName}`}
+            aria-hidden="true"
+          />
+        ) : null}
+        <span className="project-sheet__custom-select-value">{selectedLabel}</span>
+        <ChevronDown size={14} aria-hidden="true" />
+      </button>
+      {open ? (
+        <div className="project-sheet__custom-select-menu" role="listbox" aria-label={ariaLabel}>
+          {options.map((option) => {
+            const optionToneClassName = getOptionToneClassName?.(option.value) ?? "";
+            const selected = option.value === value;
+
+            return (
+              <button
+                className={`project-sheet__custom-select-option ${optionToneClassName} ${
+                  selected ? "is-selected" : ""
+                }`}
+                key={option.value || "__empty"}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                onClick={() => {
+                  onChange(option.value);
+                  setOpen(false);
+                }}
+              >
+                {optionToneClassName ? (
+                  <span
+                    className={`project-sheet__custom-select-indicator ${optionToneClassName}`}
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <span aria-hidden="true" />
+                )}
+                <span>{option.label}</span>
+                {selected ? <Check size={13} aria-hidden="true" /> : <span aria-hidden="true" />}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 export function ProjectSheetPage() {
@@ -141,7 +237,6 @@ export function ProjectSheetPage() {
     () => records.reduce((total, record) => total + record.subLines.length, 0),
     [records]
   );
-  const projectNameEntries = useMemo(() => getAllProjectNames(records), [records]);
 
   useEffect(() => {
     if (skipInitialDraftSaveRef.current) {
@@ -413,36 +508,165 @@ export function ProjectSheetPage() {
 
   const removeSubLine = (parentId: string, subLineId: string) => {
     setRecords((currentRecords) =>
-      sanitizeProjectRecords(
-        currentRecords.map((record) =>
-          record.id === parentId
-            ? { ...record, subLines: record.subLines.filter((subLine) => subLine.id !== subLineId) }
-            : record
-        )
+      currentRecords.map((record) =>
+        record.id === parentId
+          ? { ...record, subLines: record.subLines.filter((subLine) => subLine.id !== subLineId) }
+          : record
       )
     );
     setDirty(true);
   };
 
-  const detailTitle = (() => {
-    if (detailState?.lineType === "subLine") {
-      return detailState.mode === "edit"
-        ? isZh
-          ? "编辑子行详情"
-          : "Edit Subline"
-        : isZh
-          ? "新增子行详情"
-          : "New Subline";
+  const updateProjectField = (recordId: string, field: ProjectRecordField, value: string) => {
+    setRecords((currentRecords) =>
+      currentRecords.map((record) =>
+        record.id === recordId
+          ? {
+              ...record,
+              [field]: value,
+            }
+          : record
+      )
+    );
+    setDirty(true);
+  };
+
+  const commitProjectField = (recordId: string, field: ProjectRecordField) => {
+    setRecords((currentRecords) =>
+      currentRecords.map((record) => {
+        if (record.id !== recordId) {
+          return record;
+        }
+
+        if (field === "projectName") {
+          return { ...record, projectName: getUniqueProjectName(record.projectName, recordId, currentRecords) };
+        }
+
+        if (field === "lineNo") {
+          return { ...record, lineNo: normalizeProjectLineNo(record.lineNo) };
+        }
+
+        if (field === "progress") {
+          return { ...record, progress: normalizeProjectProgress(record.progress) };
+        }
+
+        return record;
+      })
+    );
+  };
+
+  const updateSubLineField = (
+    parentId: string,
+    subLineId: string,
+    field: ProjectSubLineField,
+    value: string
+  ) => {
+    setRecords((currentRecords) =>
+      currentRecords.map((record) =>
+        record.id === parentId
+          ? {
+              ...record,
+              subLines: record.subLines.map((subLine) =>
+                subLine.id === subLineId
+                  ? {
+                      ...subLine,
+                      [field]: value,
+                    }
+                  : subLine
+              ),
+            }
+          : record
+      )
+    );
+    setDirty(true);
+  };
+
+  const commitSubLineField = (parentId: string, subLineId: string, field: ProjectSubLineField) => {
+    setRecords((currentRecords) =>
+      currentRecords.map((record) =>
+        record.id === parentId
+          ? {
+              ...record,
+              subLines: record.subLines.map((subLine) => {
+                if (subLine.id !== subLineId) {
+                  return subLine;
+                }
+
+                if (field === "taskName") {
+                  return {
+                    ...subLine,
+                    taskName:
+                      normalizeProjectSubLineTaskName(subLine.taskName) ||
+                      (isZh ? "未命名任务" : "Untitled Task"),
+                  };
+                }
+
+                if (field === "lineNo") {
+                  return { ...subLine, lineNo: normalizeProjectLineNo(subLine.lineNo) };
+                }
+
+                if (field === "status") {
+                  return { ...subLine, status: normalizeProjectSubLineStatus(subLine.status) };
+                }
+
+                return subLine;
+              }),
+            }
+          : record
+      )
+    );
+  };
+
+  const renderProjectEditCell = (record: ProjectRecord, field: ProjectRecordField) => {
+    const column = PROJECT_COLUMNS.find((currentColumn) => currentColumn.field === field);
+    const label = column ? (isZh ? column.labelZh : column.labelEn) : isZh ? "编号" : "No.";
+    const value = getFieldValue(record, field);
+
+    if (field === "projectLevel") {
+      return (
+        <ProjectInlineSelect
+          ariaLabel={label}
+          value={value}
+          options={[
+            { value: "", label: isZh ? "未定" : "Unset" },
+            ...PROJECT_LEVEL_OPTIONS.map((option) => ({ value: option, label: option })),
+          ]}
+          onChange={(nextValue) => updateProjectField(record.id, field, nextValue)}
+        />
+      );
     }
 
-    return detailState?.mode === "edit"
-      ? isZh
-        ? "编辑项目详情"
-        : "Edit Project"
-      : isZh
-        ? "新增项目详情"
-        : "New Project";
-  })();
+    if (field === "progress") {
+      return (
+        <div className="project-sheet__inline-progress-control">
+          <input
+            className="project-sheet__inline-input"
+            inputMode="numeric"
+            min={0}
+            max={100}
+            step={1}
+            type="number"
+            aria-label={label}
+            value={value}
+            onBlur={() => commitProjectField(record.id, field)}
+            onChange={(event) => updateProjectField(record.id, field, event.target.value)}
+          />
+          <span aria-hidden="true">%</span>
+        </div>
+      );
+    }
+
+    return (
+      <input
+        className="project-sheet__inline-input"
+        inputMode={column?.inputMode ?? "text"}
+        aria-label={label}
+        value={value}
+        onBlur={() => commitProjectField(record.id, field)}
+        onChange={(event) => updateProjectField(record.id, field, event.target.value)}
+      />
+    );
+  };
 
   return (
     <section className="project-sheet-page" aria-label={isZh ? "项目管理表格" : "Project management table"}>
@@ -452,6 +676,26 @@ export function ProjectSheetPage() {
           <p>{isZh ? "按合同与项目维度维护项目管理信息。" : "Manage project records by contract and project."}</p>
         </div>
         <div className="project-sheet-page__header-actions">
+          <div className="project-mode-toggle" aria-label={isZh ? "编辑模式切换" : "Edit mode toggle"}>
+            <button
+              className={`project-mode-toggle__button ${!isEditMode ? "is-active" : ""}`}
+              type="button"
+              aria-pressed={!isEditMode}
+              onClick={enterReadMode}
+            >
+              <Eye size={15} />
+              <span>{isZh ? "阅读" : "Read"}</span>
+            </button>
+            <button
+              className={`project-mode-toggle__button ${isEditMode ? "is-active" : ""}`}
+              type="button"
+              aria-pressed={isEditMode}
+              onClick={() => setIsEditMode(true)}
+            >
+              <Pencil size={15} />
+              <span>{isZh ? "编辑" : "Edit"}</span>
+            </button>
+          </div>
           <div className="project-file-actions" aria-label={isZh ? "项目文件操作" : "Project file actions"}>
             <button
               className="project-file-action-button"
@@ -502,7 +746,12 @@ export function ProjectSheetPage() {
               {isZh ? "子行" : "Sublines"} <strong>{subLineCount}</strong>
             </span>
           </div>
-          <button className="project-sheet-page__add-button" type="button" onClick={openCreateDetail}>
+          <button
+            className="project-sheet-page__add-button"
+            type="button"
+            disabled={!isEditMode}
+            onClick={addProjectRecord}
+          >
             <Plus size={16} />
             <span>{isZh ? "新增项目" : "New project"}</span>
           </button>
@@ -548,7 +797,43 @@ export function ProjectSheetPage() {
                       }`}
                       scope="row"
                     >
-                      {hasSubLines ? (
+                      {isEditMode ? (
+                        <div className="project-sheet__tree-cell project-sheet__tree-cell--edit">
+                          {hasSubLines ? (
+                            <button
+                              className="project-sheet__tree-toggle"
+                              type="button"
+                              aria-expanded={isExpanded}
+                              aria-label={
+                                isExpanded
+                                  ? isZh
+                                    ? "折叠子行"
+                                    : "Collapse sublines"
+                                  : isZh
+                                    ? "展开子行"
+                                    : "Expand sublines"
+                              }
+                              title={
+                                isExpanded
+                                  ? isZh
+                                    ? "折叠子行"
+                                    : "Collapse sublines"
+                                  : isZh
+                                    ? "展开子行"
+                                    : "Expand sublines"
+                              }
+                              onClick={() => toggleProjectExpanded(record.id)}
+                            >
+                              {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+                            </button>
+                          ) : (
+                            <span className="project-sheet__tree-spacer" aria-hidden="true" />
+                          )}
+                          <span className="project-sheet__tree-index" title={record.lineNo}>
+                            {record.lineNo}
+                          </span>
+                        </div>
+                      ) : hasSubLines ? (
                         <button
                           className="project-sheet__tree-cell project-sheet__tree-cell--toggle-button"
                           type="button"
@@ -590,37 +875,36 @@ export function ProjectSheetPage() {
                       )}
                     </th>
                     {PROJECT_COLUMNS.map((column) => (
-                      <td key={column.field}>{renderProjectCell(record, column.field, isZh)}</td>
+                      <td key={column.field}>
+                        {isEditMode
+                          ? renderProjectEditCell(record, column.field)
+                          : renderProjectCell(record, column.field, isZh)}
+                      </td>
                     ))}
                     <td>
                       <div className="project-sheet__row-actions">
-                        <button
-                          className="project-sheet__row-action"
-                          type="button"
-                          aria-label={isZh ? "新增子行" : "New subline"}
-                          title={isZh ? "新增子行" : "New subline"}
-                          onClick={() => openCreateSubLineDetail(record.id)}
-                        >
-                          <Plus size={15} />
-                        </button>
-                        <button
-                          className="project-sheet__row-action"
-                          type="button"
-                          aria-label={isZh ? "编辑项目详情" : "Edit project details"}
-                          title={isZh ? "编辑项目详情" : "Edit project details"}
-                          onClick={() => openEditDetail(record)}
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          className="project-sheet__row-action project-sheet__row-action--danger"
-                          type="button"
-                          aria-label={isZh ? "删除项目" : "Delete project"}
-                          title={isZh ? "删除项目" : "Delete project"}
-                          onClick={() => removeRecord(record.id)}
-                        >
-                          <Trash2 size={15} />
-                        </button>
+                        {isEditMode ? (
+                          <>
+                            <button
+                              className="project-sheet__row-action"
+                              type="button"
+                              aria-label={isZh ? "新增子行" : "New subline"}
+                              title={isZh ? "新增子行" : "New subline"}
+                              onClick={() => addSubLineRecord(record.id)}
+                            >
+                              <Plus size={15} />
+                            </button>
+                            <button
+                              className="project-sheet__row-action project-sheet__row-action--danger"
+                              type="button"
+                              aria-label={isZh ? "删除项目" : "Delete project"}
+                              title={isZh ? "删除项目" : "Delete project"}
+                              onClick={() => removeRecord(record.id)}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -646,15 +930,43 @@ export function ProjectSheetPage() {
                             </span>
                           </td>
                           <td className="project-sheet__subline-status-cell">
-                            <span className={getSubLineStatusClassName(subLine.status)}>
-                              {subLine.status}
-                            </span>
+                            {isEditMode ? (
+                              <ProjectInlineSelect
+                                className="project-sheet__custom-select--status"
+                                ariaLabel={isZh ? "子行状态" : "Subline status"}
+                                value={subLine.status}
+                                getOptionToneClassName={getSubLineStatusToneClassName}
+                                options={PROJECT_SUB_LINE_STATUS_OPTIONS.map((status) => ({
+                                  value: status,
+                                  label: status,
+                                }))}
+                                onChange={(nextValue) =>
+                                  updateSubLineField(record.id, subLine.id, "status", nextValue)
+                                }
+                              />
+                            ) : (
+                              <span className={getSubLineStatusClassName(subLine.status)}>
+                                {subLine.status}
+                              </span>
+                            )}
                           </td>
                           <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
+                          <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
                           <td className="project-sheet__subline-detail-design-cell">
-                            <span className="project-subline__detail-design" title={subLine.detailDesign}>
-                              {subLine.detailDesign}
-                            </span>
+                            {isEditMode ? (
+                              <input
+                                className="project-sheet__inline-input"
+                                aria-label={isZh ? "细化设计" : "Detail design"}
+                                value={subLine.detailDesign}
+                                onChange={(event) =>
+                                  updateSubLineField(record.id, subLine.id, "detailDesign", event.target.value)
+                                }
+                              />
+                            ) : (
+                              <span className="project-subline__detail-design" title={subLine.detailDesign}>
+                                {subLine.detailDesign}
+                              </span>
+                            )}
                           </td>
                           <td
                             className="project-sheet__subline-empty-cell"
@@ -663,24 +975,17 @@ export function ProjectSheetPage() {
                           />
                           <td>
                             <div className="project-sheet__row-actions">
-                              <button
-                                className="project-sheet__row-action"
-                                type="button"
-                                aria-label={isZh ? "编辑子行详情" : "Edit subline details"}
-                                title={isZh ? "编辑子行详情" : "Edit subline details"}
-                                onClick={() => openEditSubLineDetail(record.id, subLine)}
-                              >
-                                <Pencil size={15} />
-                              </button>
-                              <button
-                                className="project-sheet__row-action project-sheet__row-action--danger"
-                                type="button"
-                                aria-label={isZh ? "删除子行" : "Delete subline"}
-                                title={isZh ? "删除子行" : "Delete subline"}
-                                onClick={() => removeSubLine(record.id, subLine.id)}
-                              >
-                                <Trash2 size={15} />
-                              </button>
+                              {isEditMode ? (
+                                <button
+                                  className="project-sheet__row-action project-sheet__row-action--danger"
+                                  type="button"
+                                  aria-label={isZh ? "删除子行" : "Delete subline"}
+                                  title={isZh ? "删除子行" : "Delete subline"}
+                                  onClick={() => removeSubLine(record.id, subLine.id)}
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              ) : null}
                             </div>
                           </td>
                         </tr>
@@ -699,162 +1004,6 @@ export function ProjectSheetPage() {
         ) : null}
       </div>
 
-      {detailState ? (
-        <div className="project-detail-overlay" role="presentation">
-          <section
-            className="project-detail-panel"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="project-detail-title"
-          >
-            <header className="project-detail-panel__header">
-              <h2 id="project-detail-title">{detailTitle}</h2>
-              <button
-                className="project-detail-panel__icon-button"
-                type="button"
-                aria-label={isZh ? "关闭项目详情" : "Close project details"}
-                title={isZh ? "关闭项目详情" : "Close project details"}
-                onClick={closeDetail}
-              >
-                <X size={18} />
-              </button>
-            </header>
-            <form
-              className="project-detail-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                saveDetailRecord();
-              }}
-            >
-              {detailState.lineType === "project" ? (
-                <div className="project-detail-form__grid">
-                  <label className="project-detail-form__field">
-                    <span>{isZh ? "编号" : "No."}</span>
-                    <input
-                      value={detailState.record.lineNo}
-                      onChange={(event) => updateDetailRecord("lineNo", event.target.value)}
-                    />
-                  </label>
-                  {PROJECT_COLUMNS.map((column) => {
-                    const label = isZh ? column.labelZh : column.labelEn;
-                    const value = getFieldValue(detailState.record, column.field);
-
-                    return (
-                      <label key={column.field} className="project-detail-form__field">
-                        <span>
-                          {label}
-                          {column.field === "projectName" ? <strong aria-hidden="true">*</strong> : null}
-                        </span>
-                        {column.field === "projectLevel" ? (
-                          <select
-                            value={value}
-                            onChange={(event) => updateDetailRecord(column.field, event.target.value)}
-                          >
-                            <option value="">{isZh ? "未定" : "Unset"}</option>
-                            {PROJECT_LEVEL_OPTIONS.map((option) => (
-                              <option key={option} value={option}>
-                                {option}
-                              </option>
-                            ))}
-                          </select>
-                        ) : column.field === "progress" ? (
-                          <div className="project-detail-form__progress-control">
-                            <input
-                              inputMode="numeric"
-                              min={0}
-                              max={100}
-                              step={1}
-                              type="number"
-                              value={value}
-                              onChange={(event) => updateDetailRecord(column.field, event.target.value)}
-                            />
-                            <span aria-hidden="true">%</span>
-                          </div>
-                        ) : (
-                          <input
-                            inputMode={column.inputMode ?? "text"}
-                            value={value}
-                            onChange={(event) => updateDetailRecord(column.field, event.target.value)}
-                          />
-                        )}
-                      </label>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="project-detail-form__grid project-detail-form__grid--subline">
-                  <label className="project-detail-form__field">
-                    <span>{isZh ? "编号" : "No."}</span>
-                    <input
-                      value={detailState.record.lineNo}
-                      onChange={(event) => updateSubLineDetailRecord("lineNo", event.target.value)}
-                    />
-                  </label>
-                  <label className="project-detail-form__field">
-                    <span>
-                      {isZh ? "任务名称" : "Task name"}
-                      <strong aria-hidden="true">*</strong>
-                    </span>
-                    <input
-                      value={detailState.record.taskName}
-                      onChange={(event) => updateSubLineDetailRecord("taskName", event.target.value)}
-                    />
-                  </label>
-                  <label className="project-detail-form__field">
-                    <span>{isZh ? "进度占比" : "Progress share"}</span>
-                    <div className="project-detail-form__progress-control">
-                      <input
-                        inputMode="numeric"
-                        min={0}
-                        max={100}
-                        step={1}
-                        type="number"
-                        value={detailState.record.progressRatio}
-                        onChange={(event) => updateSubLineDetailRecord("progressRatio", event.target.value)}
-                      />
-                      <span aria-hidden="true">%</span>
-                    </div>
-                  </label>
-                  <label className="project-detail-form__field">
-                    <span>{isZh ? "状态" : "Status"}</span>
-                    <select
-                      value={detailState.record.status}
-                      onChange={(event) => updateSubLineDetailRecord("status", event.target.value)}
-                    >
-                      {PROJECT_SUB_LINE_STATUS_OPTIONS.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="project-detail-form__field">
-                    <span>{isZh ? "细化设计" : "Detail Design"}</span>
-                    <input
-                      value={detailState.record.detailDesign}
-                      onChange={(event) => updateSubLineDetailRecord("detailDesign", event.target.value)}
-                    />
-                  </label>
-                </div>
-              )}
-              {detailState.error ? (
-                <div className="project-detail-form__error" role="alert">
-                  {detailState.error}
-                </div>
-              ) : null}
-              <footer className="project-detail-form__actions">
-                <button className="project-detail-form__secondary-button" type="button" onClick={closeDetail}>
-                  {isZh ? "取消" : "Cancel"}
-                </button>
-                <button className="project-detail-form__primary-button" type="submit">
-                  <Save size={16} />
-                  <span>{isZh ? "保存" : "Save"}</span>
-                </button>
-              </footer>
-            </form>
-          </section>
-        </div>
-      ) : null}
     </section>
   );
 }

@@ -151,6 +151,11 @@
   border-right: 0;
 }
 
+.project-sheet td:has(.project-sheet__custom-select),
+.project-sheet th:has(.project-sheet__custom-select) {
+  overflow: visible;
+}
+
 .project-sheet thead th {
   position: sticky;
   top: 0;
@@ -159,6 +164,7 @@
   color: var(--color-heading);
   font-size: 12px;
   font-weight: 800;
+  text-align: center;
 }
 
 .project-sheet tbody th {
@@ -316,7 +322,7 @@
   position: absolute;
   top: 50%;
   left: 22px;
-  width: 4px;
+  width: 3px;
   height: 14px;
   border-radius: 999px;
   background: var(--project-subline-marker);
@@ -345,6 +351,15 @@
   text-overflow: ellipsis;
 }
 
+.project-sheet .project-sheet__subline-status-cell {
+  text-align: center;
+}
+
+.project-sheet .project-sheet__subline-status-cell .project-sheet__custom-select {
+  width: min(124px, 100%);
+  margin: 0 auto;
+}
+
 .project-subline__status {
   display: inline-flex;
   min-height: 18px;
@@ -364,28 +379,28 @@
   height: 24px;
 }
 
-.project-subline__status--designing {
-  border-color: var(--color-border-active);
-  background: var(--color-primary-bg);
-  color: var(--color-primary);
+.project-subline__status--unprocessed {
+  border-color: color-mix(in srgb, var(--color-card-teal) 34%, var(--color-border) 66%);
+  background: color-mix(in srgb, var(--color-card-teal) 10%, var(--color-surface) 90%);
+  color: color-mix(in srgb, var(--color-card-teal) 78%, var(--color-heading) 22%);
 }
 
-.project-subline__status--review {
-  border-color: color-mix(in srgb, var(--color-primary) 36%, var(--color-border) 64%);
-  background: color-mix(in srgb, var(--color-primary-bg) 68%, var(--color-surface) 32%);
-  color: var(--color-primary);
+.project-subline__status--todo {
+  border-color: color-mix(in srgb, var(--color-card-rose) 34%, var(--color-border) 66%);
+  background: color-mix(in srgb, var(--color-card-rose) 10%, var(--color-surface) 90%);
+  color: color-mix(in srgb, var(--color-card-rose) 78%, var(--color-heading) 22%);
 }
 
-.project-subline__status--provided {
-  border-color: color-mix(in srgb, var(--color-success) 30%, var(--color-border) 70%);
-  background: color-mix(in srgb, var(--color-success) 8%, var(--color-surface) 92%);
-  color: var(--color-success);
+.project-subline__status--waiting {
+  border-color: color-mix(in srgb, var(--color-card-amber) 42%, var(--color-border) 58%);
+  background: color-mix(in srgb, var(--color-card-amber) 12%, var(--color-surface) 88%);
+  color: color-mix(in srgb, var(--color-card-amber) 70%, var(--color-heading) 30%);
 }
 
-.project-subline__status--ordered {
-  border-color: color-mix(in srgb, var(--color-success) 42%, var(--color-border) 58%);
-  background: color-mix(in srgb, var(--color-success) 12%, var(--color-surface) 88%);
-  color: var(--color-success);
+.project-subline__status--done {
+  border-color: color-mix(in srgb, var(--color-card-green) 36%, var(--color-border) 64%);
+  background: color-mix(in srgb, var(--color-card-green) 10%, var(--color-surface) 90%);
+  color: color-mix(in srgb, var(--color-card-green) 78%, var(--color-heading) 22%);
 }
 
 .project-progress {
@@ -419,9 +434,7 @@
 .project-sheet__row-action,
 .project-file-action-button,
 .project-sheet-page__add-button,
-.project-detail-panel__icon-button,
-.project-detail-form__primary-button,
-.project-detail-form__secondary-button {
+.project-mode-toggle__button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -446,13 +459,45 @@
   font-weight: 800;
 }
 
+.project-mode-toggle {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-control-bg);
+}
+
+.project-mode-toggle__button {
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-muted-strong);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.project-mode-toggle__button + .project-mode-toggle__button {
+  border-left: 1px solid var(--color-border);
+}
+
+.project-mode-toggle__button.is-active {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+}
+
 .project-sheet__row-action:hover,
 .project-file-action-button:hover,
 .project-sheet-page__add-button:hover,
-.project-detail-panel__icon-button:hover,
-.project-detail-form__secondary-button:hover {
+.project-mode-toggle__button:hover {
   border-color: var(--color-border-strong);
   background: var(--color-surface-raised);
+}
+
+.project-mode-toggle__button.is-active:hover {
+  background: var(--color-primary-hover);
 }
 
 .project-sheet__row-action--danger:hover {
@@ -469,6 +514,245 @@
   font-weight: 700;
 }
 
+.project-sheet-page__add-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.project-sheet__tree-cell--edit {
+  height: 100%;
+  padding: 0 10px;
+}
+
+.project-sheet__inline-input {
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--color-control-bg) 64%, transparent);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 22px;
+  padding: 0 8px;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.project-sheet__inline-input:hover {
+  border-color: color-mix(in srgb, var(--color-border-strong) 72%, transparent);
+  background: var(--color-control-bg);
+}
+
+.project-sheet__inline-input[type="number"] {
+  appearance: textfield;
+}
+
+.project-sheet__inline-input[type="number"]::-webkit-inner-spin-button,
+.project-sheet__inline-input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.project-sheet__custom-select {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.project-sheet__custom-select-button {
+  display: flex;
+  width: 100%;
+  height: 24px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 64%, transparent);
+  border-radius: 6px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-control-bg) 92%, var(--color-surface) 8%),
+      color-mix(in srgb, var(--color-control-bg) 72%, var(--color-surface-muted) 28%)
+    );
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 22px;
+  padding: 0 6px 0 9px;
+  text-align: left;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-surface) 82%, transparent);
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.project-sheet__custom-select-button:hover,
+.project-sheet__custom-select.is-open .project-sheet__custom-select-button {
+  border-color: color-mix(in srgb, var(--color-border-strong) 82%, transparent);
+  background: var(--color-control-bg);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-surface) 82%, transparent),
+    0 1px 5px color-mix(in srgb, var(--color-heading) 8%, transparent);
+}
+
+.project-sheet__custom-select-button:focus-visible {
+  border-color: var(--color-focus);
+  outline: 0;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-focus) 22%, transparent);
+}
+
+.project-sheet__custom-select-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-sheet__custom-select-button svg {
+  flex: 0 0 auto;
+  color: var(--color-muted-strong);
+  transition: transform 140ms ease;
+}
+
+.project-sheet__custom-select.is-open .project-sheet__custom-select-button svg {
+  transform: rotate(180deg);
+}
+
+.project-sheet__custom-select-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  display: grid;
+  width: max-content;
+  min-width: 100%;
+  max-height: 180px;
+  overflow: auto;
+  gap: 2px;
+  padding: 5px;
+  border: 1px solid color-mix(in srgb, var(--color-border-strong) 68%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-surface) 96%, var(--color-control-bg) 4%);
+  box-shadow:
+    0 14px 34px color-mix(in srgb, var(--color-heading) 18%, transparent),
+    0 2px 8px color-mix(in srgb, var(--color-heading) 8%, transparent);
+}
+
+.project-sheet__custom-select-option {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) 14px;
+  align-items: center;
+  gap: 8px;
+  min-width: 74px;
+  height: 25px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 8px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.project-sheet__custom-select-option svg {
+  color: var(--project-select-tone, var(--color-primary));
+}
+
+.project-sheet__custom-select-option:hover {
+  background: color-mix(in srgb, var(--color-surface-raised) 82%, var(--color-primary-bg) 18%);
+}
+
+.project-sheet__custom-select-option.is-selected {
+  background: var(--color-primary-bg);
+  color: var(--color-heading);
+}
+
+.project-sheet__custom-select--status .project-sheet__custom-select-button {
+  border-color: color-mix(in srgb, var(--project-select-tone, var(--color-border)) 28%, var(--color-border) 72%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--project-select-tone, var(--color-control-bg)) 12%, var(--color-control-bg) 88%),
+      color-mix(in srgb, var(--project-select-tone, var(--color-control-bg)) 8%, var(--color-surface-muted) 92%)
+    );
+  color: var(--color-heading);
+}
+
+.project-sheet__custom-select--status .project-sheet__custom-select-option {
+  min-width: 118px;
+  border: 1px solid color-mix(in srgb, var(--project-select-tone, var(--color-border)) 30%, transparent);
+  background: color-mix(in srgb, var(--project-select-tone, var(--color-surface)) 13%, var(--color-surface) 87%);
+  color: color-mix(in srgb, var(--project-select-tone, var(--color-heading)) 76%, var(--color-heading) 24%);
+  box-shadow: inset 3px 0 0 var(--project-select-tone, var(--color-border));
+}
+
+.project-sheet__custom-select--status .project-sheet__custom-select-option:hover,
+.project-sheet__custom-select--status .project-sheet__custom-select-option.is-selected {
+  background: color-mix(in srgb, var(--project-select-tone, var(--color-surface)) 20%, var(--color-surface) 80%);
+}
+
+.project-sheet__custom-select-indicator {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--project-select-tone, var(--color-muted));
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.project-sheet__custom-select-tone--unprocessed {
+  --project-select-tone: var(--color-card-teal);
+  color: var(--project-select-tone);
+}
+
+.project-sheet__custom-select-tone--todo {
+  --project-select-tone: var(--color-card-rose);
+  color: var(--project-select-tone);
+}
+
+.project-sheet__custom-select-tone--waiting {
+  --project-select-tone: var(--color-card-amber);
+  color: var(--project-select-tone);
+}
+
+.project-sheet__custom-select-tone--done {
+  --project-select-tone: var(--color-card-green);
+  color: var(--project-select-tone);
+}
+
+.project-sheet__inline-progress-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 4px;
+}
+
+.project-sheet__inline-progress-control span {
+  color: var(--color-muted-strong);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.project-sheet__inline-input:focus {
+  border-color: var(--color-focus);
+  background: var(--color-control-bg);
+  outline: 0;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-focus) 22%, transparent);
+}
+
 .project-sheet__empty {
   display: grid;
   min-height: 160px;
@@ -476,154 +760,6 @@
   color: var(--color-muted);
   font-size: 13px;
   font-weight: 700;
-}
-
-.project-detail-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-modal);
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: rgba(9, 16, 24, 0.32);
-}
-
-.project-detail-panel {
-  display: grid;
-  width: min(760px, 100%);
-  max-height: min(720px, calc(100vh - 48px));
-  grid-template-rows: auto minmax(0, 1fr);
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface);
-  box-shadow: var(--shadow-panel);
-}
-
-.project-detail-panel__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface-muted);
-}
-
-.project-detail-panel__header h2 {
-  margin: 0;
-  color: var(--color-heading);
-  font-size: 16px;
-  line-height: 1.3;
-}
-
-.project-detail-panel__icon-button {
-  width: 34px;
-  height: 34px;
-}
-
-.project-detail-form {
-  display: grid;
-  gap: 14px;
-  min-height: 0;
-  overflow: auto;
-  padding: 18px;
-}
-
-.project-detail-form__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.project-detail-form__grid--subline {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.project-detail-form__field {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-}
-
-.project-detail-form__field span {
-  color: var(--color-muted);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.project-detail-form__field strong {
-  margin-left: 3px;
-  color: var(--color-error);
-}
-
-.project-detail-form__field input,
-.project-detail-form__field select {
-  width: 100%;
-  min-height: 38px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-control-bg);
-  color: var(--color-text);
-  font: inherit;
-  padding: 0 10px;
-}
-
-.project-detail-form__progress-control {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 30px;
-  align-items: center;
-  gap: 8px;
-}
-
-.project-detail-form__progress-control span {
-  color: var(--color-muted-strong);
-  font-size: 13px;
-  font-weight: 800;
-  text-align: center;
-}
-
-.project-detail-form__field input:focus,
-.project-detail-form__field select:focus {
-  border-color: var(--color-focus);
-  outline: 0;
-  box-shadow: var(--shadow-focus);
-}
-
-.project-detail-form__error {
-  padding: 10px 12px;
-  border: 1px solid var(--color-error-border);
-  border-radius: 8px;
-  background: var(--color-error-bg);
-  color: var(--color-error);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.project-detail-form__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  padding-top: 4px;
-}
-
-.project-detail-form__primary-button,
-.project-detail-form__secondary-button {
-  gap: 7px;
-  min-height: 36px;
-  padding: 0 14px;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.project-detail-form__primary-button {
-  border-color: var(--color-border-active);
-  background: var(--color-primary);
-  color: var(--color-primary-text);
-}
-
-.project-detail-form__primary-button:hover {
-  background: var(--color-primary-hover);
 }
 
 @media (max-width: 860px) {
@@ -639,10 +775,6 @@
   .project-sheet-page__header-actions {
     width: 100%;
     justify-content: flex-start;
-  }
-
-  .project-detail-form__grid {
-    grid-template-columns: minmax(0, 1fr);
   }
 
 }

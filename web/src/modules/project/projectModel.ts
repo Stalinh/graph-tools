@@ -4,11 +4,17 @@ import type { ProjectLine, ProjectRecord, ProjectSubLine, ProjectSubLineStatus }
 const DEFAULT_PROJECT_SUB_LINE_STATUS: ProjectSubLineStatus = "未处理";
 const PROJECT_SUB_LINE_STATUSES: ProjectSubLineStatus[] = [
   "未处理",
-  "设计中",
-  "待评审",
-  "已提资",
-  "已下单",
+  "待处理",
+  "等待中",
+  "已提资/已完成",
 ];
+const LEGACY_PROJECT_SUB_LINE_STATUS_MAP: Record<string, ProjectSubLineStatus> = {
+  设计中: "待处理",
+  待评审: "等待中",
+  已处理: "已提资/已完成",
+  已提资: "已提资/已完成",
+  已下单: "已提资/已完成",
+};
 const OPTIONAL_PROJECT_LINE_FIELDS = new Set(["detailDesign", "lineNo", "progress"]);
 
 export interface ProjectRecordsSanitizeReport {
@@ -61,7 +67,6 @@ export function createProjectSubLine(values: Partial<Omit<ProjectSubLine, "id">>
     id: createProjectId(),
     lineNo: values.lineNo ?? "",
     taskName: values.taskName ?? "",
-    progressRatio: normalizeProjectProgress(values.progressRatio ?? "0"),
     status: normalizeProjectSubLineStatus(values.status),
     detailDesign: values.detailDesign ?? "",
   };
@@ -135,9 +140,15 @@ export function normalizeProjectSubLineTaskName(taskName: unknown) {
 }
 
 export function normalizeProjectSubLineStatus(status: unknown): ProjectSubLineStatus {
-  return PROJECT_SUB_LINE_STATUSES.includes(status as ProjectSubLineStatus)
-    ? (status as ProjectSubLineStatus)
-    : DEFAULT_PROJECT_SUB_LINE_STATUS;
+  if (PROJECT_SUB_LINE_STATUSES.includes(status as ProjectSubLineStatus)) {
+    return status as ProjectSubLineStatus;
+  }
+
+  if (typeof status === "string" && status in LEGACY_PROJECT_SUB_LINE_STATUS_MAP) {
+    return LEGACY_PROJECT_SUB_LINE_STATUS_MAP[status];
+  }
+
+  return DEFAULT_PROJECT_SUB_LINE_STATUS;
 }
 
 export function sanitizeProjectLine(record: unknown): ProjectLine | null {
@@ -206,7 +217,6 @@ export function sanitizeProjectSubLine(value: unknown): ProjectSubLine | null {
     id: record.id,
     lineNo: normalizeProjectLineNo(record.lineNo),
     taskName: taskName || "未命名任务",
-    progressRatio: normalizeProjectProgress(record.progressRatio ?? record.progress),
     status: normalizeProjectSubLineStatus(record.status),
     detailDesign: getStringProperty(value, "detailDesign"),
   };
