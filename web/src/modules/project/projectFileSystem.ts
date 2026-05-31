@@ -71,16 +71,12 @@ export class ProjectFileManager {
       return false;
     }
 
-    try {
-      if (!isProjectFileName(this.currentFileHandle.name)) {
-        return false;
-      }
-
-      await this.writeProject(this.currentFileHandle, records);
-      return true;
-    } catch {
-      return false;
+    if (!isProjectFileName(this.currentFileHandle.name)) {
+      throw new Error("Unsupported project file type.");
     }
+
+    await this.writeProject(this.currentFileHandle, records);
+    return true;
   }
 
   async saveProjectFileAs(records: ProjectRecord[]): Promise<string | null> {

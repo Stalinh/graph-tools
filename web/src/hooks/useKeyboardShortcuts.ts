@@ -17,13 +17,13 @@ export function useKeyboardShortcuts({
 }: UseKeyboardShortcutsOptions): void {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      const activeElement = document.activeElement as HTMLElement | null;
+      const activeElement = document.activeElement;
       const isTypingTarget =
-        activeElement !== null &&
+        activeElement instanceof HTMLElement &&
         (activeElement.tagName === "INPUT" ||
           activeElement.tagName === "TEXTAREA" ||
           activeElement.tagName === "SELECT" ||
-          activeElement.getAttribute("contenteditable") === "true");
+          activeElement.isContentEditable);
 
       const hasDialog = document.querySelector('[role="dialog"]') !== null;
 

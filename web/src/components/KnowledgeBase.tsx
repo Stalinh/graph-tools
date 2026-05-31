@@ -258,10 +258,8 @@ export function KnowledgeBase() {
     const handlePaste = (event: ClipboardEvent) => {
       const active = document.activeElement;
       if (
-        active &&
-        (active.tagName === "INPUT" ||
-          active.tagName === "TEXTAREA" ||
-          active.getAttribute("contenteditable") === "true")
+        active instanceof HTMLElement &&
+        (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)
       ) {
         return;
       }

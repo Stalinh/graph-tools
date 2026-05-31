@@ -5,6 +5,13 @@ const DEFAULT_PROJECT_SUB_LINE_STATUS: ProjectSubLineStatus = "未处理";
 const PROJECT_SUB_LINE_STATUSES: ProjectSubLineStatus[] = ["未处理", "设计中", "待评审", "已下单"];
 const OPTIONAL_PROJECT_LINE_FIELDS = new Set(["detailDesign", "lineNo", "progress"]);
 
+export interface ProjectRecordsSanitizeReport {
+  records: ProjectRecord[];
+  invalidRecordCount: number;
+  invalidSubLineCount: number;
+  duplicateProjectNameCount: number;
+}
+
 function createProjectId() {
   return (
     typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -53,6 +60,15 @@ export function createInitialProjectRecords() {
   return [];
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function getStringProperty(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  return typeof value === "string" ? value : "";
+}
+
 export function isProjectLine(value: unknown): value is ProjectLine {
   if (!value || typeof value !== "object") {
     return false;
@@ -78,16 +94,19 @@ export function isProjectRecord(value: unknown): value is ProjectRecord {
   return record.subLines === undefined || Array.isArray(record.subLines);
 }
 
-export function normalizeProjectName(projectName: string) {
-  return projectName.trim();
+export function normalizeProjectName(projectName: unknown) {
+  return typeof projectName === "string" ? projectName.trim() : "";
 }
 
 export function normalizeProjectLineNo(lineNo: unknown) {
   return typeof lineNo === "string" ? lineNo.trim() : "";
 }
 
-export function normalizeProjectProgress(progress: string | undefined) {
-  const numericProgress = Number.parseFloat(progress ?? "");
+export function normalizeProjectProgress(progress: unknown) {
+  const numericProgress =
+    typeof progress === "string" || typeof progress === "number"
+      ? Number.parseFloat(String(progress))
+      : Number.NaN;
   if (!Number.isFinite(numericProgress)) {
     return "0";
   }
@@ -106,40 +125,54 @@ export function normalizeProjectSubLineStatus(status: unknown): ProjectSubLineSt
     : DEFAULT_PROJECT_SUB_LINE_STATUS;
 }
 
-export function sanitizeProjectLine(record: ProjectLine): ProjectLine | null {
+export function sanitizeProjectLine(record: unknown): ProjectLine | null {
+  if (!isObject(record) || typeof record.id !== "string") {
+    return null;
+  }
+
   const projectName = normalizeProjectName(record.projectName);
   if (!projectName) {
     return null;
   }
 
   return {
-    ...record,
+    id: record.id,
     lineNo: normalizeProjectLineNo(record.lineNo),
-    detailDesign: record.detailDesign ?? "",
+    contractNo: getStringProperty(record, "contractNo"),
+    detailDesign: getStringProperty(record, "detailDesign"),
+    projectNo: getStringProperty(record, "projectNo"),
     projectName,
+    contractAmount: getStringProperty(record, "contractAmount"),
+    projectLevel: getStringProperty(record, "projectLevel"),
     progress: normalizeProjectProgress(record.progress),
+    schemeDesign: getStringProperty(record, "schemeDesign"),
+    projectManager: getStringProperty(record, "projectManager"),
   };
 }
 
-export function sanitizeProjectRecord(record: ProjectRecord): ProjectRecord | null {
+export function sanitizeProjectRecord(record: unknown): ProjectRecord | null {
+  if (!isObject(record)) {
+    return null;
+  }
+
   const sanitizedRecord = sanitizeProjectLine(record);
   if (!sanitizedRecord) {
     return null;
   }
 
+  const subLines = Array.isArray(record.subLines) ? record.subLines : [];
+
   return {
     ...sanitizedRecord,
-    subLines: Array.isArray(record.subLines)
-      ? record.subLines.flatMap((subLine) => {
-          const sanitizedSubLine = sanitizeProjectSubLine(subLine);
-          return sanitizedSubLine ? [sanitizedSubLine] : [];
-        })
-      : [],
+    subLines: subLines.flatMap((subLine) => {
+      const sanitizedSubLine = sanitizeProjectSubLine(subLine);
+      return sanitizedSubLine ? [sanitizedSubLine] : [];
+    }),
   };
 }
 
 export function sanitizeProjectSubLine(value: unknown): ProjectSubLine | null {
-  if (!value || typeof value !== "object") {
+  if (!isObject(value)) {
     return null;
   }
 
@@ -160,22 +193,40 @@ export function sanitizeProjectSubLine(value: unknown): ProjectSubLine | null {
     taskName: taskName || "未命名任务",
     progressRatio: normalizeProjectProgress(record.progressRatio ?? record.progress),
     status: normalizeProjectSubLineStatus(record.status),
-    detailDesign: record.detailDesign ?? "",
+    detailDesign: getStringProperty(value, "detailDesign"),
   };
 }
 
-export function sanitizeProjectRecords(records: ProjectRecord[]) {
+function getInvalidSubLineCount(record: unknown, sanitizedRecord: ProjectRecord) {
+  if (!isObject(record) || !("subLines" in record)) {
+    return 0;
+  }
+
+  if (!Array.isArray(record.subLines)) {
+    return 1;
+  }
+
+  return Math.max(0, record.subLines.length - sanitizedRecord.subLines.length);
+}
+
+export function sanitizeProjectRecordsWithReport(records: readonly unknown[]): ProjectRecordsSanitizeReport {
   const knownProjectNames = new Set<string>();
   const sanitizedRecords: ProjectRecord[] = [];
+  let invalidRecordCount = 0;
+  let invalidSubLineCount = 0;
+  let duplicateProjectNameCount = 0;
 
   for (const record of records) {
     const sanitizedRecord = sanitizeProjectRecord(record);
     if (!sanitizedRecord) {
+      invalidRecordCount += 1;
       continue;
     }
+    invalidSubLineCount += getInvalidSubLineCount(record, sanitizedRecord);
 
     const projectName = normalizeProjectName(sanitizedRecord.projectName);
     if (knownProjectNames.has(projectName)) {
+      duplicateProjectNameCount += 1;
       continue;
     }
 
@@ -185,5 +236,14 @@ export function sanitizeProjectRecords(records: ProjectRecord[]) {
     });
   }
 
-  return sanitizedRecords;
+  return {
+    records: sanitizedRecords,
+    invalidRecordCount,
+    invalidSubLineCount,
+    duplicateProjectNameCount,
+  };
+}
+
+export function sanitizeProjectRecords(records: readonly unknown[]) {
+  return sanitizeProjectRecordsWithReport(records).records;
 }

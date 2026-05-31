@@ -7,6 +7,14 @@ function makeEdgeId(sourceId: string, targetId: string) {
   return `edge-${sourceId}-${targetId}`;
 }
 
+export function hasCitationBetweenNodes(edges: GraphEdge[], sourceId: string, targetId: string) {
+  return edges.some(
+    (edge) =>
+      (edge.sourceId === sourceId && edge.targetId === targetId) ||
+      (edge.sourceId === targetId && edge.targetId === sourceId)
+  );
+}
+
 export function addNode(graph: GraphData, node: GraphNode): GraphData {
   return {
     ...graph,
@@ -104,10 +112,7 @@ export function addCitation(
     return graph;
   }
 
-  const citationExists = graph.edges.some(
-    (edge) => edge.sourceId === sourceId && edge.targetId === targetId
-  );
-  if (citationExists) {
+  if (hasCitationBetweenNodes(graph.edges, sourceId, targetId)) {
     return graph;
   }
 

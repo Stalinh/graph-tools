@@ -10,7 +10,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../../i18n";
 import "./ProjectSheetPage.css";
 import { PROJECT_COLUMNS, PROJECT_LEVEL_OPTIONS, PROJECT_SUB_LINE_STATUS_OPTIONS } from "./projectConfig";
@@ -25,7 +25,11 @@ import {
   normalizeProjectSubLineStatus,
   sanitizeProjectRecords,
 } from "./projectModel";
-import { loadProjectDraftRecords, saveProjectDraftRecords } from "./projectStorage";
+import {
+  clearProjectDraftRecords,
+  loadProjectDraftState,
+  saveProjectDraftRecords,
+} from "./projectStorage";
 import type {
   ProjectLine,
   ProjectRecord,
@@ -126,14 +130,26 @@ function getSubLineStatusClassName(status: ProjectSubLineStatus) {
 
 export function ProjectSheetPage() {
   const { isZh } = useI18n();
-  const [records, setRecords] = useState<ProjectRecord[]>(loadProjectDraftRecords);
+  const [initialDraftState] = useState(loadProjectDraftState);
+  const skipInitialDraftSaveRef = useRef(initialDraftState.hasInvalidDraftData);
+  const [records, setRecords] = useState<ProjectRecord[]>(initialDraftState.records);
   const [detailState, setDetailState] = useState<ProjectDetailState | null>(null);
   const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(() => new Set());
   const [currentFileName, setCurrentFileName] = useState<string | null>(
     projectFileManager.getCurrentFileName()
   );
-  const [fileStatus, setFileStatus] = useState<string | null>(null);
-  const [dirty, setDirty] = useState(false);
+  const [fileStatus, setFileStatus] = useState<string | null>(() => {
+    if (initialDraftState.hasInvalidDraftData) {
+      return isZh
+        ? "本地草稿包含无法恢复的数据，已保留可恢复部分。"
+        : "The local draft contains data that could not be restored. Recoverable records were kept.";
+    }
+    if (initialDraftState.restoredDraft) {
+      return isZh ? "已恢复本地草稿。" : "Local draft restored.";
+    }
+    return null;
+  });
+  const [dirty, setDirty] = useState(initialDraftState.restoredDraft);
   const recordCount = records.length;
   const subLineCount = useMemo(
     () => records.reduce((total, record) => total + record.subLines.length, 0),
@@ -146,8 +162,15 @@ export function ProjectSheetPage() {
   );
 
   useEffect(() => {
-    saveProjectDraftRecords(records);
-  }, [records]);
+    if (skipInitialDraftSaveRef.current) {
+      skipInitialDraftSaveRef.current = false;
+      return;
+    }
+
+    if (dirty) {
+      saveProjectDraftRecords(records);
+    }
+  }, [dirty, records]);
 
   const getOpenErrorMessage = (error: unknown) => {
     const message = error instanceof Error ? error.message : "";
@@ -193,6 +216,7 @@ export function ProjectSheetPage() {
     setDetailState(null);
     setExpandedProjectIds(new Set());
     replaceRecords([], false);
+    clearProjectDraftRecords();
   };
 
   const handleOpenProjectFile = async () => {
@@ -212,6 +236,7 @@ export function ProjectSheetPage() {
       setExpandedProjectIds(new Set());
       replaceRecords(openedRecords, false);
       setCurrentFileName(projectFileManager.getCurrentFileName());
+      clearProjectDraftRecords();
       setFileStatus(isZh ? "项目文件已打开。" : "Project file opened.");
     } catch (error) {
       setFileStatus(getOpenErrorMessage(error));
@@ -229,6 +254,7 @@ export function ProjectSheetPage() {
 
       setCurrentFileName(fileName);
       setDirty(false);
+      clearProjectDraftRecords();
       setFileStatus(isZh ? "项目文件已保存。" : "Project file saved.");
       return true;
     } catch {
@@ -250,6 +276,7 @@ export function ProjectSheetPage() {
       }
 
       setDirty(false);
+      clearProjectDraftRecords();
       setFileStatus(isZh ? "项目文件已保存。" : "Project file saved.");
       return true;
     } catch {

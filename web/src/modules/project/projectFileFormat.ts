@@ -1,4 +1,4 @@
-import { isProjectRecord, sanitizeProjectRecords } from "./projectModel";
+import { sanitizeProjectRecords, sanitizeProjectRecordsWithReport } from "./projectModel";
 import type { ProjectRecord } from "./projectTypes";
 
 export const PROJECT_FILE_EXTENSION = ".project";
@@ -46,7 +46,16 @@ export function parseProjectFileJson(json: string) {
     throw new Error("Invalid .project file: missing or invalid project data.");
   }
 
-  return sanitizeProjectRecords(parsedValue.projects.filter(isProjectRecord));
+  const sanitizedProjects = sanitizeProjectRecordsWithReport(parsedValue.projects);
+  if (
+    sanitizedProjects.invalidRecordCount > 0 ||
+    sanitizedProjects.invalidSubLineCount > 0 ||
+    sanitizedProjects.duplicateProjectNameCount > 0
+  ) {
+    throw new Error("Invalid .project file: invalid project records.");
+  }
+
+  return sanitizedProjects.records;
 }
 
 export function serializeProjectFile(records: ProjectRecord[]) {

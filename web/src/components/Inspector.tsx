@@ -165,62 +165,64 @@ export function Inspector({
           ) : null}
         </div>
       </div>
-      <div className="inspector__content" aria-hidden={isCollapsed}>
-        {selectedNodes.length > 1 ? (
-          <MultiSelectInspector
-            nodes={selectedNodes}
-            onBatchColorChange={onBatchColorChange}
-            onBatchDelete={onBatchDelete}
-            onBatchLockChange={onBatchLockChange}
-          />
-        ) : edge ? (
-          <div className="inspector__body">
-            <EdgeEditor
-              edge={edge}
-              sourceNode={sourceNode ?? undefined}
-              targetNode={targetNode ?? undefined}
-              onDelete={onDeleteEdge}
-              onColorChange={onEdgeColorChange ?? (() => {})}
-              onDirectionChange={onEdgeDirectionChange ?? (() => {})}
-              onStyleChange={onEdgeStyleChange ?? (() => {})}
+      {isCollapsed ? null : (
+        <div className="inspector__content">
+          {edge ? (
+            <div className="inspector__body">
+              <EdgeEditor
+                edge={edge}
+                sourceNode={sourceNode ?? undefined}
+                targetNode={targetNode ?? undefined}
+                onDelete={onDeleteEdge}
+                onColorChange={onEdgeColorChange ?? (() => {})}
+                onDirectionChange={onEdgeDirectionChange ?? (() => {})}
+                onStyleChange={onEdgeStyleChange ?? (() => {})}
+              />
+            </div>
+          ) : selectedNodes.length > 1 ? (
+            <MultiSelectInspector
+              nodes={selectedNodes}
+              onBatchColorChange={onBatchColorChange}
+              onBatchDelete={onBatchDelete}
+              onBatchLockChange={onBatchLockChange}
             />
-          </div>
-        ) : node === null ? (
-          <GraphLegend isZh={isZh} />
-        ) : node.type === "image" ? (
-          <div className="inspector__body">
-            <ImageEditor
-              allNodes={allNodes}
-              backlinks={backlinks}
-              node={node}
-              onColorChange={memoizedCallbacks.onColorChange}
-              onCreateCitation={memoizedCallbacks.onCreateCitation}
-              onDeleteCitation={memoizedCallbacks.onDeleteCitation}
-              onReferenceSelect={onSelectNode}
-              onReorderReferences={memoizedCallbacks.onReorderReferences}
-              onTitleCommit={memoizedCallbacks.onTitleCommit}
-            />
-          </div>
-        ) : (
-          <div className="inspector__body">
-            <CardEditor
-              allNodes={allNodes}
-              autoFocusContent={autoFocusContent}
-              backlinks={backlinks}
-              node={node}
-              onAutoFocusContentHandled={onAutoFocusContentHandled}
-              onContentCommit={memoizedCallbacks.onContentCommit}
-              onTitleCommit={memoizedCallbacks.onTitleCommit}
-              onTagsChange={memoizedCallbacks.onTagsChange}
-              onColorChange={memoizedCallbacks.onColorChange}
-              onCreateCitation={memoizedCallbacks.onCreateCitation}
-              onDeleteCitation={memoizedCallbacks.onDeleteCitation}
-              onReferenceSelect={onSelectNode}
-              onReorderReferences={memoizedCallbacks.onReorderReferences}
-            />
-          </div>
-        )}
-      </div>
+          ) : node === null ? (
+            <GraphLegend isZh={isZh} />
+          ) : node.type === "image" ? (
+            <div className="inspector__body">
+              <ImageEditor
+                allNodes={allNodes}
+                backlinks={backlinks}
+                node={node}
+                onColorChange={memoizedCallbacks.onColorChange}
+                onCreateCitation={memoizedCallbacks.onCreateCitation}
+                onDeleteCitation={memoizedCallbacks.onDeleteCitation}
+                onReferenceSelect={onSelectNode}
+                onReorderReferences={memoizedCallbacks.onReorderReferences}
+                onTitleCommit={memoizedCallbacks.onTitleCommit}
+              />
+            </div>
+          ) : (
+            <div className="inspector__body">
+              <CardEditor
+                allNodes={allNodes}
+                autoFocusContent={autoFocusContent}
+                backlinks={backlinks}
+                node={node}
+                onAutoFocusContentHandled={onAutoFocusContentHandled}
+                onContentCommit={memoizedCallbacks.onContentCommit}
+                onTitleCommit={memoizedCallbacks.onTitleCommit}
+                onTagsChange={memoizedCallbacks.onTagsChange}
+                onColorChange={memoizedCallbacks.onColorChange}
+                onCreateCitation={memoizedCallbacks.onCreateCitation}
+                onDeleteCitation={memoizedCallbacks.onDeleteCitation}
+                onReferenceSelect={onSelectNode}
+                onReorderReferences={memoizedCallbacks.onReorderReferences}
+              />
+            </div>
+          )}
+        </div>
+      )}
     </aside>
   );
 }

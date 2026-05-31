@@ -26,6 +26,7 @@ import {
 } from "react";
 import { useI18n } from "../i18n";
 import { isReferenceableNode } from "../lib/graphConstraints";
+import { hasCitationBetweenNodes } from "../lib/graphMutator";
 import type {
   CanvasPosition,
   CanvasViewport,
@@ -765,10 +766,7 @@ export function GraphCanvas({
           return;
         }
 
-        const citationExists = graph.edges.some(
-          (edge) => edge.sourceId === pendingCitation.sourceId && edge.targetId === node.id
-        );
-        if (citationExists) {
+        if (hasCitationBetweenNodes(graph.edges, pendingCitation.sourceId, node.id)) {
           setPendingCitation({
             ...pendingCitation,
             message: isZh
@@ -829,9 +827,10 @@ export function GraphCanvas({
   const handleEdgeClick = useCallback<EdgeMouseHandler>(
     (_, edge) => {
       onCloseContextMenu();
+      onSelectNodeIds([]);
       onEdgeSelect(edge.id);
     },
-    [onCloseContextMenu, onEdgeSelect]
+    [onCloseContextMenu, onEdgeSelect, onSelectNodeIds]
   );
 
   const handleNodesChange = useCallback((changes: NodeChange[]) => {
@@ -1046,14 +1045,8 @@ export function GraphCanvas({
       if (!instance || !container) return;
 
       const bounds = container.getBoundingClientRect();
-      const clientX =
-        Number.isFinite(event.clientX) && event.clientX !== 0
-          ? event.clientX
-          : bounds.left + bounds.width / 2;
-      const clientY =
-        Number.isFinite(event.clientY) && event.clientY !== 0
-          ? event.clientY
-          : bounds.top + bounds.height / 2;
+      const clientX = Number.isFinite(event.clientX) ? event.clientX : bounds.left + bounds.width / 2;
+      const clientY = Number.isFinite(event.clientY) ? event.clientY : bounds.top + bounds.height / 2;
 
       const position = instance.screenToFlowPosition({
         x: clientX,

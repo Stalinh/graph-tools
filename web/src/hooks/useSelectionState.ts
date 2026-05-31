@@ -18,10 +18,11 @@ export function useSelectionState() {
       setSelectedNodeIdsState((previousIds) => {
         const previousId = previousIds[0] ?? null;
         const nextId = typeof value === "function" ? value(previousId) : value;
-        if (previousId === nextId) {
+        const nextIds = nextId ? [nextId] : [];
+        if (areStringArraysEqual(previousIds, nextIds)) {
           return previousIds;
         }
-        return nextId ? [nextId] : [];
+        return nextIds;
       });
     },
     []
