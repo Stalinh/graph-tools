@@ -1,6 +1,8 @@
 export interface ProjectLine {
   id: string;
+  lineNo: string;
   contractNo: string;
+  detailDesign: string;
   projectNo: string;
   projectName: string;
   contractAmount: string;
@@ -14,8 +16,11 @@ export type ProjectSubLineStatus = "未处理" | "设计中" | "待评审" | "�
 
 export interface ProjectSubLine {
   id: string;
+  lineNo: string;
+  taskName: string;
   progressRatio: string;
   status: ProjectSubLineStatus;
+  detailDesign: string;
 }
 
 export interface ProjectRecord extends ProjectLine {

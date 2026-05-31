@@ -38,8 +38,22 @@ export function ImageGraphNode({ data }: NodeProps<Node<ImageFlowNodeData>>) {
 
   return (
     <>
-      <Handle className="graph-node__handle" position={Position.Left} type="target" />
-      <Handle className="graph-node__handle" position={Position.Right} type="source" />
+      <Handle
+        id="citation-target"
+        className="graph-node__handle graph-node__handle--target nodrag nopan"
+        position={Position.Left}
+        type="target"
+        isConnectableStart={false}
+        title={isZh ? "拖拽引用连接到这里" : "Drop a citation link here"}
+      />
+      <Handle
+        id="citation-source"
+        className="graph-node__handle graph-node__handle--source nodrag nopan"
+        position={Position.Right}
+        type="source"
+        isConnectableEnd={false}
+        title={isZh ? "拖拽创建引用" : "Drag to create a citation link"}
+      />
       <div
         className="graph-node__label graph-node__label--image"
         data-card-color={node.color || undefined}

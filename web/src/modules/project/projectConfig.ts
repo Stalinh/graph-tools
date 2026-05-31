@@ -9,10 +9,11 @@ export const PROJECT_COLUMNS: ProjectColumn[] = [
     width: "150px",
     inputMode: "decimal",
   },
+  { field: "progress", labelZh: "进度", labelEn: "Progress", width: "170px", inputMode: "decimal" },
   { field: "contractNo", labelZh: "合同号", labelEn: "Contract No.", width: "150px" },
+  { field: "detailDesign", labelZh: "细化设计", labelEn: "Detail Design", width: "160px" },
   { field: "projectNo", labelZh: "项目号", labelEn: "Project No.", width: "140px" },
   { field: "projectLevel", labelZh: "项目等级", labelEn: "Project Level", width: "130px" },
-  { field: "progress", labelZh: "进度", labelEn: "Progress", width: "170px", inputMode: "decimal" },
   { field: "schemeDesign", labelZh: "方案设计", labelEn: "Scheme Design", width: "160px" },
   { field: "projectManager", labelZh: "项目经理", labelEn: "Project Manager", width: "140px" },
 ];

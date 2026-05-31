@@ -5,12 +5,6 @@ import { KnowledgeBase } from "./components/KnowledgeBase";
 import { getStoredLocale, I18nProvider, type Locale } from "./i18n";
 import { PROJECT_NAV_ITEM, PROJECT_PAGE_ID } from "./modules/project/projectModule";
 
-interface AppShellThemeProps {
-  theme: "light" | "dark";
-  themeToggleLabel: string;
-  onToggleTheme: () => void;
-}
-
 const ProjectSheetPage = lazy(async () => {
   const { ProjectSheetPage } = await import("./modules/project");
   return { default: ProjectSheetPage };
@@ -30,7 +24,7 @@ const APP_NAV_ITEMS = [
 
 type Page = (typeof APP_NAV_ITEMS)[number]["page"];
 
-interface PageContentProps extends AppShellThemeProps {
+interface PageContentProps {
   page: Page;
 }
 
@@ -38,22 +32,13 @@ interface AppLoadingFallbackProps {
   locale: Locale;
 }
 
-function PageContent({
-  page,
-  theme,
-  themeToggleLabel,
-  onToggleTheme,
-}: PageContentProps) {
+function PageContent({ page }: PageContentProps) {
   switch (page) {
     case PROJECT_PAGE_ID:
       return <ProjectSheetPage />;
     default:
       return (
-        <KnowledgeBase
-          theme={theme}
-          themeToggleLabel={themeToggleLabel}
-          onToggleTheme={onToggleTheme}
-        />
+        <KnowledgeBase />
       );
   }
 }
@@ -73,16 +58,9 @@ export function App() {
   return (
     <I18nProvider locale={locale} setLocale={setLocale}>
       <AppShell currentPage={page} navItems={APP_NAV_ITEMS} onNavigate={setPage}>
-        {({ theme, themeToggleLabel, onToggleTheme }: AppShellThemeProps) => (
-          <Suspense fallback={<AppLoadingFallback locale={locale} />}>
-            <PageContent
-              page={page}
-              theme={theme}
-              themeToggleLabel={themeToggleLabel}
-              onToggleTheme={onToggleTheme}
-            />
-          </Suspense>
-        )}
+        <Suspense fallback={<AppLoadingFallback locale={locale} />}>
+          <PageContent page={page} />
+        </Suspense>
       </AppShell>
     </I18nProvider>
   );

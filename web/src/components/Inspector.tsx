@@ -1,5 +1,5 @@
 import { useMemo, useRef } from "react";
-import { Moon, PanelRightClose, PanelRightOpen, Sun } from "lucide-react";
+import { PanelRightClose, PanelRightOpen } from "lucide-react";
 import { useI18n } from "../i18n";
 import type { BacklinkItem, EdgeDirection, EdgeStyle, GraphEdge, GraphNode } from "../types";
 import { CardEditor } from "./CardEditor";
@@ -12,15 +12,12 @@ interface InspectorProps {
   selectedNodes?: GraphNode[];
   autoFocusContent?: boolean;
   isCollapsed?: boolean;
-  theme?: "light" | "dark";
-  themeToggleLabel?: string;
   edge?: GraphEdge | null;
   sourceNode?: GraphNode | null;
   targetNode?: GraphNode | null;
   backlinks?: BacklinkItem[];
   allEdges?: GraphEdge[];
   allNodes?: GraphNode[];
-  onToggleTheme?: () => void;
   onCollapseToggle?: () => void;
   onAutoFocusContentHandled?: () => void;
   onSelectNode?: (nodeId: string) => void;
@@ -43,15 +40,12 @@ export function Inspector({
   selectedNodes = [],
   autoFocusContent = false,
   isCollapsed = false,
-  theme = "light",
-  themeToggleLabel,
   edge,
   sourceNode,
   targetNode,
   backlinks: backlinksProp,
   allEdges = [],
   allNodes = [],
-  onToggleTheme,
   onCollapseToggle,
   onAutoFocusContentHandled,
   onSelectNode,
@@ -69,7 +63,6 @@ export function Inspector({
   onBatchLockChange,
 }: InspectorProps) {
   const { isZh } = useI18n();
-  const nextTheme = theme === "dark" ? "light" : "dark";
   const collapseLabel = isZh ? "收起检查器" : "Collapse inspector";
   const expandLabel = isZh ? "展开检查器" : "Expand inspector";
 
@@ -159,17 +152,6 @@ export function Inspector({
       <div className="inspector__header">
         <span className="inspector__title">{isZh ? "检查器" : "Inspector"}</span>
         <div className="inspector__actions">
-          {themeToggleLabel && onToggleTheme ? (
-            <button
-              className="icon-button"
-              type="button"
-              aria-label={themeToggleLabel}
-              title={themeToggleLabel}
-              onClick={onToggleTheme}
-            >
-              {nextTheme === "dark" ? <Moon size={18} /> : <Sun size={18} />}
-            </button>
-          ) : null}
           {onCollapseToggle ? (
             <button
               className="icon-button"

@@ -3,9 +3,11 @@ import {
   ReactFlow,
   SelectionMode,
   applyNodeChanges,
+  type Connection,
   type Edge,
   type EdgeTypes,
   type EdgeMouseHandler,
+  type FinalConnectionState,
   type Node,
   type NodeChange,
   type NodeMouseHandler,
@@ -101,6 +103,12 @@ const EDGE_STYLE: Record<string, Edge["style"]> = {
 
 const EDGE_TYPES: EdgeTypes = {
   citation: CitationEdge as EdgeTypes[string],
+};
+
+const CITATION_CONNECTION_LINE_STYLE = {
+  stroke: "var(--color-primary)",
+  strokeWidth: 2.2,
+  strokeDasharray: "8 6",
 };
 
 const EMPTY_NODE_SIZES: Record<string, NodeSize> = {};

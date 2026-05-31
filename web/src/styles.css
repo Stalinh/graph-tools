@@ -314,6 +314,16 @@ button {
   grid-template-columns: 1fr;
 }
 
+.is-nav-collapsed .theme-switch {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding: 0;
+}
+
+.is-nav-collapsed .theme-switch__text {
+  display: none;
+}
+
 .sidebar__nav {
   display: grid;
   gap: 6px;
@@ -392,6 +402,12 @@ button {
   min-width: 0;
 }
 
+.sidebar__theme {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
 .sidebar__footer-label {
   color: var(--color-heading);
   font-size: 12px;
@@ -402,6 +418,39 @@ button {
   color: var(--color-muted);
   font-size: 11px;
   line-height: 1.35;
+}
+
+.theme-switch {
+  display: grid;
+  min-height: 36px;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 86%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-inset-bg) 88%, transparent);
+  color: var(--color-muted-strong);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.theme-switch:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-raised);
+  color: var(--color-heading);
+}
+
+.theme-switch svg {
+  justify-self: center;
+}
+
+.theme-switch__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .locale-switch {

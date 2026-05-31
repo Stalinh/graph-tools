@@ -18,8 +18,10 @@ import { projectFileManager } from "./projectFileSystem";
 import {
   createProjectRecord,
   createProjectSubLine,
+  normalizeProjectLineNo,
   normalizeProjectName,
   normalizeProjectProgress,
+  normalizeProjectSubLineTaskName,
   normalizeProjectSubLineStatus,
   sanitizeProjectRecords,
 } from "./projectModel";
@@ -49,6 +51,8 @@ interface ProjectDetailSubLineState extends ProjectDetailBaseState {
 }
 
 type ProjectDetailState = ProjectDetailProjectState | ProjectDetailSubLineState;
+
+const PROJECT_SUB_LINE_TRAILING_COL_SPAN = PROJECT_COLUMNS.length - 5;
 
 function getFieldValue(record: ProjectLine, field: ProjectRecordField) {
   return record[field];
@@ -85,7 +89,9 @@ function getAllProjectNames(records: ProjectRecord[]) {
 function createSavedProjectLine(record: ProjectLine, projectName: string): ProjectLine {
   return {
     id: record.id,
+    lineNo: normalizeProjectLineNo(record.lineNo),
     contractNo: record.contractNo,
+    detailDesign: record.detailDesign,
     projectNo: record.projectNo,
     projectName,
     contractAmount: record.contractAmount,
@@ -99,8 +105,11 @@ function createSavedProjectLine(record: ProjectLine, projectName: string): Proje
 function createSavedProjectSubLine(record: ProjectSubLine): ProjectSubLine {
   return {
     id: record.id,
+    lineNo: normalizeProjectLineNo(record.lineNo),
+    taskName: normalizeProjectSubLineTaskName(record.taskName),
     progressRatio: normalizeProjectProgress(record.progressRatio),
     status: normalizeProjectSubLineStatus(record.status),
+    detailDesign: record.detailDesign,
   };
 }
 
@@ -341,6 +350,17 @@ export function ProjectSheetPage() {
 
     if (detailState.lineType === "subLine") {
       const savedSubLine = createSavedProjectSubLine(detailState.record);
+      if (!savedSubLine.taskName) {
+        setDetailState((currentState) =>
+          currentState
+            ? {
+                ...currentState,
+                error: isZh ? "任务名称不能为空。" : "Task name is required.",
+              }
+            : currentState
+        );
+        return;
+      }
 
       setRecords((currentRecords) =>
         sanitizeProjectRecords(
@@ -537,7 +557,7 @@ export function ProjectSheetPage() {
           </colgroup>
           <thead>
             <tr>
-              <th scope="col">#</th>
+              <th scope="col">{isZh ? "编号" : "No."}</th>
               {PROJECT_COLUMNS.map((column) => (
                 <th key={column.field} scope="col">
                   {isZh ? column.labelZh : column.labelEn}
@@ -547,7 +567,7 @@ export function ProjectSheetPage() {
             </tr>
           </thead>
           <tbody>
-            {records.map((record, rowIndex) => {
+            {records.map((record) => {
               const hasSubLines = record.subLines.length > 0;
               const isExpanded = expandedProjectIds.has(record.id);
 
@@ -586,7 +606,9 @@ export function ProjectSheetPage() {
                         ) : (
                           <span className="project-sheet__tree-spacer" aria-hidden="true" />
                         )}
-                        <span className="project-sheet__tree-index">{rowIndex + 1}</span>
+                        <span className="project-sheet__tree-index" title={record.lineNo}>
+                          {record.lineNo}
+                        </span>
                       </div>
                     </th>
                     {PROJECT_COLUMNS.map((column) => (
@@ -626,34 +648,52 @@ export function ProjectSheetPage() {
                   </tr>
                   {isExpanded
                     ? record.subLines.map((subLine, subLineIndex) => (
-                        <tr className="project-sheet__sub-row" key={subLine.id}>
+                        <tr
+                          className={`project-sheet__sub-row ${
+                            subLineIndex === record.subLines.length - 1 ? "project-sheet__sub-row--last" : ""
+                          }`}
+                          key={subLine.id}
+                        >
                           <th scope="row">
                             <div className="project-sheet__tree-cell project-sheet__tree-cell--sub">
                               <span className="project-sheet__tree-spacer" aria-hidden="true" />
-                              <span className="project-sheet__tree-index">
-                                {rowIndex + 1}.{subLineIndex + 1}
+                              <span className="project-sheet__tree-index" title={subLine.lineNo}>
+                                {subLine.lineNo}
                               </span>
                             </div>
                           </th>
-                          <td colSpan={PROJECT_COLUMNS.length}>
-                            <div className="project-subline">
-                              <span className="project-subline__label">
-                                {isZh ? "进度占比" : "Progress share"}
-                              </span>
-                              <div className="project-subline__progress">
-                                {renderProgressBar(
-                                  subLine.progressRatio,
-                                  isZh ? "子行进度占比" : "Subline progress share"
-                                )}
-                              </div>
-                              <span className="project-subline__label">
-                                {isZh ? "状态" : "Status"}
-                              </span>
-                              <span className={getSubLineStatusClassName(subLine.status)}>
-                                {subLine.status}
-                              </span>
+                          <td
+                            className="project-sheet__subline-empty-cell project-sheet__subline-branch-cell"
+                            aria-hidden="true"
+                          />
+                          <td className="project-sheet__subline-task-cell">
+                            <span className="project-subline__task" title={subLine.taskName}>
+                              {subLine.taskName}
+                            </span>
+                          </td>
+                          <td className="project-sheet__subline-progress-cell">
+                            <div className="project-subline__progress">
+                              {renderProgressBar(
+                                subLine.progressRatio,
+                                isZh ? "子行进度占比" : "Subline progress share"
+                              )}
                             </div>
                           </td>
+                          <td className="project-sheet__subline-status-cell">
+                            <span className={getSubLineStatusClassName(subLine.status)}>
+                              {subLine.status}
+                            </span>
+                          </td>
+                          <td className="project-sheet__subline-detail-design-cell">
+                            <span className="project-subline__detail-design" title={subLine.detailDesign}>
+                              {subLine.detailDesign}
+                            </span>
+                          </td>
+                          <td
+                            className="project-sheet__subline-empty-cell"
+                            colSpan={PROJECT_SUB_LINE_TRAILING_COL_SPAN}
+                            aria-hidden="true"
+                          />
                           <td>
                             <div className="project-sheet__row-actions">
                               <button
@@ -721,6 +761,13 @@ export function ProjectSheetPage() {
             >
               {detailState.lineType === "project" ? (
                 <div className="project-detail-form__grid">
+                  <label className="project-detail-form__field">
+                    <span>{isZh ? "编号" : "No."}</span>
+                    <input
+                      value={detailState.record.lineNo}
+                      onChange={(event) => updateDetailRecord("lineNo", event.target.value)}
+                    />
+                  </label>
                   {PROJECT_COLUMNS.map((column) => {
                     const label = isZh ? column.labelZh : column.labelEn;
                     const value = getFieldValue(detailState.record, column.field);
@@ -770,6 +817,23 @@ export function ProjectSheetPage() {
               ) : (
                 <div className="project-detail-form__grid project-detail-form__grid--subline">
                   <label className="project-detail-form__field">
+                    <span>{isZh ? "编号" : "No."}</span>
+                    <input
+                      value={detailState.record.lineNo}
+                      onChange={(event) => updateSubLineDetailRecord("lineNo", event.target.value)}
+                    />
+                  </label>
+                  <label className="project-detail-form__field">
+                    <span>
+                      {isZh ? "任务名称" : "Task name"}
+                      <strong aria-hidden="true">*</strong>
+                    </span>
+                    <input
+                      value={detailState.record.taskName}
+                      onChange={(event) => updateSubLineDetailRecord("taskName", event.target.value)}
+                    />
+                  </label>
+                  <label className="project-detail-form__field">
                     <span>{isZh ? "进度占比" : "Progress share"}</span>
                     <div className="project-detail-form__progress-control">
                       <input
@@ -796,6 +860,13 @@ export function ProjectSheetPage() {
                         </option>
                       ))}
                     </select>
+                  </label>
+                  <label className="project-detail-form__field">
+                    <span>{isZh ? "细化设计" : "Detail Design"}</span>
+                    <input
+                      value={detailState.record.detailDesign}
+                      onChange={(event) => updateSubLineDetailRecord("detailDesign", event.target.value)}
+                    />
                   </label>
                 </div>
               )}

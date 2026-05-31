@@ -21,13 +21,7 @@ const RichEditorModal = lazy(async () => {
 
 const DRAFT_SAVE_DEBOUNCE_MS = 500;
 
-interface KnowledgeBaseProps {
-  theme: "light" | "dark";
-  themeToggleLabel: string;
-  onToggleTheme: () => void;
-}
-
-export function KnowledgeBase({ theme, themeToggleLabel, onToggleTheme }: KnowledgeBaseProps) {
+export function KnowledgeBase() {
   const history = useCanvasHistory();
   const { isZh, locale } = useI18n();
   const graphState = useGraphState({ ...history, locale });
@@ -410,8 +404,6 @@ export function KnowledgeBase({ theme, themeToggleLabel, onToggleTheme }: Knowle
         isCollapsed={isInspectorCollapsed}
         node={selection.selectedNode}
         selectedNodes={selection.selectedNodes}
-        theme={theme}
-        themeToggleLabel={themeToggleLabel}
         onCollapseToggle={() => setIsInspectorCollapsed((current) => !current)}
         onBatchColorChange={(color) =>
           nodes.updateGraphNodesColor(selection.selectedNodeIds, color)
@@ -437,7 +429,6 @@ export function KnowledgeBase({ theme, themeToggleLabel, onToggleTheme }: Knowle
           selection.setSelectedEdgeId(null);
           setFocusNodeId(nodeId);
         }}
-        onToggleTheme={onToggleTheme}
         onCommitNode={nodes.commitGraphNode}
         sourceNode={selection.selectedEdgeSourceNode}
         targetNode={selection.selectedEdgeTargetNode}
