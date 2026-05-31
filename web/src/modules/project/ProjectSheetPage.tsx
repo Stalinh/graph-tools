@@ -1,6 +1,7 @@
 import {
   ChevronDown,
   ChevronRight,
+  Eye,
   FilePlus,
   FolderOpen,
   Pencil,
@@ -8,7 +9,6 @@ import {
   Save,
   SaveAll,
   Trash2,
-  X,
 } from "lucide-react";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../../i18n";
@@ -40,25 +40,8 @@ import type {
   ProjectSubLineStatus,
 } from "./projectTypes";
 
-interface ProjectDetailBaseState {
-  mode: "create" | "edit";
-  error: string;
-}
-
-interface ProjectDetailProjectState extends ProjectDetailBaseState {
-  lineType: "project";
-  record: ProjectLine;
-}
-
-interface ProjectDetailSubLineState extends ProjectDetailBaseState {
-  lineType: "subLine";
-  parentId: string;
-  record: ProjectSubLine;
-}
-
-type ProjectDetailState = ProjectDetailProjectState | ProjectDetailSubLineState;
-
 const PROJECT_SUB_LINE_TRAILING_COL_SPAN = PROJECT_COLUMNS.length - 4;
+type ProjectSubLineField = keyof Omit<ProjectSubLine, "id">;
 
 function getFieldValue(record: ProjectLine, field: ProjectRecordField) {
   return record[field];
@@ -136,7 +119,7 @@ export function ProjectSheetPage() {
   const [initialDraftState] = useState(loadProjectDraftState);
   const skipInitialDraftSaveRef = useRef(initialDraftState.hasInvalidDraftData);
   const [records, setRecords] = useState<ProjectRecord[]>(initialDraftState.records);
-  const [detailState, setDetailState] = useState<ProjectDetailState | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(() => new Set());
   const [currentFileName, setCurrentFileName] = useState<string | null>(
     projectFileManager.getCurrentFileName()
@@ -159,10 +142,6 @@ export function ProjectSheetPage() {
     [records]
   );
   const projectNameEntries = useMemo(() => getAllProjectNames(records), [records]);
-  const projectNames = useMemo(
-    () => new Set(projectNameEntries.map(({ projectName }) => projectName)),
-    [projectNameEntries]
-  );
 
   useEffect(() => {
     if (skipInitialDraftSaveRef.current) {
@@ -216,7 +195,6 @@ export function ProjectSheetPage() {
     projectFileManager.reset();
     setCurrentFileName(null);
     setFileStatus(isZh ? "已新建项目文件。" : "New project file created.");
-    setDetailState(null);
     setExpandedProjectIds(new Set());
     replaceRecords([], false);
     clearProjectDraftRecords();
@@ -236,7 +214,6 @@ export function ProjectSheetPage() {
       }
 
       const openedRecordsWithDefaultSubLines = ensureProjectRecordsDefaultSubLines(openedRecords);
-      setDetailState(null);
       setExpandedProjectIds(new Set());
       replaceRecords(
         openedRecordsWithDefaultSubLines.records,
@@ -256,6 +233,57 @@ export function ProjectSheetPage() {
     } catch (error) {
       setFileStatus(getOpenErrorMessage(error));
     }
+  };
+
+  const getUniqueProjectName = (
+    projectName: string,
+    recordId: string,
+    sourceRecords: ProjectRecord[] = records
+  ) => {
+    const fallbackProjectName = isZh ? "未命名项目" : "Untitled Project";
+    const baseName = normalizeProjectName(projectName) || fallbackProjectName;
+    const knownProjectNames = new Set(
+      sourceRecords
+        .filter((record) => record.id !== recordId)
+        .map((record) => normalizeProjectName(record.projectName))
+        .filter(Boolean)
+    );
+    let candidate = baseName;
+    let suffix = 2;
+
+    while (knownProjectNames.has(candidate)) {
+      candidate = `${baseName} ${suffix}`;
+      suffix += 1;
+    }
+
+    return candidate;
+  };
+
+  const normalizeRecordsForPersistence = (sourceRecords: ProjectRecord[]) => {
+    const usedProjectNames = new Set<string>();
+    const fallbackProjectName = isZh ? "未命名项目" : "Untitled Project";
+
+    return sanitizeProjectRecords(
+      sourceRecords.map((record) => {
+        const baseName = normalizeProjectName(record.projectName) || fallbackProjectName;
+        let projectName = baseName;
+        let suffix = 2;
+
+        while (usedProjectNames.has(projectName)) {
+          projectName = `${baseName} ${suffix}`;
+          suffix += 1;
+        }
+
+        usedProjectNames.add(projectName);
+
+        return {
+          ...createSavedProjectLine(record, projectName),
+          subLines: record.subLines
+            .map(createSavedProjectSubLine)
+            .filter((subLine) => normalizeProjectSubLineTaskName(subLine.taskName)),
+        };
+      })
+    );
   };
 
   const handleSaveProjectFileAs = async () => {

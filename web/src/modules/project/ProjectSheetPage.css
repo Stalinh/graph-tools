@@ -3,9 +3,9 @@
 .project-sheet-page {
   --project-subline-bg: color-mix(in srgb, var(--color-surface) 86%, #a5adb5 14%);
   --project-subline-bg-hover: color-mix(in srgb, var(--project-subline-bg) 84%, var(--color-primary-bg) 16%);
-  --project-subline-branch-color: rgb(0 0 0 / 34%);
-  --project-subline-branch-offset: 75px;
-  --project-subline-branch-length: 50px;
+  --project-subline-group-border: color-mix(in srgb, var(--color-heading) 82%, transparent);
+  --project-subline-marker: var(--project-subline-group-border);
+  --project-subline-row-separator: color-mix(in srgb, var(--color-surface) 72%, var(--project-subline-bg) 28%);
 
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
@@ -278,43 +278,21 @@
 .project-sheet__sub-row td {
   height: 28px;
   background: var(--project-subline-bg);
+  border-bottom-color: var(--project-subline-row-separator);
 }
 
 .project-sheet__sub-row th {
-  position: relative;
   z-index: 1;
-  overflow: visible;
 }
 
-.project-sheet__sub-row th::before,
-.project-sheet__sub-row th::after {
-  position: absolute;
-  left: var(--project-subline-branch-offset);
-  content: "";
-  pointer-events: none;
+.project-sheet tbody tr:not(.project-sheet__sub-row) + tr.project-sheet__sub-row th,
+.project-sheet tbody tr:not(.project-sheet__sub-row) + tr.project-sheet__sub-row td {
+  border-top: 2px solid var(--project-subline-group-border);
 }
 
-.project-sheet__sub-row th::before {
-  top: -1px;
-  bottom: -1px;
-  width: 1px;
-  background: var(--project-subline-branch-color);
-}
-
-.project-sheet__sub-row th::after {
-  top: 50%;
-  width: var(--project-subline-branch-length);
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    var(--project-subline-branch-color) 0%,
-    color-mix(in srgb, var(--project-subline-branch-color) 60%, transparent) 62%,
-    transparent 100%
-  );
-}
-
-.project-sheet__sub-row--last th::before {
-  bottom: 50%;
+.project-sheet__sub-row--last th,
+.project-sheet__sub-row--last td {
+  border-bottom: 2px solid var(--project-subline-group-border);
 }
 
 .project-sheet tbody tr.project-sheet__sub-row:hover th,
@@ -331,7 +309,20 @@
 }
 
 .project-sheet .project-sheet__subline-task-cell {
-  padding-left: 28px;
+  padding-left: 40px;
+}
+
+.project-sheet__subline-task-cell::before {
+  position: absolute;
+  top: 50%;
+  left: 22px;
+  width: 4px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--project-subline-marker);
+  content: "";
+  pointer-events: none;
+  transform: translateY(-50%);
 }
 
 .project-subline__task {
