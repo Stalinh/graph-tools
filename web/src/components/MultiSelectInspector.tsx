@@ -1,7 +1,8 @@
-import { Lock, LockOpen, Trash2, Layers } from "lucide-react";
+import { Layers, Lock, LockOpen, Maximize2, Trash2 } from "lucide-react";
 import {
   getColorLabel,
   getDefaultCardTitle,
+  getDefaultGroupTitle,
   getDefaultImageTitle,
   getNodeTypeLabel,
   useI18n,
@@ -14,6 +15,7 @@ interface MultiSelectInspectorProps {
   onBatchDelete?: () => void;
   onBatchColorChange?: (color: string) => void;
   onBatchLockChange?: (locked: boolean) => void;
+  onMatchGroupSizes?: () => void;
 }
 
 export function MultiSelectInspector({
@@ -21,11 +23,30 @@ export function MultiSelectInspector({
   onBatchDelete,
   onBatchColorChange,
   onBatchLockChange,
+  onMatchGroupSizes,
 }: MultiSelectInspectorProps) {
   const { isZh, locale } = useI18n();
 
   const cardsCount = nodes.filter((n) => n.type === "card").length;
   const imagesCount = nodes.filter((n) => n.type === "image").length;
+  const groupsCount = nodes.filter((n) => n.type === "group").length;
+  const summaryParts = [
+    groupsCount > 0
+      ? isZh
+        ? `${groupsCount} 个分组`
+        : `${groupsCount} group${groupsCount > 1 ? "s" : ""}`
+      : "",
+    cardsCount > 0
+      ? isZh
+        ? `${cardsCount} 张卡片`
+        : `${cardsCount} card${cardsCount > 1 ? "s" : ""}`
+      : "",
+    imagesCount > 0
+      ? isZh
+        ? `${imagesCount} 张图片`
+        : `${imagesCount} image${imagesCount > 1 ? "s" : ""}`
+      : "",
+  ].filter(Boolean);
 
   const previewNodes = nodes.slice(0, 3);
   const remainingCount = nodes.length - 3;
@@ -55,15 +76,7 @@ export function MultiSelectInspector({
                   : `${nodes.length} selected node${nodes.length === 1 ? "" : "s"}`}
               </h2>
               <span className="selection-summary-card__subtitle">
-                {cardsCount > 0 &&
-                  (isZh
-                    ? `${cardsCount} 张卡片`
-                    : `${cardsCount} card${cardsCount > 1 ? "s" : ""}`)}
-                {cardsCount > 0 && imagesCount > 0 && " • "}
-                {imagesCount > 0 &&
-                  (isZh
-                    ? `${imagesCount} 张图片`
-                    : `${imagesCount} image${imagesCount > 1 ? "s" : ""}`)}
+                {summaryParts.join(" • ")}
               </span>
             </div>
           </div>
@@ -81,9 +94,11 @@ export function MultiSelectInspector({
                 />
                 <span className="selection-summary-card__item-title">
                   {n.title ||
-                    (n.type === "image"
-                      ? getDefaultImageTitle(locale)
-                      : getDefaultCardTitle(locale))}
+                    (n.type === "group"
+                      ? getDefaultGroupTitle(locale)
+                      : n.type === "image"
+                        ? getDefaultImageTitle(locale)
+                        : getDefaultCardTitle(locale))}
                 </span>
                 <span className="selection-summary-card__item-type">
                   {getNodeTypeLabel(n.type, locale)}
@@ -131,6 +146,23 @@ export function MultiSelectInspector({
             ))}
           </div>
         </section>
+
+        {groupsCount >= 2 ? (
+          <section className="field-section">
+            <h3 className="field-label">{isZh ? "分组尺寸" : "Group size"}</h3>
+            <div className="property-segmented-control property-segmented-control--single">
+              <button
+                type="button"
+                className="property-segmented-control__button"
+                onClick={onMatchGroupSizes}
+                disabled={!onMatchGroupSizes}
+              >
+                <Maximize2 aria-hidden="true" size={15} style={{ marginBottom: "2px" }} />
+                <span>{isZh ? "尺寸匹配" : "Match size"}</span>
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         {/* Lock status control section */}
         <section className="field-section">

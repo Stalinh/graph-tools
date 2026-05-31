@@ -2,6 +2,7 @@ import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { Lock, Plus } from "lucide-react";
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { getDefaultGroupTitle, useI18n } from "../../i18n";
+import { GRAPH_GRID_SIZE, constrainGroupNodeSize } from "../../lib/graphLayout";
 import type { GraphNode } from "../../types";
 
 interface GroupNodeData {
@@ -68,8 +69,13 @@ export function GroupNode({ data, selected }: NodeProps<Node<GroupNodeData>>) {
         <NodeResizer
           lineClassName="group-node__resize-line"
           handleClassName="group-node__resize-handle"
+          minWidth={GRAPH_GRID_SIZE}
+          minHeight={GRAPH_GRID_SIZE}
           onResizeEnd={(event, params) => {
-            onNodeResizeEnd?.(node.id, { width: params.width, height: params.height });
+            onNodeResizeEnd?.(
+              node.id,
+              constrainGroupNodeSize({ width: params.width, height: params.height })
+            );
           }}
         />
       )}

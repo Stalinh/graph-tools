@@ -207,6 +207,15 @@ export function useGraphPersistence({
         case "resize":
           setNodeSizes((prev) => ({ ...prev, [cmd.nodeId]: cmd.after }));
           break;
+        case "resize-many":
+          setNodeSizes((prev) => {
+            const next = { ...prev };
+            cmd.resizes.forEach((resize) => {
+              next[resize.nodeId] = resize.after;
+            });
+            return next;
+          });
+          break;
       }
     },
     [
@@ -333,6 +342,19 @@ export function useGraphPersistence({
             } else {
               delete next[cmd.nodeId];
             }
+            return next;
+          });
+          break;
+        case "resize-many":
+          setNodeSizes((prev) => {
+            const next = { ...prev };
+            cmd.resizes.forEach((resize) => {
+              if (resize.before) {
+                next[resize.nodeId] = resize.before;
+              } else {
+                delete next[resize.nodeId];
+              }
+            });
             return next;
           });
           break;

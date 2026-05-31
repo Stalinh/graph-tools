@@ -1,6 +1,7 @@
 import type { Node } from "@xyflow/react";
 import type { CSSProperties, MouseEvent } from "react";
 import { isReferenceableNode } from "../../lib/graphConstraints";
+import { DEFAULT_GROUP_SIZE, constrainGroupNodeSize } from "../../lib/graphLayout";
 import { nodeMatchesSearch } from "../../lib/searchUtils";
 import type { EntityType, GraphNode } from "../../types";
 
@@ -75,7 +76,10 @@ export function createGraphNodes(
       getNodePosition(index, sortedGraphNodes.length);
     const fallbackSize = SHOULD_USE_TEST_NODE_SIZE_FALLBACK ? estimateNodeSize(node) : null;
     const savedSize = savedNodeSizes[node.id];
-    const size = savedSize || fallbackSize;
+    const size =
+      node.type === "group" && savedSize
+        ? constrainGroupNodeSize(savedSize)
+        : savedSize || fallbackSize;
     const rfNodeType =
       node.type === "image" ? "imageNode" : node.type === "group" ? "groupNode" : "cardNode";
     const isVisibleByFilter =
@@ -231,7 +235,7 @@ export function getNodePositions(nodes: GraphFlowNode[]) {
 
 export function estimateNodeSize(node: GraphNode) {
   if (node.type === "group") {
-    return { width: 450, height: 350 };
+    return DEFAULT_GROUP_SIZE;
   }
   const title = node.title.trim();
   const content = getPlainTextContent(node.contentHtml);

@@ -3,7 +3,9 @@
 .project-sheet-page {
   --project-subline-bg: color-mix(in srgb, var(--color-surface) 86%, #a5adb5 14%);
   --project-subline-bg-hover: color-mix(in srgb, var(--project-subline-bg) 84%, var(--color-primary-bg) 16%);
-  --project-subline-branch-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border) 60%);
+  --project-subline-branch-color: rgb(0 0 0 / 34%);
+  --project-subline-branch-offset: 75px;
+  --project-subline-branch-length: 50px;
 
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
@@ -280,13 +282,14 @@
 
 .project-sheet__sub-row th {
   position: relative;
+  z-index: 1;
+  overflow: visible;
 }
 
 .project-sheet__sub-row th::before,
 .project-sheet__sub-row th::after {
   position: absolute;
-  left: 35px;
-  background: var(--project-subline-branch-color);
+  left: var(--project-subline-branch-offset);
   content: "";
   pointer-events: none;
 }
@@ -294,13 +297,20 @@
 .project-sheet__sub-row th::before {
   top: -1px;
   bottom: -1px;
-  width: 2px;
+  width: 1px;
+  background: var(--project-subline-branch-color);
 }
 
 .project-sheet__sub-row th::after {
   top: 50%;
-  width: calc(100% - 35px);
+  width: var(--project-subline-branch-length);
   height: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--project-subline-branch-color) 0%,
+    color-mix(in srgb, var(--project-subline-branch-color) 60%, transparent) 62%,
+    transparent 100%
+  );
 }
 
 .project-sheet__sub-row--last th::before {
@@ -316,29 +326,12 @@
   background: var(--project-subline-bg-hover);
 }
 
-.project-sheet__subline-branch-cell,
 .project-sheet__subline-task-cell {
   position: relative;
 }
 
-.project-sheet__subline-branch-cell::before,
-.project-sheet__subline-task-cell::before {
-  position: absolute;
-  top: 50%;
-  height: 1px;
-  background: var(--project-subline-branch-color);
-  content: "";
-  pointer-events: none;
-}
-
-.project-sheet__subline-branch-cell::before {
-  right: 0;
-  left: 0;
-}
-
-.project-sheet__subline-task-cell::before {
-  left: 0;
-  width: 10px;
+.project-sheet .project-sheet__subline-task-cell {
+  padding-left: 28px;
 }
 
 .project-subline__task {

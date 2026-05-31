@@ -33,6 +33,7 @@ interface InspectorProps {
   onBatchDelete?: () => void;
   onBatchColorChange?: (color: string) => void;
   onBatchLockChange?: (locked: boolean) => void;
+  onMatchGroupSizes?: () => void;
 }
 
 export function Inspector({
@@ -61,6 +62,7 @@ export function Inspector({
   onBatchDelete,
   onBatchColorChange,
   onBatchLockChange,
+  onMatchGroupSizes,
 }: InspectorProps) {
   const { isZh } = useI18n();
   const collapseLabel = isZh ? "收起检查器" : "Collapse inspector";
@@ -185,6 +187,7 @@ export function Inspector({
               onBatchColorChange={onBatchColorChange}
               onBatchDelete={onBatchDelete}
               onBatchLockChange={onBatchLockChange}
+              onMatchGroupSizes={onMatchGroupSizes}
             />
           ) : node === null ? (
             <GraphLegend isZh={isZh} />

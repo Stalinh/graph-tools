@@ -26,6 +26,12 @@ import {
 } from "react";
 import { useI18n } from "../i18n";
 import { isReferenceableNode } from "../lib/graphConstraints";
+import {
+  DEFAULT_GROUP_SIZE,
+  GRAPH_GRID_SIZE,
+  constrainGroupNodeSize,
+  snapPositionToGrid,
+} from "../lib/graphLayout";
 import { hasCitationBetweenNodes } from "../lib/graphMutator";
 import type {
   CanvasPosition,
@@ -118,6 +124,7 @@ const MIDDLE_DOUBLE_CLICK_DELAY = 400;
 const MIDDLE_DOUBLE_CLICK_DISTANCE = 8;
 const DRAG_AUTO_PAN_EDGE_THRESHOLD = 24;
 const DRAG_AUTO_PAN_STEP = 24;
+const ALIGNMENT_GUIDE_THRESHOLD = 5;
 type ContextMenuEvent = MouseEvent | ReactMouseEvent<Element>;
 interface ScreenPoint {
   x: number;
@@ -129,6 +136,14 @@ interface ScreenRect {
   left: number;
   right: number;
   top: number;
+}
+
+interface AlignmentGuide {
+  id: string;
+  orientation: "horizontal" | "vertical";
+  offset: number;
+  start: number;
+  end: number;
 }
 
 const NODE_TYPES: NodeTypes = {
@@ -167,6 +182,144 @@ function getAutoPanDelta(pointer: number, min: number, max: number, threshold: n
     return step;
   }
   return 0;
+}
+
+function getElementScreenRect(element: Element): ScreenRect {
+  const rect = element.getBoundingClientRect();
+  return {
+    bottom: rect.bottom,
+    left: rect.left,
+    right: rect.right,
+    top: rect.top,
+  };
+}
+
+function combineScreenRects(elements: HTMLElement[]): ScreenRect {
+  return elements.reduce<ScreenRect>(
+    (combined, element) => {
+      const rect = getElementScreenRect(element);
+      return {
+        top: Math.min(combined.top, rect.top),
+        right: Math.max(combined.right, rect.right),
+        bottom: Math.max(combined.bottom, rect.bottom),
+        left: Math.min(combined.left, rect.left),
+      };
+    },
+    {
+      top: Number.POSITIVE_INFINITY,
+      right: Number.NEGATIVE_INFINITY,
+      bottom: Number.NEGATIVE_INFINITY,
+      left: Number.POSITIVE_INFINITY,
+    }
+  );
+}
+
+function clampGuideCoordinate(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function createAlignmentGuides(container: HTMLDivElement, draggedNodeIds: string[]) {
+  const draggedIdSet = new Set(draggedNodeIds);
+  const draggedElements = draggedNodeIds
+    .map((nodeId) => container.querySelector<HTMLElement>(`.react-flow__node[data-id="${nodeId}"]`))
+    .filter((element): element is HTMLElement => element !== null);
+
+  if (draggedElements.length === 0) {
+    return [];
+  }
+
+  const bounds = container.getBoundingClientRect();
+  const draggedRect = combineScreenRects(draggedElements);
+  const draggedVerticalAnchors = [
+    draggedRect.left,
+    (draggedRect.left + draggedRect.right) / 2,
+    draggedRect.right,
+  ];
+  const draggedHorizontalAnchors = [
+    draggedRect.top,
+    (draggedRect.top + draggedRect.bottom) / 2,
+    draggedRect.bottom,
+  ];
+  let bestVertical:
+    | {
+        distance: number;
+        guide: AlignmentGuide;
+      }
+    | null = null;
+  let bestHorizontal:
+    | {
+        distance: number;
+        guide: AlignmentGuide;
+      }
+    | null = null;
+
+  container.querySelectorAll<HTMLElement>(".react-flow__node[data-id]").forEach((element) => {
+    const nodeId = element.getAttribute("data-id");
+    if (!nodeId || draggedIdSet.has(nodeId)) {
+      return;
+    }
+
+    const otherRect = getElementScreenRect(element);
+    if (otherRect.right <= otherRect.left || otherRect.bottom <= otherRect.top) {
+      return;
+    }
+
+    const otherVerticalAnchors = [
+      otherRect.left,
+      (otherRect.left + otherRect.right) / 2,
+      otherRect.right,
+    ];
+    const otherHorizontalAnchors = [
+      otherRect.top,
+      (otherRect.top + otherRect.bottom) / 2,
+      otherRect.bottom,
+    ];
+
+    draggedVerticalAnchors.forEach((draggedAnchor, index) => {
+      const otherAnchor = otherVerticalAnchors[index];
+      const distance = Math.abs(draggedAnchor - otherAnchor);
+      if (distance > ALIGNMENT_GUIDE_THRESHOLD || distance >= (bestVertical?.distance ?? Infinity)) {
+        return;
+      }
+
+      bestVertical = {
+        distance,
+        guide: {
+          id: `v-${nodeId}-${index}`,
+          orientation: "vertical",
+          offset: clampGuideCoordinate(otherAnchor - bounds.left, 0, bounds.width),
+          start: clampGuideCoordinate(Math.min(draggedRect.top, otherRect.top) - bounds.top, 0, bounds.height),
+          end: clampGuideCoordinate(Math.max(draggedRect.bottom, otherRect.bottom) - bounds.top, 0, bounds.height),
+        },
+      };
+    });
+
+    draggedHorizontalAnchors.forEach((draggedAnchor, index) => {
+      const otherAnchor = otherHorizontalAnchors[index];
+      const distance = Math.abs(draggedAnchor - otherAnchor);
+      if (
+        distance > ALIGNMENT_GUIDE_THRESHOLD ||
+        distance >= (bestHorizontal?.distance ?? Infinity)
+      ) {
+        return;
+      }
+
+      bestHorizontal = {
+        distance,
+        guide: {
+          id: `h-${nodeId}-${index}`,
+          orientation: "horizontal",
+          offset: clampGuideCoordinate(otherAnchor - bounds.top, 0, bounds.height),
+          start: clampGuideCoordinate(Math.min(draggedRect.left, otherRect.left) - bounds.left, 0, bounds.width),
+          end: clampGuideCoordinate(Math.max(draggedRect.right, otherRect.right) - bounds.left, 0, bounds.width),
+        },
+      };
+    });
+  });
+
+  return [bestVertical?.guide, bestHorizontal?.guide].filter(
+    (guide): guide is AlignmentGuide => Boolean(guide) && guide.end > guide.start
+  );
 }
 
 function getNodeRect(position: CanvasPosition, size: NodeSize) {
@@ -240,12 +393,16 @@ function resolveGroupDragPosition(
 
       const otherPosition = resolvedPositions.get(otherNode.id) ?? otherCanvasNode.position;
       const otherSize = nodeSizes[otherNode.id] ?? {
-        width: otherCanvasNode.measured?.width ?? otherCanvasNode.width ?? otherCanvasNode.initialWidth ?? 450,
+        width:
+          otherCanvasNode.measured?.width ??
+          otherCanvasNode.width ??
+          otherCanvasNode.initialWidth ??
+          DEFAULT_GROUP_SIZE.width,
         height:
           otherCanvasNode.measured?.height ??
           otherCanvasNode.height ??
           otherCanvasNode.initialHeight ??
-          350,
+          DEFAULT_GROUP_SIZE.height,
       };
       const otherRect = getNodeRect(otherPosition, otherSize);
 
@@ -291,12 +448,16 @@ function resolveGroupDragPosition(
 
       const otherPosition = resolvedPositions.get(otherNode.id) ?? otherCanvasNode.position;
       const otherSize = nodeSizes[otherNode.id] ?? {
-        width: otherCanvasNode.measured?.width ?? otherCanvasNode.width ?? otherCanvasNode.initialWidth ?? 450,
+        width:
+          otherCanvasNode.measured?.width ??
+          otherCanvasNode.width ??
+          otherCanvasNode.initialWidth ??
+          DEFAULT_GROUP_SIZE.width,
         height:
           otherCanvasNode.measured?.height ??
           otherCanvasNode.height ??
           otherCanvasNode.initialHeight ??
-          350,
+          DEFAULT_GROUP_SIZE.height,
       };
       const otherRect = getNodeRect(otherPosition, otherSize);
 
@@ -339,12 +500,16 @@ function resolveGroupDragPosition(
 
     const otherPosition = resolvedPositions.get(otherNode.id) ?? otherCanvasNode.position;
     const otherSize = nodeSizes[otherNode.id] ?? {
-      width: otherCanvasNode.measured?.width ?? otherCanvasNode.width ?? otherCanvasNode.initialWidth ?? 450,
+      width:
+        otherCanvasNode.measured?.width ??
+        otherCanvasNode.width ??
+        otherCanvasNode.initialWidth ??
+        DEFAULT_GROUP_SIZE.width,
       height:
         otherCanvasNode.measured?.height ??
         otherCanvasNode.height ??
         otherCanvasNode.initialHeight ??
-        350,
+        DEFAULT_GROUP_SIZE.height,
     };
 
     return doRectsOverlap(resolvedRect, getNodeRect(otherPosition, otherSize));
@@ -376,6 +541,13 @@ function normalizeGroupCollisionChanges(
   const resolvedPositions = new Map<string, CanvasPosition>();
 
   return changes.map((change) => {
+    if (change.type === "dimensions" && graphNodeMap.get(change.id)?.type === "group") {
+      return {
+        ...change,
+        dimensions: change.dimensions ? constrainGroupNodeSize(change.dimensions) : change.dimensions,
+      };
+    }
+
     if (change.type !== "position" || !change.position) {
       return change;
     }
@@ -390,15 +562,23 @@ function normalizeGroupCollisionChanges(
     }
 
     const currentPosition = currentCanvasNode.position;
+    const candidatePosition = snapPositionToGrid(change.position);
     const candidateSize = nodeSizes[change.id] ?? {
-      width: currentCanvasNode.measured?.width ?? currentCanvasNode.width ?? currentCanvasNode.initialWidth ?? 450,
+      width:
+        currentCanvasNode.measured?.width ??
+        currentCanvasNode.width ??
+        currentCanvasNode.initialWidth ??
+        DEFAULT_GROUP_SIZE.width,
       height:
-        currentCanvasNode.measured?.height ?? currentCanvasNode.height ?? currentCanvasNode.initialHeight ?? 350,
+        currentCanvasNode.measured?.height ??
+        currentCanvasNode.height ??
+        currentCanvasNode.initialHeight ??
+        DEFAULT_GROUP_SIZE.height,
     };
     const resolvedPosition = resolveGroupDragPosition(
       change.id,
       currentPosition,
-      change.position,
+      candidatePosition,
       candidateSize,
       graphNodes,
       currentCanvasNodes,
@@ -1307,7 +1487,7 @@ export function GraphCanvas({
         proOptions={{ hideAttribution: true }}
         zoomOnDoubleClick={false}
       >
-        <Background color="var(--color-graph-grid)" gap={20} size={2} />
+        <Background color="var(--color-graph-grid)" gap={GRAPH_GRID_SIZE} size={2} />
         <GraphScaleIndicator
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}

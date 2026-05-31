@@ -2040,6 +2040,10 @@ button {
   gap: 6px;
 }
 
+.property-segmented-control--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .property-segmented-control__button {
   display: grid;
   justify-items: center;
@@ -2061,6 +2065,15 @@ button {
 
 .property-segmented-control__button:hover {
   border-color: var(--color-accent);
+}
+
+.property-segmented-control__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.property-segmented-control__button:disabled:hover {
+  border-color: var(--color-border);
 }
 
 .property-segmented-control__button.is-active {

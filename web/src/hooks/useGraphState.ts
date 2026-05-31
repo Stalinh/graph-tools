@@ -127,6 +127,7 @@ export function useGraphState(history: UseGraphStateOptions): GraphState {
       handleNodeDragEnd: nodes.handleNodeDragEnd,
       handleNodesDragEnd: nodes.handleNodesDragEnd,
       handleNodeResizeEnd: nodes.handleNodeResizeEnd,
+      matchGroupNodeSizes: nodes.matchGroupNodeSizes,
       handleViewportChange: nodes.handleViewportChange,
     },
     edges: {

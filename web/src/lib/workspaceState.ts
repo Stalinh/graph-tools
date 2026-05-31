@@ -1,6 +1,7 @@
 import type { EdgeDirection, GraphData, GraphEdge, GraphNode, WorkspaceState } from "../types";
 
 import { sanitizeReferenceGraph, sanitizeReferences } from "./graphConstraints";
+import { constrainGroupNodeSize, snapPositionToGrid } from "./graphLayout";
 import { normalizeEdgeColor, normalizeNodeColor } from "./nodeColors";
 
 export type RemoveMeta = {
@@ -67,6 +68,14 @@ export type CanvasCommand =
       nodeId: string;
       before: { width: number; height: number } | undefined;
       after: { width: number; height: number };
+    }
+  | {
+      type: "resize-many";
+      resizes: {
+        nodeId: string;
+        before: { width: number; height: number } | undefined;
+        after: { width: number; height: number };
+      }[];
     };
 
 export const EMPTY_GRAPH: GraphData = { nodes: [], edges: [] };
@@ -97,7 +106,7 @@ export function normalizeWorkspaceState(workspace: WorkspaceState): WorkspaceSta
   const nodePositions: Record<string, { x: number; y: number }> = {};
   for (const [id, pos] of Object.entries(workspace.nodePositions)) {
     if (nodeIds.has(id)) {
-      nodePositions[id] = pos;
+      nodePositions[id] = groupIds.has(id) ? snapPositionToGrid(pos) : pos;
     }
   }
 
@@ -106,7 +115,7 @@ export function normalizeWorkspaceState(workspace: WorkspaceState): WorkspaceSta
     nodeSizes = {};
     for (const [id, size] of Object.entries(workspace.nodeSizes)) {
       if (nodeIds.has(id)) {
-        nodeSizes[id] = size;
+        nodeSizes[id] = groupIds.has(id) ? constrainGroupNodeSize(size) : size;
       }
     }
   }

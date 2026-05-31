@@ -58,7 +58,7 @@ interface ProjectDetailSubLineState extends ProjectDetailBaseState {
 
 type ProjectDetailState = ProjectDetailProjectState | ProjectDetailSubLineState;
 
-const PROJECT_SUB_LINE_TRAILING_COL_SPAN = PROJECT_COLUMNS.length - 5;
+const PROJECT_SUB_LINE_TRAILING_COL_SPAN = PROJECT_COLUMNS.length - 4;
 
 function getFieldValue(record: ProjectLine, field: ProjectRecordField) {
   return record[field];
@@ -717,10 +717,6 @@ export function ProjectSheetPage() {
                               </span>
                             </div>
                           </th>
-                          <td
-                            className="project-sheet__subline-empty-cell project-sheet__subline-branch-cell"
-                            aria-hidden="true"
-                          />
                           <td className="project-sheet__subline-task-cell">
                             <span className="project-subline__task" title={subLine.taskName}>
                               {subLine.taskName}

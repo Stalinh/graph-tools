@@ -10,6 +10,12 @@ import {
   updateNodeLocked,
   updateNodeOpacity,
 } from "../lib/graphMutator";
+import {
+  DEFAULT_GROUP_SIZE,
+  GRAPH_GRID_SIZE,
+  constrainGroupNodeSize,
+  snapPositionToGrid,
+} from "../lib/graphLayout";
 import { EMPTY_GRAPH, generateNextId } from "../lib/workspaceState";
 import type { CanvasViewport, GraphData, GraphNode } from "../types";
 import type { CanvasCommand, RemoveManyMeta, RemoveMeta } from "./useCanvasHistory";
@@ -38,8 +44,6 @@ interface NodeSize {
   width: number;
   height: number;
 }
-
-const DEFAULT_GROUP_SIZE: NodeSize = { width: 450, height: 350 };
 
 export function useGraphNodes({
   locale = "zh-CN",
@@ -108,7 +112,7 @@ export function useGraphNodes({
         for (const otherNode of graphRef.current.nodes) {
           if (otherNode.type === "group") {
             const gPos = nodePositionsRef.current[otherNode.id] ?? { x: 0, y: 0 };
-            const gSize = nodeSizesRef.current[otherNode.id] ?? { width: 450, height: 350 };
+            const gSize = nodeSizesRef.current[otherNode.id] ?? DEFAULT_GROUP_SIZE;
             if (
               position.x >= gPos.x &&
               position.x <= gPos.x + gSize.width &&
@@ -123,6 +127,7 @@ export function useGraphNodes({
       }
 
       if (type === "group") {
+        resolvedPosition = snapPositionToGrid(resolvedPosition);
         resolvedPosition = findAvailableGroupPosition(
           id,
           resolvedPosition,
@@ -196,7 +201,7 @@ export function useGraphNodes({
       let nextSizes = { ...nodeSizesRef.current };
 
       if (type === "group") {
-        nextSizes[id] = { width: 450, height: 350 };
+        nextSizes[id] = DEFAULT_GROUP_SIZE;
       } else if (resolvedParentId) {
         const adjusted = adjustGroupSizeAndPosition(
           resolvedParentId,
@@ -578,11 +583,12 @@ export function useGraphNodes({
 
       // Group nodes cannot be nested in other groups
       if (node.type === "group") {
+        const finalTo = snapPositionToGrid(to);
         if (
           isGroupMovementBlocked(
             node.id,
             from,
-            to,
+            finalTo,
             nodeSizesRef.current[node.id] ?? DEFAULT_GROUP_SIZE,
             currentNodes,
             nodePositionsRef.current,
@@ -598,13 +604,13 @@ export function useGraphNodes({
           return;
         }
 
-        if (from.x !== to.x || from.y !== to.y) {
+        if (from.x !== finalTo.x || from.y !== finalTo.y) {
           setNodePositions((currentPositions) => ({
             ...currentPositions,
-            [nodeId]: to,
+            [nodeId]: finalTo,
           }));
           setDirty(true);
-          pushCommand({ type: "move", nodeId, from, to });
+          pushCommand({ type: "move", nodeId, from, to: finalTo });
         }
         return;
       }
@@ -625,7 +631,7 @@ export function useGraphNodes({
       for (const otherNode of currentNodes) {
         if (otherNode.id !== nodeId && otherNode.type === "group") {
           const gPos = nodePositionsRef.current[otherNode.id] ?? { x: 0, y: 0 };
-          const gSize = nodeSizesRef.current[otherNode.id] ?? { width: 450, height: 350 };
+          const gSize = nodeSizesRef.current[otherNode.id] ?? DEFAULT_GROUP_SIZE;
           if (
             centerX >= gPos.x &&
             centerX <= gPos.x + gSize.width &&
@@ -757,7 +763,13 @@ export function useGraphNodes({
 
   const handleNodesDragEnd = useCallback(
     (moves: { nodeId: string; from: { x: number; y: number }; to: { x: number; y: number } }[]) => {
-      const meaningfulMoves = moves.filter(
+      const currentNodes = graphRef.current.nodes;
+      const normalizedMoves = moves.map((move) =>
+        currentNodes.some((node) => node.id === move.nodeId && node.type === "group")
+          ? { ...move, to: snapPositionToGrid(move.to) }
+          : move
+      );
+      const meaningfulMoves = normalizedMoves.filter(
         (move) => move.from.x !== move.to.x || move.from.y !== move.to.y
       );
       if (meaningfulMoves.length === 0) {
@@ -813,7 +825,7 @@ export function useGraphNodes({
         for (const otherNode of afterGraph.nodes) {
           if (otherNode.id !== nodeId && otherNode.type === "group") {
             const gPos = nodePositionsRef.current[otherNode.id] ?? { x: 0, y: 0 };
-            const gSize = nodeSizesRef.current[otherNode.id] ?? { width: 450, height: 350 };
+            const gSize = nodeSizesRef.current[otherNode.id] ?? DEFAULT_GROUP_SIZE;
             if (
               centerX >= gPos.x &&
               centerX <= gPos.x + gSize.width &&
@@ -1016,12 +1028,16 @@ export function useGraphNodes({
 
   const handleNodeResizeEnd = useCallback(
     (nodeId: string, size: { width: number; height: number }) => {
-      const finalSize = size;
       const node = graphRef.current.nodes.find((n) => n.id === nodeId);
       if (!node) return;
 
+      const finalSize = node.type === "group" ? constrainGroupNodeSize(size) : size;
       const before = nodeSizesRef.current[nodeId];
       const fallbackBefore = before ?? estimateNodeSize(node);
+
+      if (before && before.width === finalSize.width && before.height === finalSize.height) {
+        return;
+      }
 
       if (
         node.type === "group" &&
@@ -1070,6 +1086,70 @@ export function useGraphNodes({
     [pushCommand, setDirty]
   );
 
+  const matchGroupNodeSizes = useCallback(
+    (nodeIds: string[]) => {
+      const currentNodes = graphRef.current.nodes;
+      const currentNodeById = new Map(currentNodes.map((node) => [node.id, node]));
+      const orderedGroupIds = [...new Set(nodeIds)].filter(
+        (nodeId) => currentNodeById.get(nodeId)?.type === "group"
+      );
+      const referenceId = orderedGroupIds[0];
+      const referenceNode = referenceId ? currentNodeById.get(referenceId) : undefined;
+      if (!referenceId || !referenceNode || orderedGroupIds.length < 2) {
+        return;
+      }
+
+      const referenceSize = constrainGroupNodeSize(
+        nodeSizesRef.current[referenceId] ?? estimateNodeSize(referenceNode)
+      );
+      const nextSizes = { ...nodeSizesRef.current };
+      const resizes: {
+        nodeId: string;
+        before: NodeSize | undefined;
+        after: NodeSize;
+      }[] = [];
+
+      orderedGroupIds.forEach((nodeId) => {
+        const node = currentNodeById.get(nodeId);
+        if (!node || (nodeId !== referenceId && node.locked)) {
+          return;
+        }
+
+        const before = nodeSizesRef.current[nodeId];
+        const fallbackBefore = before ?? estimateNodeSize(node);
+        if (fallbackBefore.width === referenceSize.width && fallbackBefore.height === referenceSize.height) {
+          return;
+        }
+
+        if (
+          isGroupPlacementBlocked(
+            nodeId,
+            nodePositionsRef.current[nodeId] ?? { x: 0, y: 0 },
+            referenceSize,
+            currentNodes,
+            nodePositionsRef.current,
+            nextSizes
+          )
+        ) {
+          return;
+        }
+
+        nextSizes[nodeId] = referenceSize;
+        resizes.push({ nodeId, before, after: referenceSize });
+      });
+
+      if (resizes.length === 0) {
+        return;
+      }
+
+      nodeSizesRef.current = nextSizes;
+      setNodeSizes(nextSizes);
+      setDirty(true);
+      pushCommand({ type: "resize-many", resizes });
+    },
+    [pushCommand, setDirty]
+  );
+
   const handleViewportChange = useCallback(
     (vp: CanvasViewport) => {
       if (!areViewportsEqual(viewportRef.current, vp)) {
@@ -1105,6 +1185,7 @@ export function useGraphNodes({
     handleNodeDragEnd,
     handleNodesDragEnd,
     handleNodeResizeEnd,
+    matchGroupNodeSizes,
     handleViewportChange,
   };
 }
@@ -1188,7 +1269,7 @@ function resolveGroupMoveTargets(
   const nextPositions: Record<string, CanvasPosition> = { ...positions };
 
   groupMoves.forEach((move) => {
-    nextPositions[move.nodeId] = move.to;
+    nextPositions[move.nodeId] = snapPositionToGrid(move.to);
   });
 
   let didChange = true;
@@ -1240,7 +1321,7 @@ function findAvailableGroupPosition(
     return preferredPosition;
   }
 
-  const step = 40;
+  const step = GRAPH_GRID_SIZE * 2;
   const maxRadius = 12;
 
   for (let radius = 1; radius <= maxRadius; radius += 1) {

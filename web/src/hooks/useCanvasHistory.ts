@@ -67,7 +67,11 @@ export type CanvasCommand =
   | { type: "link"; sourceId: string; targetId: string; direction: EdgeDirection }
   | { type: "unlink"; sourceId: string; targetId: string; direction?: EdgeDirection }
   | { type: "replace-graph"; before: GraphData; after: GraphData }
-  | { type: "resize"; nodeId: string; before: NodeSize | undefined; after: NodeSize };
+  | { type: "resize"; nodeId: string; before: NodeSize | undefined; after: NodeSize }
+  | {
+      type: "resize-many";
+      resizes: { nodeId: string; before: NodeSize | undefined; after: NodeSize }[];
+    };
 
 export const MAX_HISTORY = 20;
 

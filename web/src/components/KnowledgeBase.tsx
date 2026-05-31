@@ -410,6 +410,7 @@ export function KnowledgeBase() {
         onBatchLockChange={(locked) =>
           nodes.updateGraphNodesLocked(selection.selectedNodeIds, locked)
         }
+        onMatchGroupSizes={() => nodes.matchGroupNodeSizes(selection.selectedNodeIds)}
         onColorChange={nodes.updateGraphNodeColor}
         onCreateCitation={edges.createCitation}
         onAutoFocusContentHandled={() => selection.setPendingInspectorContentFocusNodeId(null)}
