@@ -683,6 +683,42 @@ button {
   opacity: 0.8;
 }
 
+.alignment-guides {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.alignment-guide {
+  --alignment-guide-color: color-mix(in srgb, var(--color-accent) 82%, transparent);
+  position: absolute;
+  display: block;
+  background: transparent;
+  filter: drop-shadow(0 0 1px color-mix(in srgb, var(--color-accent) 32%, transparent));
+}
+
+.alignment-guide--vertical {
+  width: 1px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--alignment-guide-color) 0 7px,
+    transparent 7px 12px
+  );
+  transform: translateX(-0.5px);
+}
+
+.alignment-guide--horizontal {
+  height: 1px;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--alignment-guide-color) 0 7px,
+    transparent 7px 12px
+  );
+  transform: translateY(-0.5px);
+}
+
 .graph-scale-indicator {
   display: inline-flex;
   align-items: center;

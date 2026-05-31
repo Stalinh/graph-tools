@@ -13,6 +13,7 @@ interface GraphFlowNodeData extends Record<string, unknown> {
   isCitationSelectionActive: boolean;
   node: GraphNode;
   onNodeMouseDown?: (event: MouseEvent, nodeId: string) => void;
+  onNodeResize?: (nodeId: string) => void;
   onNodeResizeEnd?: (nodeId: string, size: { width: number; height: number }) => void;
   onQuickAddChild?: (parentId: string) => void;
   onQuickEditSubmit: (
@@ -51,6 +52,7 @@ export function createGraphNodes(
   onNodeMouseDown?: (event: MouseEvent, nodeId: string) => void,
   matchingNodeIds: Set<string> | null = null,
   onQuickAddChild?: (parentId: string) => void,
+  onNodeResize?: (nodeId: string) => void,
   onNodeResizeEnd?: (nodeId: string, size: { width: number; height: number }) => void
 ) {
   const selectedNodeIdSet = new Set(selectedNodeIds);
@@ -152,6 +154,7 @@ export function createGraphNodes(
         searchQuery: searchQuery || undefined,
         childCount: childCounts.get(node.id) ?? 0,
         onQuickAddChild,
+        onNodeResize,
         onNodeResizeEnd,
       },
       className: classNames,
@@ -178,6 +181,7 @@ export function createGraphNodes(
         previousData.searchQuery !== nextNode.data.searchQuery ||
         previousData.childCount !== nextNode.data.childCount ||
         previousData.onQuickAddChild !== nextNode.data.onQuickAddChild ||
+        previousData.onNodeResize !== nextNode.data.onNodeResize ||
         previousData.onNodeResizeEnd !== nextNode.data.onNodeResizeEnd;
       const otherChanged =
         previousNode.selected !== nextNode.selected ||

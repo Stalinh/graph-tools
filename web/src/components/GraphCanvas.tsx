@@ -146,6 +146,11 @@ interface AlignmentGuide {
   end: number;
 }
 
+interface AlignmentAnchor {
+  coordinate: number;
+  key: "center" | "end" | "start";
+}
+
 const NODE_TYPES: NodeTypes = {
   cardNode: ResizableGraphNode as NodeTypes[string],
   imageNode: ImageGraphNode as NodeTypes[string],
@@ -218,10 +223,21 @@ function clampGuideCoordinate(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function createAlignmentGuides(container: HTMLDivElement, draggedNodeIds: string[]) {
+function getNodeElement(container: HTMLDivElement, nodeId: string) {
+  return (
+    Array.from(container.querySelectorAll<HTMLElement>(".react-flow__node[data-id]")).find(
+      (element) => element.getAttribute("data-id") === nodeId
+    ) ?? null
+  );
+}
+
+function createAlignmentGuides(
+  container: HTMLDivElement,
+  draggedNodeIds: string[]
+): AlignmentGuide[] {
   const draggedIdSet = new Set(draggedNodeIds);
   const draggedElements = draggedNodeIds
-    .map((nodeId) => container.querySelector<HTMLElement>(`.react-flow__node[data-id="${nodeId}"]`))
+    .map((nodeId) => getNodeElement(container, nodeId))
     .filter((element): element is HTMLElement => element !== null);
 
   if (draggedElements.length === 0) {
@@ -230,95 +246,98 @@ function createAlignmentGuides(container: HTMLDivElement, draggedNodeIds: string
 
   const bounds = container.getBoundingClientRect();
   const draggedRect = combineScreenRects(draggedElements);
-  const draggedVerticalAnchors = [
-    draggedRect.left,
-    (draggedRect.left + draggedRect.right) / 2,
-    draggedRect.right,
+  const draggedVerticalAnchors: AlignmentAnchor[] = [
+    { coordinate: draggedRect.left, key: "start" },
+    { coordinate: (draggedRect.left + draggedRect.right) / 2, key: "center" },
+    { coordinate: draggedRect.right, key: "end" },
   ];
-  const draggedHorizontalAnchors = [
-    draggedRect.top,
-    (draggedRect.top + draggedRect.bottom) / 2,
-    draggedRect.bottom,
+  const draggedHorizontalAnchors: AlignmentAnchor[] = [
+    { coordinate: draggedRect.top, key: "start" },
+    { coordinate: (draggedRect.top + draggedRect.bottom) / 2, key: "center" },
+    { coordinate: draggedRect.bottom, key: "end" },
   ];
-  let bestVertical:
-    | {
-        distance: number;
-        guide: AlignmentGuide;
-      }
-    | null = null;
-  let bestHorizontal:
-    | {
-        distance: number;
-        guide: AlignmentGuide;
-      }
-    | null = null;
+  let bestVerticalDistance = Infinity;
+  let bestVerticalGuide: AlignmentGuide | null = null;
+  let bestHorizontalDistance = Infinity;
+  let bestHorizontalGuide: AlignmentGuide | null = null;
 
-  container.querySelectorAll<HTMLElement>(".react-flow__node[data-id]").forEach((element) => {
+  for (const element of container.querySelectorAll<HTMLElement>(".react-flow__node[data-id]")) {
     const nodeId = element.getAttribute("data-id");
     if (!nodeId || draggedIdSet.has(nodeId)) {
-      return;
+      continue;
     }
 
     const otherRect = getElementScreenRect(element);
     if (otherRect.right <= otherRect.left || otherRect.bottom <= otherRect.top) {
-      return;
+      continue;
     }
 
-    const otherVerticalAnchors = [
-      otherRect.left,
-      (otherRect.left + otherRect.right) / 2,
-      otherRect.right,
+    const otherVerticalAnchors: AlignmentAnchor[] = [
+      { coordinate: otherRect.left, key: "start" },
+      { coordinate: (otherRect.left + otherRect.right) / 2, key: "center" },
+      { coordinate: otherRect.right, key: "end" },
     ];
-    const otherHorizontalAnchors = [
-      otherRect.top,
-      (otherRect.top + otherRect.bottom) / 2,
-      otherRect.bottom,
+    const otherHorizontalAnchors: AlignmentAnchor[] = [
+      { coordinate: otherRect.top, key: "start" },
+      { coordinate: (otherRect.top + otherRect.bottom) / 2, key: "center" },
+      { coordinate: otherRect.bottom, key: "end" },
     ];
 
-    draggedVerticalAnchors.forEach((draggedAnchor, index) => {
-      const otherAnchor = otherVerticalAnchors[index];
-      const distance = Math.abs(draggedAnchor - otherAnchor);
-      if (distance > ALIGNMENT_GUIDE_THRESHOLD || distance >= (bestVertical?.distance ?? Infinity)) {
-        return;
-      }
+    for (const draggedAnchor of draggedVerticalAnchors) {
+      for (const otherAnchor of otherVerticalAnchors) {
+        const distance = Math.abs(draggedAnchor.coordinate - otherAnchor.coordinate);
+        if (distance > ALIGNMENT_GUIDE_THRESHOLD || distance >= bestVerticalDistance) {
+          continue;
+        }
 
-      bestVertical = {
-        distance,
-        guide: {
-          id: `v-${nodeId}-${index}`,
+        bestVerticalDistance = distance;
+        bestVerticalGuide = {
+          id: `v-${nodeId}-${draggedAnchor.key}-${otherAnchor.key}`,
           orientation: "vertical",
-          offset: clampGuideCoordinate(otherAnchor - bounds.left, 0, bounds.width),
-          start: clampGuideCoordinate(Math.min(draggedRect.top, otherRect.top) - bounds.top, 0, bounds.height),
-          end: clampGuideCoordinate(Math.max(draggedRect.bottom, otherRect.bottom) - bounds.top, 0, bounds.height),
-        },
-      };
-    });
-
-    draggedHorizontalAnchors.forEach((draggedAnchor, index) => {
-      const otherAnchor = otherHorizontalAnchors[index];
-      const distance = Math.abs(draggedAnchor - otherAnchor);
-      if (
-        distance > ALIGNMENT_GUIDE_THRESHOLD ||
-        distance >= (bestHorizontal?.distance ?? Infinity)
-      ) {
-        return;
+          offset: clampGuideCoordinate(otherAnchor.coordinate - bounds.left, 0, bounds.width),
+          start: clampGuideCoordinate(
+            Math.min(draggedRect.top, otherRect.top) - bounds.top,
+            0,
+            bounds.height
+          ),
+          end: clampGuideCoordinate(
+            Math.max(draggedRect.bottom, otherRect.bottom) - bounds.top,
+            0,
+            bounds.height
+          ),
+        };
       }
+    }
 
-      bestHorizontal = {
-        distance,
-        guide: {
-          id: `h-${nodeId}-${index}`,
+    for (const draggedAnchor of draggedHorizontalAnchors) {
+      for (const otherAnchor of otherHorizontalAnchors) {
+        const distance = Math.abs(draggedAnchor.coordinate - otherAnchor.coordinate);
+        if (distance > ALIGNMENT_GUIDE_THRESHOLD || distance >= bestHorizontalDistance) {
+          continue;
+        }
+
+        bestHorizontalDistance = distance;
+        bestHorizontalGuide = {
+          id: `h-${nodeId}-${draggedAnchor.key}-${otherAnchor.key}`,
           orientation: "horizontal",
-          offset: clampGuideCoordinate(otherAnchor - bounds.top, 0, bounds.height),
-          start: clampGuideCoordinate(Math.min(draggedRect.left, otherRect.left) - bounds.left, 0, bounds.width),
-          end: clampGuideCoordinate(Math.max(draggedRect.right, otherRect.right) - bounds.left, 0, bounds.width),
-        },
-      };
-    });
-  });
+          offset: clampGuideCoordinate(otherAnchor.coordinate - bounds.top, 0, bounds.height),
+          start: clampGuideCoordinate(
+            Math.min(draggedRect.left, otherRect.left) - bounds.left,
+            0,
+            bounds.width
+          ),
+          end: clampGuideCoordinate(
+            Math.max(draggedRect.right, otherRect.right) - bounds.left,
+            0,
+            bounds.width
+          ),
+        };
+      }
+    }
+  }
 
-  return [bestVertical?.guide, bestHorizontal?.guide].filter(
-    (guide): guide is AlignmentGuide => Boolean(guide) && guide.end > guide.start
+  return [bestVerticalGuide, bestHorizontalGuide].filter(
+    (guide): guide is AlignmentGuide => guide !== null && guide.end > guide.start
   );
 }
 
@@ -638,6 +657,7 @@ export function GraphCanvas({
   const nodeDragStartPositions = useRef<Record<string, { x: number; y: number }>>({});
   const nodeDragStartTimeRef = useRef<Record<string, number>>({});
   const dragAutoPanFrameRef = useRef<number | null>(null);
+  const alignmentGuideFrameRef = useRef<number | null>(null);
   const hasJustDraggedRef = useRef(false);
   const lastFocusedNodeIdRef = useRef<string | null>(null);
   const onSelectNodeRef = useRef(onSelectNode);
@@ -660,6 +680,55 @@ export function GraphCanvas({
   onSelectNodeRef.current = onSelectNode;
   const [pendingCitation, setPendingCitation] = useState<PendingCitation | null>(null);
   const [selectionMode, setSelectionMode] = useState<SelectionMode>(SelectionMode.Full);
+  const [alignmentGuides, setAlignmentGuides] = useState<AlignmentGuide[]>([]);
+
+  const clearAlignmentGuides = useCallback(() => {
+    if (alignmentGuideFrameRef.current !== null) {
+      cancelAnimationFrame(alignmentGuideFrameRef.current);
+      alignmentGuideFrameRef.current = null;
+    }
+    setAlignmentGuides([]);
+  }, []);
+
+  const updateAlignmentGuidesForNodeIds = useCallback((nodeIds: string[]) => {
+    const container = containerRef.current;
+    if (!container) {
+      setAlignmentGuides([]);
+      return;
+    }
+
+    setAlignmentGuides(createAlignmentGuides(container, nodeIds));
+  }, []);
+
+  const handleGroupNodeResize = useCallback(
+    (nodeId: string) => {
+      if (alignmentGuideFrameRef.current !== null) {
+        cancelAnimationFrame(alignmentGuideFrameRef.current);
+      }
+
+      alignmentGuideFrameRef.current = requestAnimationFrame(() => {
+        alignmentGuideFrameRef.current = null;
+        updateAlignmentGuidesForNodeIds([nodeId]);
+      });
+    },
+    [updateAlignmentGuidesForNodeIds]
+  );
+
+  const handleGroupNodeResizeEnd = useCallback(
+    (nodeId: string, size: NodeSize) => {
+      clearAlignmentGuides();
+      onNodeResizeEnd?.(nodeId, size);
+    },
+    [clearAlignmentGuides, onNodeResizeEnd]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (alignmentGuideFrameRef.current !== null) {
+        cancelAnimationFrame(alignmentGuideFrameRef.current);
+      }
+    };
+  }, []);
 
   const handleQuickAddChild = useCallback(
     (parentId: string) => {
@@ -688,7 +757,8 @@ export function GraphCanvas({
       (event, nodeId) => handleNodeMouseDownRef.current?.(event, nodeId),
       null,
       handleQuickAddChild,
-      onNodeResizeEnd
+      handleGroupNodeResize,
+      handleGroupNodeResizeEnd
     )
   );
   const nodesRef = useRef<Node[]>(nodes);
@@ -721,7 +791,8 @@ export function GraphCanvas({
         (event, nodeId) => handleNodeMouseDownRef.current?.(event, nodeId),
         matchingNodeIds ?? null,
         handleQuickAddChild,
-        onNodeResizeEnd
+        handleGroupNodeResize,
+        handleGroupNodeResizeEnd
       )
     );
   }, [
@@ -738,7 +809,8 @@ export function GraphCanvas({
     matchingNodeIds,
     pendingCitation,
     handleQuickAddChild,
-    onNodeResizeEnd,
+    handleGroupNodeResize,
+    handleGroupNodeResizeEnd,
   ]);
 
   useEffect(() => {
@@ -1047,6 +1119,11 @@ export function GraphCanvas({
         return;
       }
 
+      const draggedNodeIds =
+        selectedNodeIds.length > 1 && selectedNodeIds.includes(node.id)
+          ? selectedNodeIds
+          : [node.id];
+      setAlignmentGuides(createAlignmentGuides(container, draggedNodeIds));
       stopDragAutoPan();
 
       const bounds = container.getBoundingClientRect();
@@ -1069,31 +1146,15 @@ export function GraphCanvas({
         return;
       }
 
-      const draggedNodeIds =
-        selectedNodeIds.length > 1 && selectedNodeIds.includes(node.id) ? selectedNodeIds : [node.id];
       const draggedElements = draggedNodeIds
-        .map((nodeId) => container.querySelector<HTMLElement>(`.react-flow__node[data-id="${nodeId}"]`))
+        .map((nodeId) => getNodeElement(container, nodeId))
         .filter((element): element is HTMLElement => element !== null);
 
       if (draggedElements.length === 0) {
         return;
       }
 
-      const draggedRect = draggedElements.reduce<ScreenRect>((combined, element) => {
-        const rect = element.getBoundingClientRect();
-        return {
-          top: Math.min(combined.top, rect.top),
-          right: Math.max(combined.right, rect.right),
-          bottom: Math.max(combined.bottom, rect.bottom),
-          left: Math.min(combined.left, rect.left),
-        };
-      }, {
-        top: Number.POSITIVE_INFINITY,
-        right: Number.NEGATIVE_INFINITY,
-        bottom: Number.NEGATIVE_INFINITY,
-        left: Number.POSITIVE_INFINITY,
-      });
-
+      const draggedRect = combineScreenRects(draggedElements);
       const nodeDeltaX =
         pointerDeltaX < 0
           ? draggedRect.left <= bounds.left + DRAG_AUTO_PAN_EDGE_THRESHOLD
@@ -1394,6 +1455,7 @@ export function GraphCanvas({
         onNodeDrag={handleNodeDrag}
         onNodeDragStart={(_, node) => {
           stopDragAutoPan();
+          clearAlignmentGuides();
           const currentNodes = nodesRef.current;
           if (selectedNodeIds.length > 1 && selectedNodeIds.includes(node.id)) {
             selectedNodeIds.forEach((selectedNodeId) => {
@@ -1411,6 +1473,7 @@ export function GraphCanvas({
         }}
         onNodeDragStop={(_, node) => {
           stopDragAutoPan();
+          clearAlignmentGuides();
           const from = nodeDragStartPositions.current[node.id] ?? node.position;
           const currentNodes = nodesRef.current;
           const resolvedNode =
@@ -1477,6 +1540,7 @@ export function GraphCanvas({
           commitSelectionDrag();
         }}
         onPaneClick={() => {
+          clearAlignmentGuides();
           onCloseContextMenu();
           onEdgeSelect(null);
           onSelectNodeIds([]);
@@ -1507,6 +1571,29 @@ export function GraphCanvas({
           </div>
         ) : null}
       </ReactFlow>
+      {alignmentGuides.length > 0 ? (
+        <div aria-hidden="true" className="alignment-guides">
+          {alignmentGuides.map((guide) => (
+            <span
+              key={guide.id}
+              className={`alignment-guide alignment-guide--${guide.orientation}`}
+              style={
+                guide.orientation === "vertical"
+                  ? {
+                      height: guide.end - guide.start,
+                      left: guide.offset,
+                      top: guide.start,
+                    }
+                  : {
+                      left: guide.start,
+                      top: guide.offset,
+                      width: guide.end - guide.start,
+                    }
+              }
+            />
+          ))}
+        </div>
+      ) : null}
       {contextMenu ? (
         <GraphContextMenu
           contextMenu={contextMenu}

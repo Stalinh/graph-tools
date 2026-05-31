@@ -19,6 +19,7 @@ interface GroupNodeData {
   onNodeMouseDown?: (event: MouseEvent, nodeId: string) => void;
   childCount?: number;
   onQuickAddChild?: (parentId: string) => void;
+  onNodeResize?: (nodeId: string) => void;
   onNodeResizeEnd?: (nodeId: string, size: { width: number; height: number }) => void;
 }
 
@@ -30,6 +31,7 @@ export function GroupNode({ data, selected }: NodeProps<Node<GroupNodeData>>) {
     onQuickEditSubmit,
     childCount = 0,
     onQuickAddChild,
+    onNodeResize,
     onNodeResizeEnd,
   } = data;
   const [draftTitle, setDraftTitle] = useState(node.title);
@@ -71,6 +73,7 @@ export function GroupNode({ data, selected }: NodeProps<Node<GroupNodeData>>) {
           handleClassName="group-node__resize-handle"
           minWidth={GRAPH_GRID_SIZE}
           minHeight={GRAPH_GRID_SIZE}
+          onResize={() => onNodeResize?.(node.id)}
           onResizeEnd={(event, params) => {
             onNodeResizeEnd?.(
               node.id,
