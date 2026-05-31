@@ -131,6 +131,16 @@ interface ProjectInlineSelectProps {
   value: string;
 }
 
+interface DroppedProjectFile {
+  file: File;
+  id: number;
+}
+
+interface ProjectSheetPageProps {
+  droppedProjectFile?: DroppedProjectFile | null;
+  onDroppedProjectFileHandled?: (id: number) => void;
+}
+
 function ProjectInlineSelect({
   ariaLabel,
   className = "",
@@ -210,10 +220,14 @@ function ProjectInlineSelect({
   );
 }
 
-export function ProjectSheetPage() {
+export function ProjectSheetPage({
+  droppedProjectFile = null,
+  onDroppedProjectFileHandled,
+}: ProjectSheetPageProps) {
   const { isZh } = useI18n();
   const [initialDraftState] = useState(loadProjectDraftState);
   const skipInitialDraftSaveRef = useRef(initialDraftState.hasInvalidDraftData);
+  const handledDroppedProjectFileIdRef = useRef<number | null>(null);
   const [records, setRecords] = useState<ProjectRecord[]>(initialDraftState.records);
   const [isEditMode, setIsEditMode] = useState(false);
   const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(() => new Set());
@@ -282,6 +296,34 @@ export function ProjectSheetPage() {
     setDirty(shouldMarkDirty);
   };
 
+  const applyOpenedProjectRecords = (
+    openedRecords: ProjectRecord[],
+    fileName: string | null,
+    openedFromDrop = false
+  ) => {
+    const openedRecordsWithDefaultSubLines = ensureProjectRecordsDefaultSubLines(openedRecords);
+    setExpandedProjectIds(new Set());
+    replaceRecords(
+      openedRecordsWithDefaultSubLines.records,
+      openedRecordsWithDefaultSubLines.addedSubLineCount > 0
+    );
+    setCurrentFileName(fileName);
+    clearProjectDraftRecords();
+    setFileStatus(
+      openedRecordsWithDefaultSubLines.addedSubLineCount > 0
+        ? isZh
+          ? `项目文件已打开，并自动补齐 ${openedRecordsWithDefaultSubLines.addedSubLineCount} 条子行。`
+          : `Project file opened and ${openedRecordsWithDefaultSubLines.addedSubLineCount} sublines were added.`
+        : openedFromDrop
+          ? isZh
+            ? "拖入的项目文件已打开，保存时将另存为。"
+            : "Dropped project file opened. Saving will use Save As."
+          : isZh
+            ? "项目文件已打开。"
+            : "Project file opened."
+    );
+  };
+
   const handleNewProjectFile = () => {
     if (!confirmDiscardUnsavedChanges()) {
       return;
@@ -308,27 +350,38 @@ export function ProjectSheetPage() {
         return;
       }
 
-      const openedRecordsWithDefaultSubLines = ensureProjectRecordsDefaultSubLines(openedRecords);
-      setExpandedProjectIds(new Set());
-      replaceRecords(
-        openedRecordsWithDefaultSubLines.records,
-        openedRecordsWithDefaultSubLines.addedSubLineCount > 0
-      );
-      setCurrentFileName(projectFileManager.getCurrentFileName());
-      clearProjectDraftRecords();
-      setFileStatus(
-        openedRecordsWithDefaultSubLines.addedSubLineCount > 0
-          ? isZh
-            ? `项目文件已打开，并自动补齐 ${openedRecordsWithDefaultSubLines.addedSubLineCount} 条子行。`
-            : `Project file opened and ${openedRecordsWithDefaultSubLines.addedSubLineCount} sublines were added.`
-          : isZh
-            ? "项目文件已打开。"
-            : "Project file opened."
-      );
+      applyOpenedProjectRecords(openedRecords, projectFileManager.getCurrentFileName());
     } catch (error) {
       setFileStatus(getOpenErrorMessage(error));
     }
   };
+
+  const handleDroppedProjectFile = async (file: File) => {
+    if (!confirmDiscardUnsavedChanges()) {
+      return;
+    }
+
+    try {
+      setFileStatus(isZh ? "正在打开..." : "Opening...");
+      const openedRecords = await projectFileManager.openDroppedProjectFile(file);
+      applyOpenedProjectRecords(openedRecords, file.name, true);
+    } catch (error) {
+      setFileStatus(getOpenErrorMessage(error));
+    }
+  };
+
+  useEffect(() => {
+    if (!droppedProjectFile) {
+      return;
+    }
+    if (handledDroppedProjectFileIdRef.current === droppedProjectFile.id) {
+      return;
+    }
+
+    handledDroppedProjectFileIdRef.current = droppedProjectFile.id;
+    onDroppedProjectFileHandled?.(droppedProjectFile.id);
+    void handleDroppedProjectFile(droppedProjectFile.file);
+  }, [droppedProjectFile, onDroppedProjectFileHandled]);
 
   const getUniqueProjectName = (
     projectName: string,

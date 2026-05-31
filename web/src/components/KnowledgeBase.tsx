@@ -21,7 +21,20 @@ const RichEditorModal = lazy(async () => {
 
 const DRAFT_SAVE_DEBOUNCE_MS = 500;
 
-export function KnowledgeBase() {
+interface DroppedWorkspaceFile {
+  file: File;
+  id: number;
+}
+
+interface KnowledgeBaseProps {
+  droppedWorkspaceFile?: DroppedWorkspaceFile | null;
+  onDroppedWorkspaceFileHandled?: (id: number) => void;
+}
+
+export function KnowledgeBase({
+  droppedWorkspaceFile = null,
+  onDroppedWorkspaceFileHandled,
+}: KnowledgeBaseProps) {
   const history = useCanvasHistory();
   const { isZh, locale } = useI18n();
   const graphState = useGraphState({ ...history, locale });
@@ -29,6 +42,7 @@ export function KnowledgeBase() {
   const didRestoreDraftRef = useRef(false);
   const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestDraftStateRef = useRef<WorkspaceState | null>(null);
+  const handledDroppedWorkspaceFileIdRef = useRef<number | null>(null);
   const [nodeFilter, setNodeFilter] = useState<WorkspaceNodeFilter>("all");
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null);
   const [draftSaveFailed, setDraftSaveFailed] = useState(false);
@@ -170,6 +184,19 @@ export function KnowledgeBase() {
     setDirty: status.setDirty,
     locale,
   });
+
+  useEffect(() => {
+    if (!droppedWorkspaceFile) {
+      return;
+    }
+    if (handledDroppedWorkspaceFileIdRef.current === droppedWorkspaceFile.id) {
+      return;
+    }
+
+    handledDroppedWorkspaceFileIdRef.current = droppedWorkspaceFile.id;
+    onDroppedWorkspaceFileHandled?.(droppedWorkspaceFile.id);
+    void files.handleDroppedWorkspaceFile(droppedWorkspaceFile.file);
+  }, [droppedWorkspaceFile, files.handleDroppedWorkspaceFile, onDroppedWorkspaceFileHandled]);
 
   const handleDropImages = useCallback(
     (files: File[], position: { x: number; y: number }) => {
@@ -454,9 +481,13 @@ export function KnowledgeBase() {
               ? isZh
                 ? "新建画布"
                 : "creating a new canvas"
-              : isZh
-                ? "打开其他文件"
-                : "opening another file"
+              : files.pendingAction === "open-dropped"
+                ? isZh
+                  ? "打开拖入的文件"
+                  : "opening the dropped file"
+                : isZh
+                  ? "打开其他文件"
+                  : "opening another file"
           }
           onCancel={files.cancelPendingAction}
           onDiscard={() => {

@@ -72,7 +72,7 @@ function findMissingImagePath(state: WorkspaceState, images: Map<string, Blob>) 
   )?.imagePath;
 }
 
-type PendingAction = "new" | "open" | null;
+type PendingAction = "new" | "open" | "open-dropped" | null;
 
 interface UseFileOperationsOptions {
   locale?: Locale;
@@ -108,6 +108,7 @@ export function useFileOperations({
   );
   const [fileStatus, setFileStatus] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [pendingDroppedFile, setPendingDroppedFile] = useState<File | null>(null);
 
   useEffect(() => {
     setCurrentFileName(fileManager.getCurrentFileName());
@@ -125,6 +126,37 @@ export function useFileOperations({
     setDirty(false);
   }, [clearHistory, resetToEmpty, setStatus, setErrorMessage, setImages, setDirty, fileManager]);
 
+  const applyWorkspacePackage = useCallback(
+    (pkg: WorkspacePackage, fileName: string | null, openedFromDrop = false) => {
+      const migratedState = migrateWorkspaceIds(pkg.state);
+      applyWorkspaceState(migratedState);
+      setImages(pkg.images);
+      clearHistory();
+      setCurrentFileName(fileName);
+      setStatus("ready");
+      setFileStatus(
+        openedFromDrop
+          ? locale === "zh-CN"
+            ? "拖入的文件已打开，保存时将另存为。"
+            : "Dropped file opened. Saving will use Save As."
+          : locale === "zh-CN"
+            ? "文件已打开。"
+            : "File opened."
+      );
+      setErrorMessage(null);
+      setDirty(false);
+    },
+    [
+      applyWorkspaceState,
+      clearHistory,
+      locale,
+      setDirty,
+      setErrorMessage,
+      setImages,
+      setStatus,
+    ]
+  );
+
   const executeOpen = useCallback(async () => {
     try {
       setStatus("loading");
@@ -138,15 +170,7 @@ export function useFileOperations({
         return;
       }
 
-      const migratedState = migrateWorkspaceIds(pkg.state);
-      applyWorkspaceState(migratedState);
-      setImages(pkg.images);
-      clearHistory();
-      setCurrentFileName(fileManager.getCurrentFileName());
-      setStatus("ready");
-      setFileStatus(locale === "zh-CN" ? "文件已打开。" : "File opened.");
-      setErrorMessage(null);
-      setDirty(false);
+      applyWorkspacePackage(pkg, fileManager.getCurrentFileName());
     } catch (error) {
       const message = getOpenWorkspaceErrorMessage(error, locale);
       setStatus("ready");
@@ -154,15 +178,31 @@ export function useFileOperations({
       setFileStatus(message);
     }
   }, [
-    applyWorkspaceState,
-    clearHistory,
+    applyWorkspacePackage,
     locale,
-    setDirty,
     setStatus,
     setErrorMessage,
-    setImages,
     fileManager,
   ]);
+
+  const executeOpenDroppedFile = useCallback(
+    async (file: File) => {
+      try {
+        setStatus("loading");
+        setFileStatus(null);
+        setErrorMessage(null);
+
+        const pkg = await fileManager.openDroppedWorkspaceFile(file);
+        applyWorkspacePackage(pkg, file.name, true);
+      } catch (error) {
+        const message = getOpenWorkspaceErrorMessage(error, locale);
+        setStatus("ready");
+        setErrorMessage(message);
+        setFileStatus(message);
+      }
+    },
+    [applyWorkspacePackage, fileManager, locale, setErrorMessage, setStatus]
+  );
 
   const handleSaveAs = useCallback(async () => {
     try {
@@ -271,6 +311,18 @@ export function useFileOperations({
     await executeOpen();
   }, [dirty, executeOpen]);
 
+  const handleDroppedWorkspaceFile = useCallback(
+    async (file: File) => {
+      if (dirty) {
+        setPendingDroppedFile(file);
+        setPendingAction("open-dropped");
+        return;
+      }
+      await executeOpenDroppedFile(file);
+    },
+    [dirty, executeOpenDroppedFile]
+  );
+
   const continuePendingAction = useCallback(async () => {
     if (pendingAction === "new") {
       executeNew();
@@ -281,11 +333,22 @@ export function useFileOperations({
     if (pendingAction === "open") {
       setPendingAction(null);
       await executeOpen();
+      return;
     }
-  }, [executeNew, executeOpen, pendingAction]);
+
+    if (pendingAction === "open-dropped") {
+      const file = pendingDroppedFile;
+      setPendingAction(null);
+      setPendingDroppedFile(null);
+      if (file) {
+        await executeOpenDroppedFile(file);
+      }
+    }
+  }, [executeNew, executeOpen, executeOpenDroppedFile, pendingAction, pendingDroppedFile]);
 
   const cancelPendingAction = useCallback(() => {
     setPendingAction(null);
+    setPendingDroppedFile(null);
   }, []);
 
   const discardPendingAction = useCallback(async () => {
@@ -307,6 +370,7 @@ export function useFileOperations({
     setCurrentFileName,
     handleNew,
     handleOpen,
+    handleDroppedWorkspaceFile,
     handleSave,
     handleSaveAs,
     cancelPendingAction,

@@ -47,15 +47,7 @@ export class ProjectFileManager {
       });
 
       const file = await fileHandle.getFile();
-      if (!isProjectFileName(file.name)) {
-        throw new Error("Unsupported project file type.");
-      }
-
-      if (file.size > MAX_PROJECT_FILE_BYTES) {
-        throw new Error("Project file is too large.");
-      }
-
-      const records = parseProjectFileJson(await readFileAsUtf8(file));
+      const records = await this.readProjectFile(file);
       this.currentFileHandle = fileHandle;
       return records;
     } catch (error) {
@@ -64,6 +56,12 @@ export class ProjectFileManager {
       }
       throw error;
     }
+  }
+
+  async openDroppedProjectFile(file: File): Promise<ProjectRecord[]> {
+    const records = await this.readProjectFile(file);
+    this.currentFileHandle = null;
+    return records;
   }
 
   async saveProjectFile(records: ProjectRecord[]): Promise<boolean> {
@@ -106,6 +104,18 @@ export class ProjectFileManager {
     const writable = await handle.createWritable();
     await writable.write(toWritableBytes(serializeProjectFile(records)));
     await writable.close();
+  }
+
+  private async readProjectFile(file: File): Promise<ProjectRecord[]> {
+    if (!isProjectFileName(file.name)) {
+      throw new Error("Unsupported project file type.");
+    }
+
+    if (file.size > MAX_PROJECT_FILE_BYTES) {
+      throw new Error("Project file is too large.");
+    }
+
+    return parseProjectFileJson(await readFileAsUtf8(file));
   }
 }
 

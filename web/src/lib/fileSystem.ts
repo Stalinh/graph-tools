@@ -133,58 +133,22 @@ export class WorkspaceFileManager {
       });
 
       const file = await fileHandle.getFile();
-
-      if (!isWorkspaceArchiveFileName(file.name)) {
-        throw new Error("Unsupported workspace file type.");
-      }
-
-      if (file.size > MAX_WORKSPACE_ARCHIVE_BYTES) {
-        throw new Error("Workspace archive is too large.");
-      }
-
-      const buffer = await readFileAsArrayBuffer(file);
-      const unzipped = await unzipWorkspaceArchive(new Uint8Array(buffer));
-      const archivedImages = new Map<string, Blob>();
-      let state: WorkspaceState | null = null;
-
-      let actualUnzippedBytes = 0;
-      for (const [path, data] of Object.entries(unzipped)) {
-        if (data.byteLength > MAX_WORKSPACE_ENTRY_BYTES) {
-          throw new Error(`Workspace archive entry is too large: ${path}`);
-        }
-        actualUnzippedBytes += data.byteLength;
-        if (actualUnzippedBytes > MAX_WORKSPACE_UNZIPPED_BYTES) {
-          throw new Error("Workspace archive expands to too much data.");
-        }
-
-        if (path === WORKSPACE_JSON_ENTRY) {
-          state = parseWorkspaceStateJson(new TextDecoder().decode(data));
-        } else if (isWorkspaceImagePath(path)) {
-          const blob = new Blob([data]);
-          archivedImages.set(path, blob);
-        }
-      }
-
-      if (!state) {
-        throw new Error("Invalid .graph workspace: missing or invalid workspace.json");
-      }
-
-      const images = new Map<string, Blob>();
-      for (const path of getWorkspaceImagePaths(state)) {
-        const blob = archivedImages.get(path);
-        if (blob) {
-          images.set(path, blob);
-        }
-      }
+      const pkg = await this.readWorkspaceFile(file);
 
       this.currentFileHandle = fileHandle;
-      return { state, images };
+      return pkg;
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         return null;
       }
       throw error;
     }
+  }
+
+  async openDroppedWorkspaceFile(file: File): Promise<WorkspacePackage> {
+    const pkg = await this.readWorkspaceFile(file);
+    this.currentFileHandle = null;
+    return pkg;
   }
 
   async saveWorkspaceFile(pkg: WorkspacePackage): Promise<boolean> {
@@ -244,6 +208,53 @@ export class WorkspaceFileManager {
     const writable = await handle.createWritable();
     await writable.write(zipped);
     await writable.close();
+  }
+
+  private async readWorkspaceFile(file: File): Promise<WorkspacePackage> {
+    if (!isWorkspaceArchiveFileName(file.name)) {
+      throw new Error("Unsupported workspace file type.");
+    }
+
+    if (file.size > MAX_WORKSPACE_ARCHIVE_BYTES) {
+      throw new Error("Workspace archive is too large.");
+    }
+
+    const buffer = await readFileAsArrayBuffer(file);
+    const unzipped = await unzipWorkspaceArchive(new Uint8Array(buffer));
+    const archivedImages = new Map<string, Blob>();
+    let state: WorkspaceState | null = null;
+
+    let actualUnzippedBytes = 0;
+    for (const [path, data] of Object.entries(unzipped)) {
+      if (data.byteLength > MAX_WORKSPACE_ENTRY_BYTES) {
+        throw new Error(`Workspace archive entry is too large: ${path}`);
+      }
+      actualUnzippedBytes += data.byteLength;
+      if (actualUnzippedBytes > MAX_WORKSPACE_UNZIPPED_BYTES) {
+        throw new Error("Workspace archive expands to too much data.");
+      }
+
+      if (path === WORKSPACE_JSON_ENTRY) {
+        state = parseWorkspaceStateJson(new TextDecoder().decode(data));
+      } else if (isWorkspaceImagePath(path)) {
+        const blob = new Blob([data]);
+        archivedImages.set(path, blob);
+      }
+    }
+
+    if (!state) {
+      throw new Error("Invalid .graph workspace: missing or invalid workspace.json");
+    }
+
+    const images = new Map<string, Blob>();
+    for (const path of getWorkspaceImagePaths(state)) {
+      const blob = archivedImages.get(path);
+      if (blob) {
+        images.set(path, blob);
+      }
+    }
+
+    return { state, images };
   }
 }
 
