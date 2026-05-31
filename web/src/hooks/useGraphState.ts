@@ -5,7 +5,7 @@ import { useGraphNodes } from "./useGraphNodes";
 import { useGraphPersistence } from "./useGraphPersistence";
 import { useGraphSearch } from "./useGraphSearch";
 import { useGraphSelection } from "./useGraphSelection";
-import type { CanvasCommand } from "./useCanvasHistory";
+import type { CanvasCommand } from "./canvasHistoryTypes";
 import { useSelectionState } from "./useSelectionState";
 import { useWorkspaceStatusState } from "./useWorkspaceStatusState";
 

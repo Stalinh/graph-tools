@@ -1,6 +1,6 @@
 import Fuse from "fuse.js";
 import { pinyin } from "pinyin-pro";
-import { getPlainTextContent } from "../components/GraphCanvas/graphUtils";
+import { getPlainTextContent } from "./cardContent";
 import type { GraphNode } from "../types";
 
 export interface SearchFilters {

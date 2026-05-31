@@ -1,8 +1,8 @@
 import type { Node } from "@xyflow/react";
 import type { CSSProperties, MouseEvent } from "react";
 import { isReferenceableNode } from "../../lib/graphConstraints";
-import { DEFAULT_GROUP_SIZE, constrainGroupNodeSize } from "../../lib/graphLayout";
-import { nodeMatchesSearch } from "../../lib/searchUtils";
+import { constrainGroupNodeSize } from "../../lib/graphLayout";
+import { estimateNodeSize } from "../../lib/graphNodeMetrics";
 import type { EntityType, GraphNode } from "../../types";
 
 interface GraphFlowNodeData extends Record<string, unknown> {
@@ -222,10 +222,6 @@ export function getEdgeVisualStyle({
   };
 }
 
-export function matchesSearch(node: GraphNode, query: string): boolean {
-  return nodeMatchesSearch(node, query);
-}
-
 export function shouldDimEdgeByFilter(
   edge: { sourceId: string; targetId: string },
   visibleNodeIds: Set<string>
@@ -235,50 +231,6 @@ export function shouldDimEdgeByFilter(
 
 export function getNodePositions(nodes: GraphFlowNode[]) {
   return Object.fromEntries(nodes.map((node) => [node.id, node.position]));
-}
-
-export function estimateNodeSize(node: GraphNode) {
-  if (node.type === "group") {
-    return DEFAULT_GROUP_SIZE;
-  }
-  const title = node.title.trim();
-  const content = getPlainTextContent(node.contentHtml);
-  const tags = node.tags.slice(0, 3).join(", ");
-  const snippets = [title, content, tags].filter(Boolean);
-  const longestSnippetLength = Math.max(...snippets.map((snippet) => snippet.length), 12);
-  const width = clamp(Math.round(longestSnippetLength * 6.6) + 36, 140, 400);
-  const approxCharsPerLine = Math.max(Math.floor((width - 20) / 6.6), 10);
-  const lineCount = snippets.reduce(
-    (count, snippet) => count + Math.max(Math.ceil(snippet.length / approxCharsPerLine), 1),
-    1
-  );
-
-  return {
-    width,
-    height: Math.max(68, 34 + lineCount * 18),
-  };
-}
-
-const globalDOMParser = typeof window !== "undefined" ? new DOMParser() : null;
-
-export function getPlainTextContent(contentHtml: string | undefined) {
-  if (!contentHtml) {
-    return "";
-  }
-
-  if (!globalDOMParser) {
-    return contentHtml
-      .replace(/<[^>]*>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  const document = globalDOMParser.parseFromString(contentHtml, "text/html");
-  return document.body.textContent?.replace(/\s+/g, " ").trim() ?? "";
-}
-
-export function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
 }
 
 export function getNodePosition(index: number, total: number) {

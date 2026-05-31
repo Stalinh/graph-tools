@@ -1,4 +1,21 @@
 const PLAIN_TEXT_TAGS = new Set(["P", "BR"]);
+const globalDOMParser = typeof window !== "undefined" ? new DOMParser() : null;
+
+export function getPlainTextContent(contentHtml: string | undefined) {
+  if (!contentHtml) {
+    return "";
+  }
+
+  if (!globalDOMParser) {
+    return contentHtml
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  const document = globalDOMParser.parseFromString(contentHtml, "text/html");
+  return document.body.textContent?.replace(/\s+/g, " ").trim() ?? "";
+}
 
 export function isPlainTextCardContent(contentHtml: string | undefined) {
   if (!contentHtml) {

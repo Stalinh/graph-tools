@@ -70,8 +70,11 @@ export function isWorkspaceState(value: unknown): value is WorkspaceState {
   }
 
   const nodeIds = new Set(graph.nodes.map((node) => node.id));
+  const edgeIds = new Set(graph.edges.map((edge) => edge.id));
 
   return (
+    nodeIds.size === graph.nodes.length &&
+    edgeIds.size === graph.edges.length &&
     (selectedNodeId === null || nodeIds.has(selectedNodeId)) &&
     graph.edges.every((edge) => nodeIds.has(edge.sourceId) && nodeIds.has(edge.targetId)) &&
     graph.nodes.every((node) =>

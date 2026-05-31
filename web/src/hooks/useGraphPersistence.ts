@@ -1,11 +1,11 @@
 import type { CanvasPosition, CanvasViewport, GraphData, NodeSize, WorkspaceState } from "../types";
 import { useCallback, useRef } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import type { CanvasCommand } from "./useCanvasHistory";
+import type { CanvasCommand } from "./canvasHistoryTypes";
 import {
   clearContentCache,
   deleteContentCacheEntry,
-} from "../components/GraphCanvas/GraphNodeContent";
+} from "../lib/cardContentCache";
 import { addCitation, addNode, removeCitation, removeNode, restoreNode } from "../lib/graphMutator";
 import { normalizeWorkspaceState } from "../lib/workspaceState";
 

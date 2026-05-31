@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { deleteContentCacheEntry } from "../components/GraphCanvas/GraphNodeContent";
-import { estimateNodeSize } from "../components/GraphCanvas/graphUtils";
 import { getDefaultCardTitle, getDefaultGroupTitle, type Locale } from "../i18n";
+import { deleteContentCacheEntry } from "../lib/cardContentCache";
 import {
   addNode,
   removeNode,
@@ -16,9 +15,10 @@ import {
   constrainGroupNodeSize,
   snapPositionToGrid,
 } from "../lib/graphLayout";
+import { estimateNodeSize } from "../lib/graphNodeMetrics";
 import { EMPTY_GRAPH, generateNextId } from "../lib/workspaceState";
 import type { CanvasViewport, GraphData, GraphNode } from "../types";
-import type { CanvasCommand, RemoveManyMeta, RemoveMeta } from "./useCanvasHistory";
+import type { CanvasCommand, RemoveManyMeta, RemoveMeta } from "./canvasHistoryTypes";
 
 interface UseGraphNodesOptions {
   locale?: Locale;

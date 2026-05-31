@@ -1,17 +1,13 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { Locale } from "../../i18n";
+import {
+  getContentCacheEntry,
+  rememberContentCacheEntry,
+} from "../../lib/cardContentCache";
 import type { GraphNode, ReferenceItem } from "../../types";
 
 const globalParser = typeof window !== "undefined" ? new DOMParser() : null;
 
-interface CacheEntry {
-  contentHtml: string;
-  locale: Locale;
-  referencesKey: string;
-  elements: ReactNode;
-}
-
-const MAX_CONTENT_CACHE_ENTRIES = 200;
 const INLINE_REFERENCE_TOKEN_PATTERN = /(\[#\d+\])/g;
 const INLINE_REFERENCE_TOKEN_EXACT_PATTERN = /^\[(#\d+)\]$/;
 const SUPPORTED_CONTENT_BACKGROUND_COLORS = new Set([
@@ -23,34 +19,11 @@ const SUPPORTED_CONTENT_BACKGROUND_COLORS = new Set([
   "#fecaca",
 ]);
 
-const contentCache = new Map<string, CacheEntry>();
-
 function getReferenceAriaLabel(reference: ReferenceItem, locale: Locale) {
   const isZh = locale === "zh-CN";
   return isZh
     ? `打开画布引用 ${reference.id}: ${reference.title}`
     : `Open canvas reference ${reference.id}: ${reference.title}`;
-}
-
-function rememberContentCacheEntry(nodeId: string, entry: CacheEntry) {
-  contentCache.delete(nodeId);
-  contentCache.set(nodeId, entry);
-
-  while (contentCache.size > MAX_CONTENT_CACHE_ENTRIES) {
-    const oldestKey = contentCache.keys().next().value;
-    if (oldestKey === undefined) {
-      break;
-    }
-    contentCache.delete(oldestKey);
-  }
-}
-
-export function clearContentCache() {
-  contentCache.clear();
-}
-
-export function deleteContentCacheEntry(nodeId: string) {
-  contentCache.delete(nodeId);
 }
 
 export function renderCardContent(
@@ -65,7 +38,7 @@ export function renderCardContent(
 
   if (!searchQuery) {
     const referencesKey = JSON.stringify(node.references ?? []);
-    const cached = contentCache.get(node.id);
+    const cached = getContentCacheEntry(node.id);
     if (
       cached &&
       cached.contentHtml === node.contentHtml &&

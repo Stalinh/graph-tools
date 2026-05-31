@@ -1,82 +1,8 @@
-import type { EdgeDirection, GraphData, GraphEdge, GraphNode, WorkspaceState } from "../types";
+import type { GraphData, GraphNode, WorkspaceState } from "../types";
 
 import { sanitizeReferenceGraph, sanitizeReferences } from "./graphConstraints";
 import { constrainGroupNodeSize, snapPositionToGrid } from "./graphLayout";
 import { normalizeEdgeColor, normalizeNodeColor } from "./nodeColors";
-
-export type RemoveMeta = {
-  removedNode: GraphNode;
-  position: { x: number; y: number };
-  size?: { width: number; height: number };
-  removedEdges: GraphEdge[];
-  affectedRefs: { ownerId: string; refId: string }[];
-};
-
-export type RemoveManyMeta = {
-  nodeId: string;
-  meta: RemoveMeta;
-};
-
-export type CanvasCommand =
-  | {
-      type: "move";
-      nodeId: string;
-      from: { x: number; y: number };
-      to: { x: number; y: number };
-      graphBefore?: GraphData;
-      graphAfter?: GraphData;
-    }
-  | {
-      type: "move-many";
-      moves: { nodeId: string; from: { x: number; y: number }; to: { x: number; y: number } }[];
-      graphBefore?: GraphData;
-      graphAfter?: GraphData;
-    }
-  | {
-      type: "add";
-      nodeId: string;
-      nodeData: GraphNode;
-      position: { x: number; y: number };
-      size?: { width: number; height: number };
-    }
-  | {
-      type: "remove";
-      nodeId: string;
-      meta: RemoveMeta;
-      graphBefore?: GraphData;
-      graphAfter?: GraphData;
-      positionsBefore?: Record<string, { x: number; y: number }>;
-      positionsAfter?: Record<string, { x: number; y: number }>;
-      sizesBefore?: Record<string, { width: number; height: number }>;
-      sizesAfter?: Record<string, { width: number; height: number }>;
-    }
-  | {
-      type: "remove-many";
-      removals: RemoveManyMeta[];
-      graphBefore?: GraphData;
-      graphAfter?: GraphData;
-      positionsBefore?: Record<string, { x: number; y: number }>;
-      positionsAfter?: Record<string, { x: number; y: number }>;
-      sizesBefore?: Record<string, { width: number; height: number }>;
-      sizesAfter?: Record<string, { width: number; height: number }>;
-    }
-  | { type: "link"; sourceId: string; targetId: string; direction: EdgeDirection }
-  | { type: "unlink"; sourceId: string; targetId: string; direction?: EdgeDirection }
-  | { type: "replace-graph"; before: GraphData; after: GraphData }
-  | {
-      type: "resize";
-      nodeId: string;
-      before: { width: number; height: number } | undefined;
-      after: { width: number; height: number };
-    }
-  | {
-      type: "resize-many";
-      resizes: {
-        nodeId: string;
-        before: { width: number; height: number } | undefined;
-        after: { width: number; height: number };
-      }[];
-    };
 
 export const EMPTY_GRAPH: GraphData = { nodes: [], edges: [] };
 

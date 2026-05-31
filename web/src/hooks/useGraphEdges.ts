@@ -1,7 +1,7 @@
 import { useCallback, useRef } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { EdgeDirection, EdgeStyle, GraphData } from "../types";
-import type { CanvasCommand } from "./useCanvasHistory";
+import type { CanvasCommand } from "./canvasHistoryTypes";
 import {
   addCitation,
   removeCitation,
