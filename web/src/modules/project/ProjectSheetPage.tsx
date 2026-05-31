@@ -287,9 +287,12 @@ export function ProjectSheetPage() {
   };
 
   const handleSaveProjectFileAs = async () => {
+    const recordsToSave = normalizeRecordsForPersistence(records);
+    setRecords(recordsToSave);
+
     try {
       setFileStatus(isZh ? "正在保存..." : "Saving...");
-      const fileName = await projectFileManager.saveProjectFileAs(records);
+      const fileName = await projectFileManager.saveProjectFileAs(recordsToSave);
       if (!fileName) {
         setFileStatus(null);
         return false;
@@ -307,13 +310,16 @@ export function ProjectSheetPage() {
   };
 
   const handleSaveProjectFile = async () => {
+    const recordsToSave = normalizeRecordsForPersistence(records);
+    setRecords(recordsToSave);
+
     if (!currentFileName) {
       return await handleSaveProjectFileAs();
     }
 
     try {
       setFileStatus(isZh ? "正在保存..." : "Saving...");
-      const saved = await projectFileManager.saveProjectFile(records);
+      const saved = await projectFileManager.saveProjectFile(recordsToSave);
       if (!saved) {
         return await handleSaveProjectFileAs();
       }
@@ -328,46 +334,9 @@ export function ProjectSheetPage() {
     }
   };
 
-  const openCreateDetail = () => {
-    setDetailState({
-      mode: "create",
-      lineType: "project",
-      record: createProjectRecord(),
-      error: "",
-    });
-  };
-
-  const openEditDetail = (record: ProjectRecord) => {
-    setDetailState({
-      mode: "edit",
-      lineType: "project",
-      record: { ...record },
-      error: "",
-    });
-  };
-
-  const openCreateSubLineDetail = (parentId: string) => {
-    setDetailState({
-      mode: "create",
-      lineType: "subLine",
-      parentId,
-      record: createProjectSubLine(),
-      error: "",
-    });
-  };
-
-  const openEditSubLineDetail = (parentId: string, subLine: ProjectSubLine) => {
-    setDetailState({
-      mode: "edit",
-      lineType: "subLine",
-      parentId,
-      record: { ...subLine },
-      error: "",
-    });
-  };
-
-  const closeDetail = () => {
-    setDetailState(null);
+  const enterReadMode = () => {
+    setRecords((currentRecords) => normalizeRecordsForPersistence(currentRecords));
+    setIsEditMode(false);
   };
 
   const toggleProjectExpanded = (recordId: string) => {
@@ -383,127 +352,53 @@ export function ProjectSheetPage() {
     });
   };
 
-  const updateDetailRecord = (field: ProjectRecordField, value: string) => {
-    setDetailState((currentState) =>
-      currentState?.lineType === "project"
-        ? {
-            ...currentState,
-            error: "",
-            record: {
-              ...currentState.record,
-              [field]: value,
-            },
-          }
-        : currentState
-    );
-  };
-
-  const updateSubLineDetailRecord = (field: keyof Omit<ProjectSubLine, "id">, value: string) => {
-    setDetailState((currentState) =>
-      currentState?.lineType === "subLine"
-        ? {
-            ...currentState,
-            error: "",
-            record: {
-              ...currentState.record,
-              [field]: value,
-            },
-          }
-        : currentState
-    );
-  };
-
-  const saveDetailRecord = () => {
-    if (!detailState) {
+  const addProjectRecord = () => {
+    if (!isEditMode) {
       return;
     }
 
-    if (detailState.lineType === "subLine") {
-      const savedSubLine = createSavedProjectSubLine(detailState.record);
-      if (!savedSubLine.taskName) {
-        setDetailState((currentState) =>
-          currentState
-            ? {
-                ...currentState,
-                error: isZh ? "任务名称不能为空。" : "Task name is required.",
-              }
-            : currentState
-        );
-        return;
-      }
-
-      setRecords((currentRecords) =>
-        sanitizeProjectRecords(
-          currentRecords.map((record) => {
-            if (record.id !== detailState.parentId) {
-              return record;
-            }
-
-            if (detailState.mode === "create") {
-              return { ...record, subLines: [...record.subLines, savedSubLine] };
-            }
-
-            return {
-              ...record,
-              subLines: record.subLines.map((subLine) =>
-                subLine.id === savedSubLine.id ? savedSubLine : subLine
-              ),
-            };
-          })
-        )
-      );
-      setExpandedProjectIds((currentIds) => new Set(currentIds).add(detailState.parentId));
-      setDirty(true);
-      setDetailState(null);
-      return;
-    }
-
-    const projectName = normalizeProjectName(detailState.record.projectName);
-    if (!projectName) {
-      setDetailState((currentState) =>
-        currentState
-          ? {
-              ...currentState,
-              error: isZh ? "项目名称不能为空。" : "Project name is required.",
-            }
-          : currentState
-      );
-      return;
-    }
-
-    const isDuplicateProjectName = projectNameEntries.some(
-      (entry) => entry.id !== detailState.record.id && entry.projectName === projectName
-    );
-    if (isDuplicateProjectName || (detailState.mode === "create" && projectNames.has(projectName))) {
-      setDetailState((currentState) =>
-        currentState
-          ? {
-              ...currentState,
-              error: isZh ? "项目名称已存在，请使用唯一名称。" : "Project name already exists.",
-            }
-          : currentState
-      );
-      return;
-    }
-
-    const savedLine = createSavedProjectLine(detailState.record, projectName);
-
-    setRecords((currentRecords) => {
-      if (detailState.mode === "create") {
-        return sanitizeProjectRecords([
-          ...currentRecords,
-          { ...savedLine, subLines: createDefaultProjectSubLines() },
-        ]);
-      }
-
-      return sanitizeProjectRecords(
-        currentRecords.map((record) =>
-          record.id === savedLine.id ? { ...record, ...savedLine } : record
-        )
-      );
+    const projectName = getUniqueProjectName(isZh ? "新项目" : "New Project", "");
+    const nextRecord = createProjectRecord({
+      projectName,
+      subLines: createDefaultProjectSubLines(),
     });
+
+    setRecords((currentRecords) => [...currentRecords, nextRecord]);
+    setExpandedProjectIds((currentIds) => new Set(currentIds).add(nextRecord.id));
     setDirty(true);
-    setDetailState(null);
+  };
+
+  const addSubLineRecord = (parentId: string) => {
+    if (!isEditMode) {
+      return;
+    }
+
+    setRecords((currentRecords) =>
+      currentRecords.map((record) => {
+        if (record.id !== parentId) {
+          return record;
+        }
+
+        const baseTaskName = isZh ? "新任务" : "New Task";
+        const knownTaskNames = new Set(
+          record.subLines.map((subLine) => normalizeProjectSubLineTaskName(subLine.taskName))
+        );
+        let taskName = baseTaskName;
+        let suffix = 2;
+
+        while (knownTaskNames.has(taskName)) {
+          taskName = `${baseTaskName} ${suffix}`;
+          suffix += 1;
+        }
+
+        return {
+          ...record,
+          subLines: [...record.subLines, createProjectSubLine({ taskName })],
+        };
+      })
+    );
+    setExpandedProjectIds((currentIds) => new Set(currentIds).add(parentId));
+    setDirty(true);
   };
 
   const removeRecord = (recordId: string) => {
