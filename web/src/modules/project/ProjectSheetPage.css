@@ -133,11 +133,11 @@
 
 .project-sheet th,
 .project-sheet td {
-  height: 42px;
+  height: 32px;
   border-right: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
   overflow: hidden;
-  padding: 0 10px;
+  padding: 0 8px;
   text-align: left;
   text-overflow: ellipsis;
   vertical-align: middle;
@@ -165,6 +165,10 @@
   font-size: 12px;
   font-weight: 700;
   text-align: center;
+}
+
+.project-sheet tbody th.project-sheet__tree-header--toggleable {
+  padding: 0;
 }
 
 .project-sheet tbody tr:hover th,
@@ -201,6 +205,23 @@
   min-width: 0;
 }
 
+.project-sheet__tree-cell--toggle-button {
+  height: 100%;
+  min-height: 32px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0 8px;
+  text-align: left;
+}
+
+.project-sheet__tree-cell--toggle-button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
 .project-sheet__tree-cell--sub {
   position: relative;
   z-index: 1;
@@ -215,8 +236,8 @@
 
 .project-sheet__tree-toggle {
   display: inline-flex;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
@@ -233,8 +254,8 @@
 }
 
 .project-sheet__tree-spacer {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   flex: 0 0 auto;
 }
 
@@ -253,7 +274,7 @@
 
 .project-sheet__sub-row th,
 .project-sheet__sub-row td {
-  height: 54px;
+  height: 28px;
   background: var(--project-subline-bg);
 }
 
@@ -326,7 +347,7 @@
   display: block;
   overflow: hidden;
   color: var(--color-heading);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   text-overflow: ellipsis;
 }
@@ -335,40 +356,28 @@
   display: block;
   overflow: hidden;
   color: var(--color-muted-strong);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   text-overflow: ellipsis;
 }
 
-.project-subline__progress {
-  min-width: 0;
-}
-
-.project-subline__progress .project-progress {
-  grid-template-columns: minmax(0, 1fr) 36px;
-  gap: 7px;
-}
-
-.project-subline__progress .project-progress__bar {
-  height: 6px;
-}
-
-.project-subline__progress .project-progress__value {
-  font-size: 11px;
-}
-
 .project-subline__status {
   display: inline-flex;
-  min-height: 24px;
+  min-height: 18px;
   align-items: center;
   justify-content: center;
-  padding: 0 9px;
+  padding: 0 7px;
   border: 1px solid var(--color-border);
   border-radius: 999px;
   background: var(--color-control-bg);
   color: var(--color-muted-strong);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
+}
+
+.project-sheet__sub-row .project-sheet__row-action {
+  width: 24px;
+  height: 24px;
 }
 
 .project-subline__status--designing {
@@ -381,6 +390,12 @@
   border-color: color-mix(in srgb, var(--color-primary) 36%, var(--color-border) 64%);
   background: color-mix(in srgb, var(--color-primary-bg) 68%, var(--color-surface) 32%);
   color: var(--color-primary);
+}
+
+.project-subline__status--provided {
+  border-color: color-mix(in srgb, var(--color-success) 30%, var(--color-border) 70%);
+  background: color-mix(in srgb, var(--color-success) 8%, var(--color-surface) 92%);
+  color: var(--color-success);
 }
 
 .project-subline__status--ordered {
@@ -434,8 +449,8 @@
 }
 
 .project-sheet__row-action {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   color: var(--color-muted);
 }
 

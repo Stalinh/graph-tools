@@ -16,8 +16,10 @@ import "./ProjectSheetPage.css";
 import { PROJECT_COLUMNS, PROJECT_LEVEL_OPTIONS, PROJECT_SUB_LINE_STATUS_OPTIONS } from "./projectConfig";
 import { projectFileManager } from "./projectFileSystem";
 import {
+  createDefaultProjectSubLines,
   createProjectRecord,
   createProjectSubLine,
+  ensureProjectRecordsDefaultSubLines,
   normalizeProjectLineNo,
   normalizeProjectName,
   normalizeProjectProgress,
@@ -122,6 +124,7 @@ function getSubLineStatusClassName(status: ProjectSubLineStatus) {
     未处理: "project-subline__status--pending",
     设计中: "project-subline__status--designing",
     待评审: "project-subline__status--review",
+    已提资: "project-subline__status--provided",
     已下单: "project-subline__status--ordered",
   };
 
@@ -232,12 +235,24 @@ export function ProjectSheetPage() {
         return;
       }
 
+      const openedRecordsWithDefaultSubLines = ensureProjectRecordsDefaultSubLines(openedRecords);
       setDetailState(null);
       setExpandedProjectIds(new Set());
-      replaceRecords(openedRecords, false);
+      replaceRecords(
+        openedRecordsWithDefaultSubLines.records,
+        openedRecordsWithDefaultSubLines.addedSubLineCount > 0
+      );
       setCurrentFileName(projectFileManager.getCurrentFileName());
       clearProjectDraftRecords();
-      setFileStatus(isZh ? "项目文件已打开。" : "Project file opened.");
+      setFileStatus(
+        openedRecordsWithDefaultSubLines.addedSubLineCount > 0
+          ? isZh
+            ? `项目文件已打开，并自动补齐 ${openedRecordsWithDefaultSubLines.addedSubLineCount} 条子行。`
+            : `Project file opened and ${openedRecordsWithDefaultSubLines.addedSubLineCount} sublines were added.`
+          : isZh
+            ? "项目文件已打开。"
+            : "Project file opened."
+      );
     } catch (error) {
       setFileStatus(getOpenErrorMessage(error));
     }
@@ -447,7 +462,10 @@ export function ProjectSheetPage() {
 
     setRecords((currentRecords) => {
       if (detailState.mode === "create") {
-        return sanitizeProjectRecords([...currentRecords, { ...savedLine, subLines: [] }]);
+        return sanitizeProjectRecords([
+          ...currentRecords,
+          { ...savedLine, subLines: createDefaultProjectSubLines() },
+        ]);
       }
 
       return sanitizeProjectRecords(
@@ -601,42 +619,52 @@ export function ProjectSheetPage() {
               return (
                 <Fragment key={record.id}>
                   <tr>
-                    <th scope="row">
-                      <div className="project-sheet__tree-cell">
-                        {hasSubLines ? (
-                          <button
-                            className="project-sheet__tree-toggle"
-                            type="button"
-                            aria-expanded={isExpanded}
-                            aria-label={
-                              isExpanded
-                                ? isZh
-                                  ? "折叠子行"
-                                  : "Collapse sublines"
-                                : isZh
-                                  ? "展开子行"
-                                  : "Expand sublines"
-                            }
-                            title={
-                              isExpanded
-                                ? isZh
-                                  ? "折叠子行"
-                                  : "Collapse sublines"
-                                : isZh
-                                  ? "展开子行"
-                                  : "Expand sublines"
-                            }
-                            onClick={() => toggleProjectExpanded(record.id)}
-                          >
+                    <th
+                      className={`project-sheet__tree-header ${
+                        hasSubLines ? "project-sheet__tree-header--toggleable" : ""
+                      }`}
+                      scope="row"
+                    >
+                      {hasSubLines ? (
+                        <button
+                          className="project-sheet__tree-cell project-sheet__tree-cell--toggle-button"
+                          type="button"
+                          aria-expanded={isExpanded}
+                          aria-label={
+                            isExpanded
+                              ? isZh
+                                ? "折叠子行"
+                                : "Collapse sublines"
+                              : isZh
+                                ? "展开子行"
+                                : "Expand sublines"
+                          }
+                          title={
+                            isExpanded
+                              ? isZh
+                                ? "折叠子行"
+                                : "Collapse sublines"
+                              : isZh
+                                ? "展开子行"
+                                : "Expand sublines"
+                          }
+                          onClick={() => toggleProjectExpanded(record.id)}
+                        >
+                          <span className="project-sheet__tree-toggle" aria-hidden="true">
                             {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-                          </button>
-                        ) : (
+                          </span>
+                          <span className="project-sheet__tree-index" title={record.lineNo}>
+                            {record.lineNo}
+                          </span>
+                        </button>
+                      ) : (
+                        <div className="project-sheet__tree-cell">
                           <span className="project-sheet__tree-spacer" aria-hidden="true" />
-                        )}
-                        <span className="project-sheet__tree-index" title={record.lineNo}>
-                          {record.lineNo}
-                        </span>
-                      </div>
+                          <span className="project-sheet__tree-index" title={record.lineNo}>
+                            {record.lineNo}
+                          </span>
+                        </div>
+                      )}
                     </th>
                     {PROJECT_COLUMNS.map((column) => (
                       <td key={column.field}>{renderProjectCell(record, column.field, isZh)}</td>
@@ -698,19 +726,12 @@ export function ProjectSheetPage() {
                               {subLine.taskName}
                             </span>
                           </td>
-                          <td className="project-sheet__subline-progress-cell">
-                            <div className="project-subline__progress">
-                              {renderProgressBar(
-                                subLine.progressRatio,
-                                isZh ? "子行进度占比" : "Subline progress share"
-                              )}
-                            </div>
-                          </td>
                           <td className="project-sheet__subline-status-cell">
                             <span className={getSubLineStatusClassName(subLine.status)}>
                               {subLine.status}
                             </span>
                           </td>
+                          <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
                           <td className="project-sheet__subline-detail-design-cell">
                             <span className="project-subline__detail-design" title={subLine.detailDesign}>
                               {subLine.detailDesign}

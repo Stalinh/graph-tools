@@ -12,7 +12,7 @@ export interface ProjectLine {
   projectManager: string;
 }
 
-export type ProjectSubLineStatus = "未处理" | "设计中" | "待评审" | "已下单";
+export type ProjectSubLineStatus = "未处理" | "设计中" | "待评审" | "已提资" | "已下单";
 
 export interface ProjectSubLine {
   id: string;

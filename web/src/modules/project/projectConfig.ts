@@ -23,5 +23,24 @@ export const PROJECT_SUB_LINE_STATUS_OPTIONS: ProjectSubLineStatus[] = [
   "未处理",
   "设计中",
   "待评审",
+  "已提资",
   "已下单",
+];
+
+export const PROJECT_DEFAULT_SUB_LINE_TASK_NAMES = [
+  "主机设备",
+  "输送设备",
+  "常规外购",
+  "个性化外购",
+  "预制件",
+  "溜管",
+  "钢材软连接",
+  "辅材",
+  "平台",
+  "专项-料仓",
+  "专项-风网",
+  "专项-空压",
+  "专项-液体",
+  "专项-蒸汽",
+  "专项-液体模块",
 ];

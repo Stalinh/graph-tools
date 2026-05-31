@@ -1,8 +1,14 @@
-import { PROJECT_COLUMNS } from "./projectConfig";
+import { PROJECT_COLUMNS, PROJECT_DEFAULT_SUB_LINE_TASK_NAMES } from "./projectConfig";
 import type { ProjectLine, ProjectRecord, ProjectSubLine, ProjectSubLineStatus } from "./projectTypes";
 
 const DEFAULT_PROJECT_SUB_LINE_STATUS: ProjectSubLineStatus = "未处理";
-const PROJECT_SUB_LINE_STATUSES: ProjectSubLineStatus[] = ["未处理", "设计中", "待评审", "已下单"];
+const PROJECT_SUB_LINE_STATUSES: ProjectSubLineStatus[] = [
+  "未处理",
+  "设计中",
+  "待评审",
+  "已提资",
+  "已下单",
+];
 const OPTIONAL_PROJECT_LINE_FIELDS = new Set(["detailDesign", "lineNo", "progress"]);
 
 export interface ProjectRecordsSanitizeReport {
@@ -10,6 +16,11 @@ export interface ProjectRecordsSanitizeReport {
   invalidRecordCount: number;
   invalidSubLineCount: number;
   duplicateProjectNameCount: number;
+}
+
+export interface ProjectDefaultSubLinesResult {
+  records: ProjectRecord[];
+  addedSubLineCount: number;
 }
 
 function createProjectId() {
@@ -54,6 +65,10 @@ export function createProjectSubLine(values: Partial<Omit<ProjectSubLine, "id">>
     status: normalizeProjectSubLineStatus(values.status),
     detailDesign: values.detailDesign ?? "",
   };
+}
+
+export function createDefaultProjectSubLines() {
+  return PROJECT_DEFAULT_SUB_LINE_TASK_NAMES.map((taskName) => createProjectSubLine({ taskName }));
 }
 
 export function createInitialProjectRecords() {
@@ -246,4 +261,44 @@ export function sanitizeProjectRecordsWithReport(records: readonly unknown[]): P
 
 export function sanitizeProjectRecords(records: readonly unknown[]) {
   return sanitizeProjectRecordsWithReport(records).records;
+}
+
+export function ensureProjectDefaultSubLines(record: ProjectRecord): ProjectDefaultSubLinesResult {
+  const knownTaskNames = new Set(
+    record.subLines.map((subLine) => normalizeProjectSubLineTaskName(subLine.taskName))
+  );
+  const missingSubLines = PROJECT_DEFAULT_SUB_LINE_TASK_NAMES.filter(
+    (taskName) => !knownTaskNames.has(taskName)
+  ).map((taskName) => createProjectSubLine({ taskName }));
+
+  return {
+    records:
+      missingSubLines.length > 0
+        ? [
+            {
+              ...record,
+              subLines: [...record.subLines, ...missingSubLines],
+            },
+          ]
+        : [record],
+    addedSubLineCount: missingSubLines.length,
+  };
+}
+
+export function ensureProjectRecordsDefaultSubLines(
+  records: readonly ProjectRecord[]
+): ProjectDefaultSubLinesResult {
+  const nextRecords: ProjectRecord[] = [];
+  let addedSubLineCount = 0;
+
+  records.forEach((record) => {
+    const result = ensureProjectDefaultSubLines(record);
+    nextRecords.push(...result.records);
+    addedSubLineCount += result.addedSubLineCount;
+  });
+
+  return {
+    records: nextRecords,
+    addedSubLineCount,
+  };
 }
