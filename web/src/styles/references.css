@@ -1,0 +1,272 @@
+/* ── Color Palette ── */
+.color-palette {
+  display: grid;
+  grid-template-columns: repeat(7, 24px);
+  gap: 6px;
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  background: var(--swatch-color);
+}
+
+.color-swatch.is-active {
+  border-color: var(--color-text);
+  box-shadow: 0 0 0 1px var(--color-bg);
+}
+
+.color-swatch[aria-checked="true"] {
+  border-color: var(--color-text);
+}
+
+.color-swatch--default  {
+  --swatch-color: transparent;
+  border-color: var(--color-border-strong);
+  background:
+    linear-gradient(135deg, transparent 0 43%, var(--color-border-strong) 44% 56%, transparent 57% 100%),
+    var(--color-surface);
+}
+.color-swatch--amber    { --swatch-color: var(--color-card-amber); }
+.color-swatch--rose     { --swatch-color: var(--color-card-rose); }
+.color-swatch--green    { --swatch-color: var(--color-card-green); }
+.color-swatch--blue     { --swatch-color: var(--color-card-blue); }
+.color-swatch--purple   { --swatch-color: var(--color-card-purple); }
+.color-swatch--teal     { --swatch-color: var(--color-card-teal); }
+
+/* ── Reference Groups ── */
+.reference-group + .reference-group {
+  margin-top: 14px;
+}
+
+.reference-group__title {
+  margin: 0 0 8px;
+  color: var(--color-muted-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ── Reference Search ── */
+.reference-search-bar {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.reference-search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.reference-search-input:focus {
+  border-color: var(--color-focus);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-focus) 25%, transparent);
+}
+
+.reference-search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-panel);
+  list-style: none;
+}
+
+.reference-search-dropdown li {
+  margin: 0;
+  padding: 0;
+}
+
+.reference-search-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+}
+
+.reference-search-option:hover {
+  background: var(--color-surface-raised);
+}
+
+.reference-search-color {
+  display: block;
+  width: 4px;
+  height: 18px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.reference-search-color[data-card-color="amber"]  { background: var(--color-card-amber); }
+.reference-search-color[data-card-color="rose"]   { background: var(--color-card-rose); }
+.reference-search-color[data-card-color="green"]  { background: var(--color-card-green); }
+.reference-search-color[data-card-color="blue"]   { background: var(--color-card-blue); }
+.reference-search-color[data-card-color="purple"] { background: var(--color-card-purple); }
+.reference-search-color[data-card-color="teal"]   { background: var(--color-card-teal); }
+.reference-search-color[data-card-color=""],
+.reference-search-color:not([data-card-color])    { background: var(--color-card-0); }
+
+.reference-search-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reference-search-empty {
+  padding: 10px;
+  color: var(--color-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ── Reference Card List ── */
+.reference-card-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reference-card-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.reference-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-list-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.reference-card:hover {
+  border-color: var(--color-border-active);
+  background: var(--color-surface-raised);
+}
+
+.reference-card__color-bar {
+  display: block;
+  width: 4px;
+  height: 22px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.reference-card__color-bar[data-card-color="amber"]  { background: var(--color-card-amber); }
+.reference-card__color-bar[data-card-color="rose"]   { background: var(--color-card-rose); }
+.reference-card__color-bar[data-card-color="green"]  { background: var(--color-card-green); }
+.reference-card__color-bar[data-card-color="blue"]   { background: var(--color-card-blue); }
+.reference-card__color-bar[data-card-color="purple"] { background: var(--color-card-purple); }
+.reference-card__color-bar[data-card-color="teal"]   { background: var(--color-card-teal); }
+.reference-card__color-bar[data-card-color=""],
+.reference-card__color-bar:not([data-card-color])    { background: var(--color-card-0); }
+
+.reference-card__badge {
+  flex-shrink: 0;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--color-surface-raised);
+  color: var(--color-muted-strong);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.reference-card__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reference-card__delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.reference-card-item:hover .reference-card__delete,
+.reference-card__delete:focus {
+  opacity: 1;
+}
+
+.reference-card__delete:hover {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border-color: var(--color-error-border);
+}
+
+.references-empty {
+  padding: 16px 0;
+  color: var(--color-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.references-empty p {
+  margin: 0;
+}
+
+.references-empty__hint {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.references-tab-content {
+  min-width: 0;
+}
+

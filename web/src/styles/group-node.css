@@ -1,0 +1,212 @@
+/* ===== Group Node / Swimlanes ===== */
+.group-node-container {
+  --group-color: var(--color-card-0);
+  background: color-mix(in srgb, var(--group-color) 10%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 2px dashed color-mix(in srgb, var(--group-color) 30%, transparent);
+  border-radius: 16px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 20px -10px rgba(0, 0, 0, 0.08);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.react-flow__node.selected .group-node-container {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--group-color) 75%, transparent);
+  box-shadow: 0 12px 30px -10px color-mix(in srgb, var(--group-color) 20%, transparent);
+  background: color-mix(in srgb, var(--group-color) 10%, transparent);
+}
+
+/* Color thematic overrides */
+.group-node--amber    { --group-color: var(--color-card-amber); }
+.group-node--rose     { --group-color: var(--color-card-rose); }
+.group-node--green    { --group-color: var(--color-card-green); }
+.group-node--blue     { --group-color: var(--color-card-blue); }
+.group-node--purple   { --group-color: var(--color-card-purple); }
+.group-node--teal     { --group-color: var(--color-card-teal); }
+
+.group-node__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--group-color) 12%, var(--color-surface));
+  border-bottom: 1px solid color-mix(in srgb, var(--group-color) 15%, transparent);
+  cursor: pointer;
+  user-select: none;
+  height: 40px;
+}
+
+.group-node__header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.group-node__accent-bar {
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--group-color);
+  flex-shrink: 0;
+}
+
+.group-node__lock-icon {
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+.group-node__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.group-node__title-input {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-heading);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 4px;
+  padding: 2px 6px;
+  width: 150px;
+  outline: none;
+}
+
+.group-node__badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--group-color) 15%, transparent);
+  color: color-mix(in srgb, var(--group-color) 85%, #000);
+  white-space: nowrap;
+}
+
+.group-node__header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.group-node__add-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.group-node__add-btn:hover {
+  background: color-mix(in srgb, var(--group-color) 20%, transparent);
+  color: var(--color-heading);
+}
+
+.group-node__body {
+  flex: 1;
+  pointer-events: none;
+}
+
+/* React Flow custom resizer handle and line overrides */
+.group-node__resize-line.react-flow__resize-control.line {
+  --group-resize-guide: color-mix(in srgb, var(--group-color) 50%, transparent);
+  border-color: transparent !important;
+  background: transparent;
+  z-index: 8;
+}
+
+.group-node__resize-line.react-flow__resize-control.line.left,
+.group-node__resize-line.react-flow__resize-control.line.right {
+  width: 16px;
+}
+
+.group-node__resize-line.react-flow__resize-control.line.top,
+.group-node__resize-line.react-flow__resize-control.line.bottom {
+  height: 16px;
+}
+
+.group-node__resize-line.react-flow__resize-control.line::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.group-node__resize-line.react-flow__resize-control.line.left::after,
+.group-node__resize-line.react-flow__resize-control.line.right::after {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: var(--group-resize-guide);
+}
+
+.group-node__resize-line.react-flow__resize-control.line.top::after,
+.group-node__resize-line.react-flow__resize-control.line.bottom::after {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  transform: translateY(-50%);
+  background: var(--group-resize-guide);
+}
+
+.group-node__resize-handle {
+  background: var(--color-surface) !important;
+  border: 2px solid var(--group-color) !important;
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 2px !important;
+  position: absolute;
+}
+
+/* Expand the interactive hit area of resize handle to prevent jitter from minor mouse movements */
+.group-node__resize-handle::after {
+  content: "";
+  position: absolute;
+  top: -18px;
+  left: -18px;
+  right: -18px;
+  bottom: -18px;
+  background: transparent;
+  cursor: inherit;
+}
+
+/* Disable hover elevation, jumping, and double borders for group nodes */
+.graph-node--group.graph-node,
+.graph-node--group.graph-node:hover,
+.graph-node--group.graph-node.is-selected,
+.graph-node--group.graph-node.is-selected:hover {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  translate: 0 0 !important;
+  scale: 1 !important;
+}
+
+.graph-node--group.graph-node.is-citation-disabled .group-node-container {
+  border-color: color-mix(in srgb, var(--group-color) 16%, transparent);
+  background: color-mix(in srgb, var(--group-color) 5%, transparent);
+  box-shadow: none;
+}
+
+.graph-node--group.graph-node.is-citation-disabled .group-node__header {
+  opacity: 0.7;
+}
