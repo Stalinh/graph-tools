@@ -7,7 +7,6 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
-import { Fragment, type Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { FileText, X } from "lucide-react";
 import {
   useCallback,
@@ -31,6 +30,8 @@ import {
 import type { RichEditorModalProps } from "./RichEditorModal/richEditorTypes";
 import { useRichEditorShortcutHelp } from "./RichEditorModal/useRichEditorShortcutHelp";
 import { useRichEditorSlashMenu } from "./RichEditorModal/useRichEditorSlashMenu";
+import { useRichEditorStats } from "./RichEditorModal/useRichEditorStats";
+import { useRichEditorTaskActions } from "./RichEditorModal/useRichEditorTaskActions";
 
 export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps) {
   const { isZh } = useI18n();
@@ -161,6 +162,12 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
       },
     },
   });
+  const { clearCompletedTasks, setAllTasksChecked, sortTasks } =
+    useRichEditorTaskActions(editor);
+  const { characters, checkedTasks, totalTasks, words } = useRichEditorStats(
+    editor,
+    editorUpdateTrigger
+  );
 
   useEffect(() => {
     editorRef.current = editor;
@@ -356,124 +363,6 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
       editor?.chain().focus().unsetHighlight().run();
     }
   }
-
-  // Batch update all task item check states
-  const setAllTasksChecked = useCallback(
-    (checked: boolean) => {
-      if (!editor) return;
-      editor
-        .chain()
-        .focus()
-        .command(({ tr }) => {
-          let hasChanges = false;
-          tr.doc.descendants((node, pos) => {
-            if (node.type.name === "taskItem" && !!node.attrs.checked !== checked) {
-              tr.setNodeMarkup(pos, undefined, { ...node.attrs, checked });
-              hasChanges = true;
-            }
-          });
-          return hasChanges;
-        })
-        .run();
-    },
-    [editor]
-  );
-
-  const clearCompletedTasks = useCallback(() => {
-    if (!editor) return;
-    editor
-      .chain()
-      .focus()
-      .command(({ tr }) => {
-        let hasChanges = false;
-        const tasksToDelete: { from: number; to: number }[] = [];
-        tr.doc.descendants((node, pos) => {
-          if (node.type.name === "taskItem" && node.attrs.checked) {
-            tasksToDelete.push({ from: pos, to: pos + node.nodeSize });
-          }
-        });
-
-        for (let i = tasksToDelete.length - 1; i >= 0; i--) {
-          const { from, to } = tasksToDelete[i];
-          tr.delete(from, to);
-          hasChanges = true;
-        }
-        return hasChanges;
-      })
-      .run();
-  }, [editor]);
-
-  const sortTasks = useCallback(() => {
-    if (!editor) return;
-    editor
-      .chain()
-      .focus()
-      .command(({ tr }) => {
-        let hasChanges = false;
-        tr.doc.descendants((node, pos) => {
-          if (node.type.name === "taskList") {
-            const children: ProseMirrorNode[] = [];
-            node.forEach((child) => {
-              children.push(child);
-            });
-
-            const checkedStates = children.map((c) => !!c.attrs.checked);
-            let isSorted = true;
-            for (let i = 0; i < checkedStates.length - 1; i++) {
-              if (checkedStates[i] && !checkedStates[i + 1]) {
-                isSorted = false;
-                break;
-              }
-            }
-
-            if (!isSorted) {
-              const sortedChildren = [...children].sort((a, b) => {
-                const aChecked = !!a.attrs.checked;
-                const bChecked = !!b.attrs.checked;
-                if (aChecked === bChecked) return 0;
-                return aChecked ? 1 : -1;
-              });
-
-              const start = pos + 1;
-              const end = pos + node.nodeSize - 1;
-              const sortedFragment = Fragment.from(sortedChildren);
-              tr.replaceWith(start, end, sortedFragment);
-              hasChanges = true;
-            }
-          }
-        });
-        return hasChanges;
-      })
-      .run();
-  }, [editor]);
-
-  // Get statistics
-  const getTextStats = () => {
-    if (!editor) return { characters: 0, words: 0 };
-    const text = editor.getText().trim();
-    const characters = text.length;
-    const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
-    return { characters, words };
-  };
-
-  // Get task statistics
-  const getTaskStats = () => {
-    if (!editor) return { total: 0, checked: 0 };
-    let total = 0;
-    let checked = 0;
-    editor.state.doc.descendants((node) => {
-      if (node.type.name === "taskItem") {
-        total++;
-        if (node.attrs.checked) {
-          checked++;
-        }
-      }
-    });
-    return { total, checked };
-  };
-
-  const { characters, words } = getTextStats();
-  const { total: totalTasks, checked: checkedTasks } = getTaskStats();
 
   return (
     <div className="modal-overlay" onClick={handleCloseAttempt} onKeyDown={handleKeyDown}>
