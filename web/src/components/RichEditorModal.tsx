@@ -25,213 +25,44 @@ import { ShortcutHelpOverlay } from "./RichEditorModal/ShortcutHelpOverlay";
 import { SlashCommandMenu } from "./RichEditorModal/SlashCommandMenu";
 import {
   DEFAULT_CARD_TITLES,
-  SHORTCUT_ITEMS,
   getHighlightColors,
-  getShortcutCategories,
-  getShortcutDescription,
-  getSlashCommands,
   getTextColors,
 } from "./RichEditorModal/richEditorConfig";
-import type {
-  RichEditorModalProps,
-  SlashCommandItem,
-  SlashMenuState,
-} from "./RichEditorModal/richEditorTypes";
+import type { RichEditorModalProps } from "./RichEditorModal/richEditorTypes";
+import { useRichEditorShortcutHelp } from "./RichEditorModal/useRichEditorShortcutHelp";
+import { useRichEditorSlashMenu } from "./RichEditorModal/useRichEditorSlashMenu";
 
 export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps) {
   const { isZh } = useI18n();
   const textColors = useMemo(() => getTextColors(isZh), [isZh]);
   const highlightColors = useMemo(() => getHighlightColors(isZh), [isZh]);
-  const slashCommands = useMemo(() => getSlashCommands(isZh), [isZh]);
-  const shortcutCategories = useMemo(() => getShortcutCategories(isZh), [isZh]);
   const [title, setTitle] = useState(node.title);
   const [initialFocusTarget, setInitialFocusTarget] = useState<"title" | "body" | null>(null);
   const [editorUpdateTrigger, setEditorUpdateTrigger] = useState(0);
   const titleInputRef = useRef<HTMLInputElement | null>(null);
 
   const editorRef = useRef<Editor | null>(null);
-
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [helpSearch, setHelpSearch] = useState("");
-
-  const isHelpOpenRef = useRef(false);
-  useEffect(() => {
-    isHelpOpenRef.current = isHelpOpen;
-  }, [isHelpOpen]);
-
-  const [slashMenu, setSlashMenu] = useState<SlashMenuState>({
-    isOpen: false,
-    pos: 0,
-    coords: { top: 0, left: 0 },
-    query: "",
-    activeIndex: 0,
+  const {
+    closeHelp,
+    filteredShortcuts,
+    helpSearch,
+    isHelpOpen,
+    isHelpOpenRef,
+    openHelp,
+    setHelpSearch,
+    shortcutCategories,
+    toggleHelp,
+  } = useRichEditorShortcutHelp(isZh);
+  const {
+    filteredCommands,
+    handleKeyDownCapture,
+    scheduleSlashMenuCheck,
+    setSlashMenu,
+    slashMenu,
+  } = useRichEditorSlashMenu({
+    editorRef,
+    isZh,
   });
-
-  const slashMenuRef = useRef({
-    isOpen: false,
-    activeIndex: 0,
-    filteredCommands: [] as SlashCommandItem[],
-    query: "",
-    pos: 0,
-  });
-  const slashMenuCheckTimerRef = useRef<number | null>(null);
-
-  const filteredCommands = useMemo(() => {
-    if (!slashMenu.isOpen) return [];
-    const q = slashMenu.query.toLowerCase();
-    return slashCommands.filter((cmd) => {
-      if (!q) return true;
-      return (
-        cmd.title.toLowerCase().includes(q) ||
-        cmd.keywords.some((kw) => kw.includes(q)) ||
-        cmd.subtitle.toLowerCase().includes(q)
-      );
-    });
-  }, [slashCommands, slashMenu.isOpen, slashMenu.query]);
-
-  const filteredShortcuts = useMemo(() => {
-    const q = helpSearch.trim().toLowerCase();
-    if (!q) return SHORTCUT_ITEMS;
-    return SHORTCUT_ITEMS.filter((item) => {
-      const localizedDescription = getShortcutDescription(item.id, isZh).toLowerCase();
-      return (
-        localizedDescription.includes(q) ||
-        item.description.toLowerCase().includes(q) ||
-        item.keywords.some((kw) => kw.includes(q)) ||
-        shortcutCategories[item.category].toLowerCase().includes(q)
-      );
-    });
-  }, [helpSearch, isZh, shortcutCategories]);
-
-  // Keep ref synchronized
-  useEffect(() => {
-    slashMenuRef.current = {
-      isOpen: slashMenu.isOpen,
-      activeIndex: slashMenu.activeIndex,
-      filteredCommands,
-      query: slashMenu.query,
-      pos: slashMenu.pos,
-    };
-  }, [slashMenu, filteredCommands]);
-
-  const checkSlashMenu = useCallback((editorInstance: Editor) => {
-    if (!editorInstance) return;
-    const { state } = editorInstance;
-    const { selection } = state;
-    const { $from } = selection;
-
-    // Only show slash commands in paragraph blocks and when selection is empty
-    if (!selection.empty || $from.parent.type.name !== "paragraph") {
-      setSlashMenu((prev) => (prev.isOpen ? { ...prev, isOpen: false } : prev));
-      return;
-    }
-
-    const textBeforeCursor = $from.parent.textBetween(0, $from.parentOffset);
-    // Regex matching a slash at the start of block or after a space, followed by alphanumeric query
-    const match = /(?:^|\s)\/(\w*)$/.exec(textBeforeCursor);
-
-    if (match) {
-      const query = match[1];
-      const coords = editorInstance.view.coordsAtPos(selection.from);
-      if (coords) {
-        setSlashMenu((prev) => {
-          const q = query.toLowerCase();
-          const itemsCount = slashCommands.filter((cmd) => {
-            if (!q) return true;
-            return (
-              cmd.title.toLowerCase().includes(q) ||
-              cmd.keywords.some((kw) => kw.includes(q)) ||
-              cmd.subtitle.toLowerCase().includes(q)
-            );
-          }).length;
-
-          // Estimate menu height: min(280, itemsCount * 48 + 8)
-          const menuHeight = Math.min(280, itemsCount * 48 + 8);
-          const viewportHeight = window.innerHeight;
-          let top = coords.bottom + 4;
-          if (top + menuHeight > viewportHeight) {
-            top = Math.max(10, coords.top - menuHeight - 4);
-          }
-
-          const nextIndex = prev.isOpen
-            ? Math.min(prev.activeIndex, Math.max(0, itemsCount - 1))
-            : 0;
-
-          return {
-            isOpen: true,
-            pos: selection.from,
-            coords: { top, left: coords.left },
-            query,
-            activeIndex: nextIndex,
-          };
-        });
-      }
-    } else {
-      setSlashMenu((prev) => (prev.isOpen ? { ...prev, isOpen: false } : prev));
-    }
-  }, []);
-
-  const scheduleSlashMenuCheck = useCallback(
-    (editorInstance: Editor) => {
-      if (slashMenuCheckTimerRef.current !== null) {
-        window.clearTimeout(slashMenuCheckTimerRef.current);
-      }
-
-      slashMenuCheckTimerRef.current = window.setTimeout(() => {
-        slashMenuCheckTimerRef.current = null;
-        checkSlashMenu(editorInstance);
-      }, 0);
-    },
-    [checkSlashMenu]
-  );
-
-  useEffect(() => {
-    return () => {
-      if (slashMenuCheckTimerRef.current !== null) {
-        window.clearTimeout(slashMenuCheckTimerRef.current);
-      }
-    };
-  }, []);
-
-  const handleKeyDownCapture = useCallback((event: KeyboardEvent) => {
-    if (slashMenuRef.current.isOpen) {
-      const { activeIndex, filteredCommands, pos, query } = slashMenuRef.current;
-
-      if (event.key === "ArrowDown") {
-        event.preventDefault();
-        event.stopPropagation();
-        const nextIndex =
-          filteredCommands.length > 0 ? (activeIndex + 1) % filteredCommands.length : 0;
-        setSlashMenu((prev) => ({ ...prev, activeIndex: nextIndex }));
-      } else if (event.key === "ArrowUp") {
-        event.preventDefault();
-        event.stopPropagation();
-        const nextIndex =
-          filteredCommands.length > 0
-            ? (activeIndex - 1 + filteredCommands.length) % filteredCommands.length
-            : 0;
-        setSlashMenu((prev) => ({ ...prev, activeIndex: nextIndex }));
-      } else if (event.key === "Enter" || event.key === "Tab") {
-        const activeCmd = filteredCommands[activeIndex];
-        if (activeCmd) {
-          event.preventDefault();
-          event.stopPropagation();
-          const start = pos - query.length - 1;
-          const ed = editorRef.current;
-          if (ed) {
-            const end = pos;
-            const chain = ed.chain().focus().deleteRange({ from: start, to: end });
-            activeCmd.action(chain).run();
-          }
-          setSlashMenu((prev) => ({ ...prev, isOpen: false }));
-        }
-      } else if (event.key === "Escape") {
-        event.preventDefault();
-        event.stopPropagation();
-        setSlashMenu((prev) => ({ ...prev, isOpen: false }));
-      }
-    }
-  }, []);
 
   // We use refs to expose the save function inside useEditor callbacks
   // to avoid closure stale-state issues.
@@ -267,8 +98,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
         if (event.key === "Escape" && isHelpOpenRef.current) {
           event.preventDefault();
           event.stopPropagation();
-          setIsHelpOpen(false);
-          setHelpSearch("");
+          closeHelp();
           return true;
         }
 
@@ -276,8 +106,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
         if (isHelpShortcut) {
           event.preventDefault();
           event.stopPropagation();
-          setIsHelpOpen((prev) => !prev);
-          setHelpSearch("");
+          toggleHelp();
           return true;
         }
 
@@ -420,8 +249,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
         if (isHelpOpen) {
           event.preventDefault();
           event.stopPropagation();
-          setIsHelpOpen(false);
-          setHelpSearch("");
+          closeHelp();
           return;
         }
         handleCloseAttempt();
@@ -432,8 +260,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
       if (isHelpShortcut) {
         event.preventDefault();
         event.stopPropagation();
-        setIsHelpOpen((prev) => !prev);
-        setHelpSearch("");
+        toggleHelp();
         return;
       }
 
@@ -447,7 +274,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
         handleSave();
       }
     },
-    [handleCloseAttempt, handleSave, isHelpOpen]
+    [closeHelp, handleCloseAttempt, handleSave, isHelpOpen, toggleHelp]
   );
 
   const handleTitleKeyDown = useCallback(
@@ -723,10 +550,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
           isZh={isZh}
           totalTasks={totalTasks}
           words={words}
-          onOpenHelp={() => {
-            setIsHelpOpen(true);
-            setHelpSearch("");
-          }}
+          onOpenHelp={openHelp}
         />
 
         <div className="modal-footer">
@@ -756,10 +580,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
             helpSearch={helpSearch}
             isZh={isZh}
             shortcutCategories={shortcutCategories}
-            onClose={() => {
-              setIsHelpOpen(false);
-              setHelpSearch("");
-            }}
+            onClose={closeHelp}
             onHelpSearchChange={setHelpSearch}
           />
         ) : null}
