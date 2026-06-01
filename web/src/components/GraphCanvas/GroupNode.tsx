@@ -74,7 +74,7 @@ export function GroupNode({ data, selected }: NodeProps<Node<GroupNodeData>>) {
           minWidth={GRAPH_GRID_SIZE}
           minHeight={GRAPH_GRID_SIZE}
           onResize={() => onNodeResize?.(node.id)}
-          onResizeEnd={(event, params) => {
+          onResizeEnd={(_, params) => {
             onNodeResizeEnd?.(
               node.id,
               constrainGroupNodeSize({ width: params.width, height: params.height })

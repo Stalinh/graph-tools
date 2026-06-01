@@ -18,6 +18,21 @@ function toWritableBytes(text: string): Uint8Array<ArrayBuffer> {
   return copy;
 }
 
+async function writeBytesToFile(handle: FileSystemFileHandle, data: Uint8Array<ArrayBuffer>) {
+  const writable = await handle.createWritable();
+  try {
+    await writable.write(data);
+    await writable.close();
+  } catch (error) {
+    try {
+      await writable.abort(error);
+    } catch {
+      // Preserve the original write failure if cleanup also fails.
+    }
+    throw error;
+  }
+}
+
 async function readFileAsUtf8(file: File) {
   const buffer = await file.arrayBuffer();
   return new TextDecoder("utf-8", { fatal: true }).decode(buffer);
@@ -101,9 +116,7 @@ export class ProjectFileManager {
   }
 
   private async writeProject(handle: FileSystemFileHandle, records: ProjectRecord[]) {
-    const writable = await handle.createWritable();
-    await writable.write(toWritableBytes(serializeProjectFile(records)));
-    await writable.close();
+    await writeBytesToFile(handle, toWritableBytes(serializeProjectFile(records)));
   }
 
   private async readProjectFile(file: File): Promise<ProjectRecord[]> {

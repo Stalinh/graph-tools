@@ -348,7 +348,6 @@ function renderTextWithReferences(
     return highlightTextWithReferences(
       text,
       key,
-      node,
       onReferenceSelect,
       referencesById,
       locale,
@@ -386,7 +385,6 @@ function renderTextWithReferences(
 function highlightTextWithReferences(
   text: string,
   key: string,
-  node: GraphNode,
   onReferenceSelect: (nodeId: string | null) => void,
   referencesById: Map<string, ReferenceItem>,
   locale: Locale,

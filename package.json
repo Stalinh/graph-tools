@@ -9,6 +9,8 @@
   "scripts": {
     "dev": "concurrently \"npm run dev -w web\" \"npm run build -w @local-kg/shared -- --watch --preserveWatchOutput\"",
     "build": "npm run build -w @local-kg/shared && npm run build -w web",
+    "typecheck": "npm run typecheck -w @local-kg/shared && npm run typecheck -w web",
+    "check": "npm run typecheck && npm test && npm run build",
     "test": "npm run test -w web"
   },
   "devDependencies": {

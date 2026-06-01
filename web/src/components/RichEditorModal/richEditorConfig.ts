@@ -326,16 +326,16 @@ export function getShortcutDescription(id: string, isZh: boolean) {
     "inline-code": { zh: "行内代码样式", en: "Apply inline code style" },
     undo: { zh: "撤销操作", en: "Undo the last action" },
     redo: { zh: "重做操作", en: "Redo the last action" },
-    "todo-create": { zh: "自动创建待办列表", en: "Create a checklist automatically" },
-    "todo-toggle-enter": { zh: "勾选 / 取消当前行待办", en: "Toggle the current checklist item" },
-    "todo-toggle-mod": {
+    "checklist-create": { zh: "自动创建待办列表", en: "Create a checklist automatically" },
+    "checklist-toggle": { zh: "勾选 / 取消当前行待办", en: "Toggle the current checklist item" },
+    "checklist-toggle-cmd": {
       zh: "勾选 / 取消当前行待办 (替代)",
       en: "Toggle the current checklist item (alternate)",
     },
-    indent: { zh: "增加列表缩进", en: "Indent the current list item" },
-    outdent: { zh: "减少列表缩进", en: "Outdent the current list item" },
-    "slash-open": { zh: "唤起 Notion 式命令菜单", en: "Open the slash command menu" },
-    "slash-nav": { zh: "上下选择菜单项", en: "Move through slash menu items" },
+    "list-indent": { zh: "增加列表缩进", en: "Indent the current list item" },
+    "list-outdent": { zh: "减少列表缩进", en: "Outdent the current list item" },
+    "slash-trigger": { zh: "唤起 Notion 式命令菜单", en: "Open the slash command menu" },
+    "slash-navigate": { zh: "上下选择菜单项", en: "Move through slash menu items" },
     "slash-confirm": { zh: "确认执行菜单项命令", en: "Run the selected slash command" },
     "slash-close": { zh: "关闭命令菜单", en: "Close the slash command menu" },
   };

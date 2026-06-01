@@ -109,6 +109,21 @@ function toWritableBytes(data: Uint8Array): Uint8Array<ArrayBuffer> {
   return copy;
 }
 
+async function writeBytesToFile(handle: FileSystemFileHandle, data: Uint8Array<ArrayBuffer>) {
+  const writable = await handle.createWritable();
+  try {
+    await writable.write(data);
+    await writable.close();
+  } catch (error) {
+    try {
+      await writable.abort(error);
+    } catch {
+      // Preserve the original write failure if cleanup also fails.
+    }
+    throw error;
+  }
+}
+
 export class WorkspaceFileManager {
   private currentFileHandle: FileSystemFileHandle | null = null;
 
@@ -205,9 +220,7 @@ export class WorkspaceFileManager {
     }
 
     const zipped = toWritableBytes(await zipWorkspaceFiles(files));
-    const writable = await handle.createWritable();
-    await writable.write(zipped);
-    await writable.close();
+    await writeBytesToFile(handle, zipped);
   }
 
   private async readWorkspaceFile(file: File): Promise<WorkspacePackage> {

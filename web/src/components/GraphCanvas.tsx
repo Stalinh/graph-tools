@@ -3,13 +3,9 @@ import {
   ReactFlow,
   SelectionMode,
   applyNodeChanges,
-  useNodesInitialized,
-  useReactFlow,
-  type Connection,
   type Edge,
   type EdgeTypes,
   type EdgeMouseHandler,
-  type FinalConnectionState,
   type Node,
   type NodeChange,
   type NodeMouseHandler,
@@ -51,20 +47,20 @@ import { GroupNode } from "./GraphCanvas/GroupNode";
 import {
   combineScreenRects,
   containsRect,
-  createAlignmentGuides,
   getAutoPanDelta,
   getNodeElement,
   getScreenRect,
   intersectsRect,
   normalizeGroupCollisionChanges,
-  type AlignmentGuide,
   type ScreenPoint,
 } from "./GraphCanvas/canvasInteractionUtils";
+import { GlobalPreviewController } from "./GraphCanvas/GlobalPreviewController";
 import {
   createGraphNodes,
   getEdgeVisualStyle,
   shouldDimEdgeByFilter,
 } from "./GraphCanvas/graphUtils";
+import { useGraphCanvasAlignmentGuides } from "./GraphCanvas/useGraphCanvasAlignmentGuides";
 
 interface PendingCitation {
   direction: EdgeDirection;
@@ -118,26 +114,12 @@ interface ViewportChangeOptions {
   markDirty?: boolean;
 }
 
-interface GlobalPreviewControllerProps {
-  nodeCount: number;
-  requestId: number;
-  onPreviewEnd: () => void;
-  onPreviewStart: () => void;
-  onPreviewViewportChange: (viewport: CanvasViewport) => void;
-}
-
 const EDGE_STYLE: Record<string, Edge["style"]> = {
   citation: { strokeWidth: 1.8 },
 };
 
 const EDGE_TYPES: EdgeTypes = {
   citation: CitationEdge as EdgeTypes[string],
-};
-
-const CITATION_CONNECTION_LINE_STYLE = {
-  stroke: "var(--color-primary)",
-  strokeWidth: 2.2,
-  strokeDasharray: "8 6",
 };
 
 const EMPTY_NODE_SIZES: Record<string, NodeSize> = {};
@@ -153,72 +135,6 @@ const NODE_TYPES: NodeTypes = {
   imageNode: ImageGraphNode as NodeTypes[string],
   groupNode: GroupNode as NodeTypes[string],
 };
-
-function GlobalPreviewController({
-  nodeCount,
-  requestId,
-  onPreviewEnd,
-  onPreviewStart,
-  onPreviewViewportChange,
-}: GlobalPreviewControllerProps) {
-  const flow = useReactFlow();
-  const nodesInitialized = useNodesInitialized({ includeHiddenNodes: true });
-  const handledRequestIdRef = useRef(0);
-
-  useEffect(() => {
-    if (requestId <= 0 || requestId === handledRequestIdRef.current || nodeCount === 0) {
-      return;
-    }
-    if (!nodesInitialized) {
-      return;
-    }
-
-    let cancelled = false;
-    let previewStarted = false;
-    const frame = requestAnimationFrame(() => {
-      if (cancelled) {
-        return;
-      }
-
-      handledRequestIdRef.current = requestId;
-      previewStarted = true;
-      onPreviewStart();
-      void flow
-        .fitView({ duration: 0 })
-        .then(() => {
-          if (!cancelled) {
-            onPreviewViewportChange(flow.getViewport());
-          }
-        })
-        .catch(() => undefined)
-        .finally(() => {
-          requestAnimationFrame(() => {
-            if (!cancelled) {
-              onPreviewEnd();
-            }
-          });
-        });
-    });
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(frame);
-      if (previewStarted) {
-        onPreviewEnd();
-      }
-    };
-  }, [
-    flow,
-    nodeCount,
-    nodesInitialized,
-    onPreviewEnd,
-    onPreviewStart,
-    onPreviewViewportChange,
-    requestId,
-  ]);
-
-  return null;
-}
 
 export function GraphCanvas({
   graph,
@@ -264,7 +180,6 @@ export function GraphCanvas({
   const nodeDragStartPositions = useRef<Record<string, { x: number; y: number }>>({});
   const nodeDragStartTimeRef = useRef<Record<string, number>>({});
   const dragAutoPanFrameRef = useRef<number | null>(null);
-  const alignmentGuideFrameRef = useRef<number | null>(null);
   const hasJustDraggedRef = useRef(false);
   const lastFocusedNodeIdRef = useRef<string | null>(null);
   const suppressNextViewportDirtyRef = useRef(false);
@@ -288,59 +203,21 @@ export function GraphCanvas({
   onSelectNodeRef.current = onSelectNode;
   const [pendingCitation, setPendingCitation] = useState<PendingCitation | null>(null);
   const [selectionMode, setSelectionMode] = useState<SelectionMode>(SelectionMode.Full);
-  const [alignmentGuides, setAlignmentGuides] = useState<AlignmentGuide[]>([]);
   const graphNodeTypeById = useMemo(
     () => new Map(graph.nodes.map((node) => [node.id, node.type])),
     [graph.nodes]
   );
-
-  const clearAlignmentGuides = useCallback(() => {
-    if (alignmentGuideFrameRef.current !== null) {
-      cancelAnimationFrame(alignmentGuideFrameRef.current);
-      alignmentGuideFrameRef.current = null;
-    }
-    setAlignmentGuides([]);
-  }, []);
-
-  const updateAlignmentGuidesForNodeIds = useCallback((nodeIds: string[]) => {
-    const container = containerRef.current;
-    if (!container) {
-      setAlignmentGuides([]);
-      return;
-    }
-
-    setAlignmentGuides(createAlignmentGuides(container, nodeIds, graphNodeTypeById));
-  }, [graphNodeTypeById]);
-
-  const handleGroupNodeResize = useCallback(
-    (nodeId: string) => {
-      if (alignmentGuideFrameRef.current !== null) {
-        cancelAnimationFrame(alignmentGuideFrameRef.current);
-      }
-
-      alignmentGuideFrameRef.current = requestAnimationFrame(() => {
-        alignmentGuideFrameRef.current = null;
-        updateAlignmentGuidesForNodeIds([nodeId]);
-      });
-    },
-    [updateAlignmentGuidesForNodeIds]
-  );
-
-  const handleGroupNodeResizeEnd = useCallback(
-    (nodeId: string, size: NodeSize) => {
-      clearAlignmentGuides();
-      onNodeResizeEnd?.(nodeId, size);
-    },
-    [clearAlignmentGuides, onNodeResizeEnd]
-  );
-
-  useEffect(() => {
-    return () => {
-      if (alignmentGuideFrameRef.current !== null) {
-        cancelAnimationFrame(alignmentGuideFrameRef.current);
-      }
-    };
-  }, []);
+  const {
+    alignmentGuides,
+    clearAlignmentGuides,
+    handleGroupNodeResize,
+    handleGroupNodeResizeEnd,
+    showAlignmentGuidesForNodeIds,
+  } = useGraphCanvasAlignmentGuides({
+    containerRef,
+    graphNodeTypeById,
+    onNodeResizeEnd,
+  });
 
   const handleQuickAddChild = useCallback(
     (parentId: string) => {
@@ -750,7 +627,7 @@ export function GraphCanvas({
         selectedNodeIds.length > 1 && selectedNodeIds.includes(node.id)
           ? selectedNodeIds
           : [node.id];
-      setAlignmentGuides(createAlignmentGuides(container, draggedNodeIds, graphNodeTypeById));
+      showAlignmentGuidesForNodeIds(draggedNodeIds);
       stopDragAutoPan();
 
       const bounds = container.getBoundingClientRect();
@@ -820,7 +697,7 @@ export function GraphCanvas({
         );
       });
     },
-    [graphNodeTypeById, selectedNodeIds, stopDragAutoPan]
+    [selectedNodeIds, showAlignmentGuidesForNodeIds, stopDragAutoPan]
   );
 
   const handleCanvasAuxClick = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
