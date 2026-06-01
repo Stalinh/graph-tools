@@ -2,7 +2,6 @@ import { useCallback, useRef, useState, type Dispatch, type SetStateAction } fro
 import { getDefaultCardTitle, getDefaultGroupTitle, type Locale } from "../i18n";
 import { deleteContentCacheEntry } from "../lib/cardContentCache";
 import {
-  addNode,
   removeNode,
   updateNodeColor,
   updateNodeFields,
@@ -11,13 +10,21 @@ import {
 } from "../lib/graphMutator";
 import {
   DEFAULT_GROUP_SIZE,
-  GRAPH_GRID_SIZE,
   constrainGroupNodeSize,
   snapPositionToGrid,
 } from "../lib/graphLayout";
+import {
+  adjustGroupSizeAndPosition,
+  areViewportsEqual,
+  detachChildrenFromGroup,
+  isGroupPlacementBlocked,
+  resolveGroupMoveTarget,
+  resolveGroupMoveTargets,
+} from "../lib/groupNodeLayout";
+import { createNodeDraft, deleteNodeDraft } from "../lib/graphNodeCommands";
 import { estimateNodeSize } from "../lib/graphNodeMetrics";
 import { EMPTY_GRAPH, generateNextId } from "../lib/workspaceState";
-import type { CanvasViewport, GraphData, GraphNode } from "../types";
+import type { CanvasViewport, GraphData, GraphNode, NodeSize } from "../types";
 import type { CanvasCommand, RemoveManyMeta, RemoveMeta } from "./canvasHistoryTypes";
 
 interface UseGraphNodesOptions {
@@ -34,18 +41,6 @@ interface UseGraphNodesOptions {
 interface UpdateGraphNodeOptions {
   pushToHistory?: boolean;
 }
-
-interface CanvasPosition {
-  x: number;
-  y: number;
-}
-
-interface NodeSize {
-  width: number;
-  height: number;
-}
-
-const GROUP_COLLISION_TOLERANCE = 0.5;
 
 export function useGraphNodes({
   locale = "zh-CN",
@@ -105,121 +100,26 @@ export function useGraphNodes({
       const id = generateNextId(graphRef.current.nodes);
       const now = new Date();
       const createdAt = now.toISOString();
-      let createdNode: GraphNode;
+      const draft = createNodeDraft({
+        createdAt,
+        defaultCardTitle: getDefaultCardTitle(locale),
+        defaultGroupTitle: getDefaultGroupTitle(locale),
+        graph: graphRef.current,
+        id,
+        imagePath,
+        parentId,
+        position,
+        positions: nodePositionsRef.current,
+        sizes: nodeSizesRef.current,
+        type,
+      });
 
-      let resolvedParentId = parentId;
-      let resolvedPosition = { ...position };
-
-      if (!resolvedParentId && type !== "group") {
-        for (const otherNode of graphRef.current.nodes) {
-          if (otherNode.type === "group") {
-            const gPos = nodePositionsRef.current[otherNode.id] ?? { x: 0, y: 0 };
-            const gSize = nodeSizesRef.current[otherNode.id] ?? DEFAULT_GROUP_SIZE;
-            if (
-              position.x >= gPos.x &&
-              position.x <= gPos.x + gSize.width &&
-              position.y >= gPos.y &&
-              position.y <= gPos.y + gSize.height
-            ) {
-              resolvedParentId = otherNode.id;
-              break;
-            }
-          }
-        }
-      }
-
-      if (type === "group") {
-        resolvedPosition = snapPositionToGrid(resolvedPosition);
-        resolvedPosition = findAvailableGroupPosition(
-          id,
-          resolvedPosition,
-          graphRef.current.nodes,
-          nodePositionsRef.current,
-          nodeSizesRef.current
-        );
-      } else if (resolvedParentId) {
-        const parentPosition = nodePositionsRef.current[resolvedParentId] ?? { x: 0, y: 0 };
-        resolvedPosition = {
-          x: position.x - parentPosition.x,
-          y: position.y - parentPosition.y,
-        };
-      }
-
-      const parentGroup = resolvedParentId
-        ? graphRef.current.nodes.find((n) => n.id === resolvedParentId)
-        : undefined;
-      const initialTags = parentGroup && parentGroup.title ? [parentGroup.title] : [];
-
-      if (type === "image") {
-        createdNode = {
-          id,
-          type: "image",
-          title: "",
-          parentId: resolvedParentId,
-          locked: false,
-          opacity: 1,
-          tags: initialTags,
-          color: "",
-          createdAt,
-          updatedAt: createdAt,
-          imagePath,
-        };
-      } else if (type === "group") {
-        createdNode = {
-          id,
-          type: "group",
-          title: getDefaultGroupTitle(locale),
-          locked: false,
-          opacity: 1,
-          tags: [],
-          color: "",
-          createdAt,
-          updatedAt: createdAt,
-        };
-      } else {
-        createdNode = {
-          id,
-          type: "card",
-          title: getDefaultCardTitle(locale),
-          parentId: resolvedParentId,
-          locked: false,
-          opacity: 1,
-          tags: initialTags,
-          color: "",
-          createdAt,
-          updatedAt: createdAt,
-          contentHtml: "<p></p>",
-          customFields: [],
-        };
-      }
-
-      const nextGraph = addNode(graphRef.current, createdNode);
-      graphRef.current = nextGraph;
-
-      let nextPositions = {
-        ...nodePositionsRef.current,
-        [id]: resolvedPosition,
-      };
-      let nextSizes = { ...nodeSizesRef.current };
-
-      if (type === "group") {
-        nextSizes[id] = DEFAULT_GROUP_SIZE;
-      } else if (resolvedParentId) {
-        const adjusted = adjustGroupSizeAndPosition(
-          resolvedParentId,
-          nextGraph.nodes,
-          nextPositions,
-          nextSizes
-        );
-        nextPositions = adjusted.positions;
-        nextSizes = adjusted.sizes;
-      }
-
-      nodePositionsRef.current = nextPositions;
-      nodeSizesRef.current = nextSizes;
-      setGraph(nextGraph);
-      setNodePositions(nextPositions);
-      setNodeSizes(nextSizes);
+      graphRef.current = draft.graph;
+      nodePositionsRef.current = draft.positions;
+      nodeSizesRef.current = draft.sizes;
+      setGraph(draft.graph);
+      setNodePositions(draft.positions);
+      setNodeSizes(draft.sizes);
       setSelectedNodeId(id);
       setSelectedNodeIds([id]);
       setQuickEditingNodeId(type === "card" || type === "group" ? id : null);
@@ -228,9 +128,9 @@ export function useGraphNodes({
       pushCommand({
         type: "add",
         nodeId: id,
-        nodeData: createdNode,
-        position: resolvedPosition,
-        size: nextSizes[id],
+        nodeData: draft.node,
+        position: draft.position,
+        size: draft.size,
       });
     },
     [
@@ -247,62 +147,22 @@ export function useGraphNodes({
 
   const deleteNode = useCallback(
     (nodeId: string) => {
-      const originalGraph = graphRef.current;
-      const originalPositions = nodePositionsRef.current;
-      const originalSizes = nodeSizesRef.current;
-      const nodeToDelete = originalGraph.nodes.find((node) => node.id === nodeId);
-      let graphBeforeRemoval = originalGraph;
-      let positionsBeforeRemoval = originalPositions;
-      let sizesBeforeRemoval = originalSizes;
-
-      if (nodeToDelete?.type === "group") {
-        const detached = detachChildrenFromGroup(
-          nodeId,
-          nodeToDelete.title,
-          graphBeforeRemoval,
-          positionsBeforeRemoval,
-          sizesBeforeRemoval
-        );
-        graphBeforeRemoval = detached.graph;
-        positionsBeforeRemoval = detached.positions;
-        sizesBeforeRemoval = detached.sizes;
-      }
-
-      const {
-        graph: nextGraph,
-        removedNode,
-        removedEdges,
-        affectedRefs,
-      } = removeNode(graphBeforeRemoval, nodeId);
-      if (!removedNode) return;
+      const draft = deleteNodeDraft(
+        nodeId,
+        graphRef.current,
+        nodePositionsRef.current,
+        nodeSizesRef.current
+      );
+      if (!draft) return;
       deleteContentCacheEntry(nodeId);
 
-      const removedNodePos = nodePositionsRef.current[nodeId] ?? { x: 0, y: 0 };
-      const removedNodeSize = nodeSizesRef.current[nodeId];
-      let nextPositions = { ...positionsBeforeRemoval };
-      delete nextPositions[nodeId];
-      let nextSizes = { ...sizesBeforeRemoval };
-      delete nextSizes[nodeId];
+      graphRef.current = draft.graph;
+      nodePositionsRef.current = draft.positions;
+      nodeSizesRef.current = draft.sizes;
 
-      const parentId = removedNode?.parentId;
-      if (parentId) {
-        const adjusted = adjustGroupSizeAndPosition(
-          parentId,
-          nextGraph.nodes,
-          nextPositions,
-          nextSizes
-        );
-        nextPositions = adjusted.positions;
-        nextSizes = adjusted.sizes;
-      }
-
-      graphRef.current = nextGraph;
-      nodePositionsRef.current = nextPositions;
-      nodeSizesRef.current = nextSizes;
-
-      setGraph(nextGraph);
-      setNodePositions(nextPositions);
-      setNodeSizes(nextSizes);
+      setGraph(draft.graph);
+      setNodePositions(draft.positions);
+      setNodeSizes(draft.sizes);
 
       setSelectedNodeId((currentSelectedNodeId) =>
         currentSelectedNodeId === nodeId ? null : currentSelectedNodeId
@@ -321,23 +181,16 @@ export function useGraphNodes({
       );
       setDirty(true);
 
-      const removeMeta: RemoveMeta = {
-        removedNode,
-        position: removedNodePos,
-        size: removedNodeSize,
-        removedEdges,
-        affectedRefs,
-      };
       pushCommand({
         type: "remove",
         nodeId,
-        meta: removeMeta,
-        graphBefore: nodeToDelete?.type === "group" ? originalGraph : undefined,
-        graphAfter: nodeToDelete?.type === "group" ? nextGraph : undefined,
-        positionsBefore: nodeToDelete?.type === "group" ? originalPositions : undefined,
-        positionsAfter: nodeToDelete?.type === "group" ? nextPositions : undefined,
-        sizesBefore: nodeToDelete?.type === "group" ? originalSizes : undefined,
-        sizesAfter: nodeToDelete?.type === "group" ? nextSizes : undefined,
+        meta: draft.meta,
+        graphBefore: draft.graphBefore,
+        graphAfter: draft.graphAfter,
+        positionsBefore: draft.positionsBefore,
+        positionsAfter: draft.positionsAfter,
+        sizesBefore: draft.sizesBefore,
+        sizesAfter: draft.sizesAfter,
       });
     },
     [
@@ -1190,315 +1043,4 @@ export function useGraphNodes({
     matchGroupNodeSizes,
     handleViewportChange,
   };
-}
-
-function areViewportsEqual(left: CanvasViewport | null, right: CanvasViewport) {
-  return left !== null && left.x === right.x && left.y === right.y && left.zoom === right.zoom;
-}
-
-function detachChildrenFromGroup(
-  groupId: string,
-  groupTitle: string,
-  graph: GraphData,
-  positions: Record<string, { x: number; y: number }>,
-  sizes: Record<string, { width: number; height: number }>
-) {
-  const groupPosition = positions[groupId] ?? { x: 0, y: 0 };
-  const updatedAt = new Date().toISOString();
-  const nextGraph = {
-    ...graph,
-    nodes: graph.nodes.map((node) => {
-      if (node.parentId !== groupId) {
-        return node;
-      }
-
-      const nodeWithoutParent = { ...node };
-      delete nodeWithoutParent.parentId;
-      return {
-        ...nodeWithoutParent,
-        tags: groupTitle ? node.tags.filter((tag) => tag !== groupTitle) : node.tags,
-        updatedAt,
-      };
-    }),
-  };
-
-  const nextPositions = { ...positions };
-  graph.nodes.forEach((node) => {
-    if (node.parentId !== groupId) {
-      return;
-    }
-
-    const childPosition = positions[node.id] ?? { x: 0, y: 0 };
-    nextPositions[node.id] = {
-      x: childPosition.x + groupPosition.x,
-      y: childPosition.y + groupPosition.y,
-    };
-  });
-  delete nextPositions[groupId];
-
-  const nextSizes = { ...sizes };
-  delete nextSizes[groupId];
-
-  return {
-    graph: nextGraph,
-    positions: nextPositions,
-    sizes: nextSizes,
-  };
-}
-
-function adjustGroupSizeAndPosition(
-  _groupId: string,
-  _currentNodes: GraphNode[],
-  positions: Record<string, CanvasPosition>,
-  sizes: Record<string, NodeSize>
-) {
-  // Group auto-sizing is intentionally disabled. Keep this wrapper so creation,
-  // deletion, drag, and resize flows can share one extension point if the feature
-  // is reintroduced without changing those call sites again.
-  return { positions, sizes };
-}
-
-function resolveGroupMoveTargets(
-  moves: { nodeId: string; from: CanvasPosition; to: CanvasPosition }[],
-  currentNodes: GraphNode[],
-  positions: Record<string, CanvasPosition>,
-  sizes: Record<string, NodeSize>
-) {
-  const groupMoves = moves.filter((move) =>
-    currentNodes.some((node) => node.id === move.nodeId && node.type === "group")
-  );
-  const movingGroupIds = new Set(groupMoves.map((move) => move.nodeId));
-  const nextPositions: Record<string, CanvasPosition> = { ...positions };
-
-  groupMoves.forEach((move) => {
-    nextPositions[move.nodeId] = snapPositionToGrid(move.to);
-  });
-
-  let didChange = true;
-  while (didChange) {
-    didChange = false;
-
-    for (const move of groupMoves) {
-      const candidatePosition = nextPositions[move.nodeId] ?? move.to;
-      const size = sizes[move.nodeId] ?? DEFAULT_GROUP_SIZE;
-      const resolvedPosition = resolveGroupMoveTarget(
-        move.nodeId,
-        move.from,
-        candidatePosition,
-        size,
-        currentNodes,
-        nextPositions,
-        sizes,
-        movingGroupIds
-      );
-
-      if (
-        (resolvedPosition.x !== candidatePosition.x ||
-          resolvedPosition.y !== candidatePosition.y) &&
-        (candidatePosition.x !== move.from.x || candidatePosition.y !== move.from.y)
-      ) {
-        nextPositions[move.nodeId] = resolvedPosition;
-        didChange = true;
-      }
-    }
-  }
-
-  return nextPositions;
-}
-
-function resolveGroupMoveTarget(
-  groupId: string,
-  from: CanvasPosition,
-  to: CanvasPosition,
-  size: NodeSize,
-  currentNodes: GraphNode[],
-  positions: Record<string, CanvasPosition>,
-  sizes: Record<string, NodeSize>,
-  ignoredGroupIds = new Set<string>()
-) {
-  const staticGroups = currentNodes.filter(
-    (node) => node.type === "group" && node.id !== groupId && !ignoredGroupIds.has(node.id)
-  );
-  const fromRect = toRect(from, size);
-  const targetRect = toRect(to, size);
-
-  let nextX = to.x;
-  if (nextX !== from.x) {
-    const movingRight = nextX > from.x;
-
-    staticGroups.forEach((node) => {
-      const otherPosition = positions[node.id] ?? { x: 0, y: 0 };
-      const otherSize = sizes[node.id] ?? DEFAULT_GROUP_SIZE;
-      const otherRect = toRect(otherPosition, otherSize);
-
-      if (
-        !rangesOverlapDuringMove(
-          fromRect.top,
-          fromRect.bottom,
-          targetRect.top,
-          targetRect.bottom,
-          otherRect.top,
-          otherRect.bottom
-        )
-      ) {
-        return;
-      }
-
-      if (movingRight && fromRect.right <= otherRect.left && nextX + size.width > otherRect.left) {
-        nextX = Math.min(nextX, otherRect.left - size.width);
-      } else if (!movingRight && fromRect.left >= otherRect.right && nextX < otherRect.right) {
-        nextX = Math.max(nextX, otherRect.right);
-      }
-    });
-  }
-
-  let nextY = to.y;
-  if (nextY !== from.y) {
-    const movingDown = nextY > from.y;
-    const xResolvedRect = toRect({ x: nextX, y: from.y }, size);
-
-    staticGroups.forEach((node) => {
-      const otherPosition = positions[node.id] ?? { x: 0, y: 0 };
-      const otherSize = sizes[node.id] ?? DEFAULT_GROUP_SIZE;
-      const otherRect = toRect(otherPosition, otherSize);
-
-      if (
-        !rangesOverlapDuringMove(
-          fromRect.left,
-          fromRect.right,
-          xResolvedRect.left,
-          xResolvedRect.right,
-          otherRect.left,
-          otherRect.right
-        )
-      ) {
-        return;
-      }
-
-      if (movingDown && xResolvedRect.bottom <= otherRect.top && nextY + size.height > otherRect.top) {
-        nextY = Math.min(nextY, otherRect.top - size.height);
-      } else if (!movingDown && xResolvedRect.top >= otherRect.bottom && nextY < otherRect.bottom) {
-        nextY = Math.max(nextY, otherRect.bottom);
-      }
-    });
-  }
-
-  const resolvedPosition = { x: nextX, y: nextY };
-  const resolvedRect = toRect(resolvedPosition, size);
-  const isStillBlocked = staticGroups.some((node) => {
-    const otherPosition = positions[node.id] ?? { x: 0, y: 0 };
-    const otherSize = sizes[node.id] ?? DEFAULT_GROUP_SIZE;
-    return doRectsOverlap(resolvedRect, toRect(otherPosition, otherSize));
-  });
-
-  return isStillBlocked ? from : resolvedPosition;
-}
-
-function findAvailableGroupPosition(
-  groupId: string,
-  preferredPosition: CanvasPosition,
-  currentNodes: GraphNode[],
-  positions: Record<string, CanvasPosition>,
-  sizes: Record<string, NodeSize>
-) {
-  if (
-    !isGroupPlacementBlocked(
-      groupId,
-      preferredPosition,
-      DEFAULT_GROUP_SIZE,
-      currentNodes,
-      positions,
-      sizes
-    )
-  ) {
-    return preferredPosition;
-  }
-
-  const step = GRAPH_GRID_SIZE * 2;
-  const maxRadius = 12;
-
-  for (let radius = 1; radius <= maxRadius; radius += 1) {
-    for (let offsetY = -radius; offsetY <= radius; offsetY += 1) {
-      for (let offsetX = -radius; offsetX <= radius; offsetX += 1) {
-        if (Math.abs(offsetX) !== radius && Math.abs(offsetY) !== radius) {
-          continue;
-        }
-
-        const candidate = {
-          x: preferredPosition.x + offsetX * step,
-          y: preferredPosition.y + offsetY * step,
-        };
-
-        if (
-          !isGroupPlacementBlocked(groupId, candidate, DEFAULT_GROUP_SIZE, currentNodes, positions, sizes)
-        ) {
-          return candidate;
-        }
-      }
-    }
-  }
-
-  return preferredPosition;
-}
-
-function isGroupPlacementBlocked(
-  groupId: string,
-  position: CanvasPosition,
-  size: NodeSize,
-  currentNodes: GraphNode[],
-  positions: Record<string, CanvasPosition>,
-  sizes: Record<string, NodeSize>
-) {
-  const nextRect = toRect(position, size);
-
-  return currentNodes.some((node) => {
-    if (node.id === groupId || node.type !== "group") {
-      return false;
-    }
-
-    const otherPosition = positions[node.id] ?? { x: 0, y: 0 };
-    const otherSize = sizes[node.id] ?? DEFAULT_GROUP_SIZE;
-    return doRectsOverlap(nextRect, toRect(otherPosition, otherSize));
-  });
-}
-
-function toRect(position: CanvasPosition, size: NodeSize) {
-  return {
-    left: position.x,
-    right: position.x + size.width,
-    top: position.y,
-    bottom: position.y + size.height,
-  };
-}
-
-function doRectsOverlap(
-  left: ReturnType<typeof toRect>,
-  right: ReturnType<typeof toRect>
-) {
-  return (
-    left.left < right.right - GROUP_COLLISION_TOLERANCE &&
-    left.right > right.left + GROUP_COLLISION_TOLERANCE &&
-    left.top < right.bottom - GROUP_COLLISION_TOLERANCE &&
-    left.bottom > right.top + GROUP_COLLISION_TOLERANCE
-  );
-}
-
-function rangesOverlap(startA: number, endA: number, startB: number, endB: number) {
-  return startA < endB - GROUP_COLLISION_TOLERANCE && endA > startB + GROUP_COLLISION_TOLERANCE;
-}
-
-function rangesOverlapDuringMove(
-  fromStart: number,
-  fromEnd: number,
-  toStart: number,
-  toEnd: number,
-  obstacleStart: number,
-  obstacleEnd: number
-) {
-  return rangesOverlap(
-    Math.min(fromStart, toStart),
-    Math.max(fromEnd, toEnd),
-    obstacleStart,
-    obstacleEnd
-  );
 }
