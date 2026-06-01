@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev -w web\" \"npm run build -w @local-kg/shared -- --watch --preserveWatchOutput\"",
-    "build": "npm run build -w @local-kg/shared && npm run build -w web"
+    "build": "npm run build -w @local-kg/shared && npm run build -w web",
+    "test": "npm run test -w web"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
