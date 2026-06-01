@@ -1,29 +1,15 @@
 import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { getDefaultCardTitle, getDefaultGroupTitle, type Locale } from "../i18n";
 import { deleteContentCacheEntry } from "../lib/cardContentCache";
-import {
-  updateNodeColor,
-  updateNodeFields,
-  updateNodeLocked,
-  updateNodeOpacity,
-} from "../lib/graphMutator";
-import {
-  DEFAULT_GROUP_SIZE,
-  constrainGroupNodeSize,
-  snapPositionToGrid,
-} from "../lib/graphLayout";
-import {
-  adjustGroupSizeAndPosition,
-  areViewportsEqual,
-  isGroupPlacementBlocked,
-  resolveGroupMoveTarget,
-  resolveGroupMoveTargets,
-} from "../lib/groupNodeLayout";
+import { updateNodeFields } from "../lib/graphMutator";
+import { areViewportsEqual } from "../lib/groupNodeLayout";
 import { createNodeDraft, deleteNodeDraft, deleteNodesDraft } from "../lib/graphNodeCommands";
-import { estimateNodeSize } from "../lib/graphNodeMetrics";
 import { EMPTY_GRAPH, generateNextId } from "../lib/workspaceState";
-import type { CanvasViewport, GraphData, GraphNode, NodeSize } from "../types";
+import type { CanvasPosition, CanvasViewport, GraphData, GraphNode, NodeSize } from "../types";
 import type { CanvasCommand } from "./canvasHistoryTypes";
+import type { UpdateGraphNodeOptions } from "./graphNodes/graphNodeActionTypes";
+import { useGraphNodeAppearanceActions } from "./graphNodes/useGraphNodeAppearanceActions";
+import { useGraphNodeLayoutActions } from "./graphNodes/useGraphNodeLayoutActions";
 
 interface UseGraphNodesOptions {
   locale?: Locale;
@@ -34,10 +20,6 @@ interface UseGraphNodesOptions {
   setEditingNodeId: Dispatch<SetStateAction<string | null>>;
   setQuickEditingNodeId: Dispatch<SetStateAction<string | null>>;
   setPendingInspectorContentFocusNodeId: Dispatch<SetStateAction<string | null>>;
-}
-
-interface UpdateGraphNodeOptions {
-  pushToHistory?: boolean;
 }
 
 interface ViewportChangeOptions {
@@ -55,8 +37,8 @@ export function useGraphNodes({
   setPendingInspectorContentFocusNodeId,
 }: UseGraphNodesOptions) {
   const [graph, setGraph] = useState<GraphData>(EMPTY_GRAPH);
-  const [nodePositions, setNodePositions] = useState<Record<string, { x: number; y: number }>>({});
-  const [nodeSizes, setNodeSizes] = useState<Record<string, { width: number; height: number }>>({});
+  const [nodePositions, setNodePositions] = useState<Record<string, CanvasPosition>>({});
+  const [nodeSizes, setNodeSizes] = useState<Record<string, NodeSize>>({});
   const [viewport, setViewport] = useState<CanvasViewport | null>(null);
 
   const graphRef = useRef(graph);
@@ -72,7 +54,7 @@ export function useGraphNodes({
   viewportRef.current = viewport;
 
   const applyGraphUpdate = useCallback(
-    (mutate: (currentGraph: GraphData) => GraphData, options?: { pushToHistory?: boolean }) => {
+    (mutate: (currentGraph: GraphData) => GraphData, options?: UpdateGraphNodeOptions) => {
       const currentGraph = graphRef.current;
       const nextGraph = mutate(currentGraph);
       if (nextGraph === currentGraph) {
@@ -95,7 +77,7 @@ export function useGraphNodes({
   const createNode = useCallback(
     (
       type: GraphNode["type"],
-      position: { x: number; y: number },
+      position: CanvasPosition,
       imagePath?: string,
       parentId?: string
     ) => {
@@ -139,11 +121,12 @@ export function useGraphNodes({
       locale,
       pushCommand,
       setDirty,
+      setNodePositions,
+      setNodeSizes,
       setPendingInspectorContentFocusNodeId,
       setQuickEditingNodeId,
       setSelectedNodeId,
       setSelectedNodeIds,
-      setNodeSizes,
     ]
   );
 
@@ -199,6 +182,8 @@ export function useGraphNodes({
       pushCommand,
       setDirty,
       setEditingNodeId,
+      setNodePositions,
+      setNodeSizes,
       setPendingInspectorContentFocusNodeId,
       setQuickEditingNodeId,
       setSelectedNodeId,
@@ -259,6 +244,7 @@ export function useGraphNodes({
       setDirty,
       setEditingNodeId,
       setNodePositions,
+      setNodeSizes,
       setPendingInspectorContentFocusNodeId,
       setQuickEditingNodeId,
       setSelectedNodeId,
@@ -287,647 +273,34 @@ export function useGraphNodes({
     [updateGraphNode]
   );
 
-  const updateGraphNodeColor = useCallback(
-    (nodeId: string, color: string) => {
-      applyGraphUpdate(
-        (currentGraph) => {
-          const currentNode = currentGraph.nodes.find((node) => node.id === nodeId);
-          if (!currentNode || (currentNode.color ?? "") === color) {
-            return currentGraph;
-          }
-
-          return updateNodeColor(currentGraph, nodeId, color);
-        },
-        { pushToHistory: true }
-      );
-    },
-    [applyGraphUpdate]
-  );
-
-  const updateGraphNodeLocked = useCallback(
-    (nodeId: string, locked: boolean) => {
-      applyGraphUpdate(
-        (currentGraph) => {
-          const currentNode = currentGraph.nodes.find((node) => node.id === nodeId);
-          if (!currentNode || Boolean(currentNode.locked) === locked) {
-            return currentGraph;
-          }
-
-          return updateNodeLocked(currentGraph, nodeId, locked);
-        },
-        { pushToHistory: true }
-      );
-    },
-    [applyGraphUpdate]
-  );
-
-  const updateGraphNodeOpacity = useCallback(
-    (nodeId: string, opacity: number) => {
-      const currentGraph = graphRef.current;
-      const nextGraph = updateNodeOpacity(currentGraph, nodeId, opacity);
-      if (nextGraph !== currentGraph) {
-        graphRef.current = nextGraph;
-        setGraph(nextGraph);
-        setDirty(true);
-      }
-    },
-    [setDirty]
-  );
-
-  const commitGraphNodeOpacity = useCallback(
-    (nodeId: string, from: number, to: number) => {
-      const previousOpacity = Math.min(Math.max(from, 0), 1);
-      const nextOpacity = Math.min(Math.max(to, 0), 1);
-      if (previousOpacity === nextOpacity) {
-        return;
-      }
-
-      const currentGraph = graphRef.current;
-      const currentNode = currentGraph.nodes.find((node) => node.id === nodeId);
-      if (!currentNode) {
-        return;
-      }
-
-      const beforeGraph = updateNodeOpacity(currentGraph, nodeId, previousOpacity);
-      pushCommand({ type: "replace-graph", before: beforeGraph, after: currentGraph });
-    },
-    [pushCommand]
-  );
-
-  const handleNodeDragEnd = useCallback(
-    (nodeId: string, from: { x: number; y: number }, to: { x: number; y: number }) => {
-      const currentNodes = graphRef.current.nodes;
-      const node = currentNodes.find((n) => n.id === nodeId);
-      if (!node) return;
-
-      // Group nodes cannot be nested in other groups
-      if (node.type === "group") {
-        const candidateTo = snapPositionToGrid(to);
-        const finalTo = resolveGroupMoveTarget(
-          node.id,
-          from,
-          candidateTo,
-          nodeSizesRef.current[node.id] ?? DEFAULT_GROUP_SIZE,
-          currentNodes,
-          nodePositionsRef.current,
-          nodeSizesRef.current
-        );
-
-        if (finalTo.x === from.x && finalTo.y === from.y) {
-          const revertedPositions = {
-            ...nodePositionsRef.current,
-            [nodeId]: from,
-          };
-          nodePositionsRef.current = revertedPositions;
-          setNodePositions(revertedPositions);
-          return;
-        }
-
-        if (from.x !== finalTo.x || from.y !== finalTo.y) {
-          setNodePositions((currentPositions) => ({
-            ...currentPositions,
-            [nodeId]: finalTo,
-          }));
-          setDirty(true);
-          pushCommand({ type: "move", nodeId, from, to: finalTo });
-        }
-        return;
-      }
-
-      // Calculate dropped absolute position
-      let absTo = { ...to };
-      if (node.parentId) {
-        const parentPos = nodePositionsRef.current[node.parentId] ?? { x: 0, y: 0 };
-        absTo = { x: to.x + parentPos.x, y: to.y + parentPos.y };
-      }
-
-      // Determine if dropped inside a group node (using center of node)
-      const nodeSize = nodeSizesRef.current[nodeId] ?? estimateNodeSize(node);
-      const centerX = absTo.x + nodeSize.width / 2;
-      const centerY = absTo.y + nodeSize.height / 2;
-
-      let targetGroup: GraphNode | undefined;
-      for (const otherNode of currentNodes) {
-        if (otherNode.id !== nodeId && otherNode.type === "group") {
-          const gPos = nodePositionsRef.current[otherNode.id] ?? { x: 0, y: 0 };
-          const gSize = nodeSizesRef.current[otherNode.id] ?? DEFAULT_GROUP_SIZE;
-          if (
-            centerX >= gPos.x &&
-            centerX <= gPos.x + gSize.width &&
-            centerY >= gPos.y &&
-            centerY <= gPos.y + gSize.height
-          ) {
-            targetGroup = otherNode;
-            break;
-          }
-        }
-      }
-
-      const oldParentId = node.parentId;
-      const newParentId = targetGroup?.id;
-
-      if (oldParentId === newParentId) {
-        // Parent didn't change (still same group or still outside)
-        if (from.x !== to.x || from.y !== to.y) {
-          let nextPositions = {
-            ...nodePositionsRef.current,
-            [nodeId]: to,
-          };
-          let nextSizes = { ...nodeSizesRef.current };
-
-          if (newParentId) {
-            const adjusted = adjustGroupSizeAndPosition(
-              newParentId,
-              currentNodes,
-              nextPositions,
-              nextSizes
-            );
-            nextPositions = adjusted.positions;
-            nextSizes = adjusted.sizes;
-          }
-
-          nodePositionsRef.current = nextPositions;
-          setNodePositions(nextPositions);
-          setNodeSizes(nextSizes);
-          setDirty(true);
-          pushCommand({ type: "move", nodeId, from, to: nextPositions[nodeId] });
-        }
-        return;
-      }
-
-      // Parent changed, update parentId and tags
-      const beforeGraph = graphRef.current;
-      const afterGraph = {
-        ...beforeGraph,
-        nodes: beforeGraph.nodes.map((n) => {
-          if (n.id !== nodeId) return n;
-
-          let nextTags = [...n.tags];
-          // Remove old parent's tag
-          if (oldParentId) {
-            const oldGroup = beforeGraph.nodes.find((gn) => gn.id === oldParentId);
-            if (oldGroup && oldGroup.title) {
-              nextTags = nextTags.filter((t) => t !== oldGroup.title);
-            }
-          }
-          // Add new parent's tag
-          if (newParentId && targetGroup && targetGroup.title) {
-            if (!nextTags.includes(targetGroup.title)) {
-              nextTags.push(targetGroup.title);
-            }
-          }
-
-          return {
-            ...n,
-            parentId: newParentId,
-            tags: nextTags,
-            updatedAt: new Date().toISOString(),
-          };
-        }),
-      };
-
-      const finalToPos = newParentId
-        ? {
-            x: absTo.x - (nodePositionsRef.current[newParentId]?.x ?? 0),
-            y: absTo.y - (nodePositionsRef.current[newParentId]?.y ?? 0),
-          }
-        : absTo;
-
-      let nextPositions = {
-        ...nodePositionsRef.current,
-        [nodeId]: finalToPos,
-      };
-      let nextSizes = { ...nodeSizesRef.current };
-
-      if (newParentId) {
-        const adjusted = adjustGroupSizeAndPosition(
-          newParentId,
-          afterGraph.nodes,
-          nextPositions,
-          nextSizes
-        );
-        nextPositions = adjusted.positions;
-        nextSizes = adjusted.sizes;
-      }
-
-      if (oldParentId) {
-        const adjusted = adjustGroupSizeAndPosition(
-          oldParentId,
-          afterGraph.nodes,
-          nextPositions,
-          nextSizes
-        );
-        nextPositions = adjusted.positions;
-        nextSizes = adjusted.sizes;
-      }
-
-      graphRef.current = afterGraph;
-      setGraph(afterGraph);
-      nodePositionsRef.current = nextPositions;
-      setNodePositions(nextPositions);
-      setNodeSizes(nextSizes);
-      setDirty(true);
-
-      pushCommand({
-        type: "move",
-        nodeId,
-        from,
-        to: nextPositions[nodeId],
-        graphBefore: beforeGraph,
-        graphAfter: afterGraph,
-      });
-    },
-    [pushCommand, setDirty]
-  );
-
-  const handleNodesDragEnd = useCallback(
-    (moves: { nodeId: string; from: { x: number; y: number }; to: { x: number; y: number } }[]) => {
-      const currentNodes = graphRef.current.nodes;
-      const normalizedMoves = moves.map((move) =>
-        currentNodes.some((node) => node.id === move.nodeId && node.type === "group")
-          ? { ...move, to: snapPositionToGrid(move.to) }
-          : move
-      );
-      const meaningfulMoves = normalizedMoves.filter(
-        (move) => move.from.x !== move.to.x || move.from.y !== move.to.y
-      );
-      if (meaningfulMoves.length === 0) {
-        return;
-      }
-
-      const beforeGraph = graphRef.current;
-      let afterGraph = beforeGraph;
-      const finalMoves: typeof moves = [];
-      const updatedPositions: Record<string, { x: number; y: number }> = {};
-      const resolvedGroupPositions = resolveGroupMoveTargets(
-        meaningfulMoves,
-        beforeGraph.nodes,
-        nodePositionsRef.current,
-        nodeSizesRef.current
-      );
-
-      meaningfulMoves.forEach((move) => {
-        const { nodeId, from, to } = move;
-        const node = afterGraph.nodes.find((n) => n.id === nodeId);
-        if (!node) {
-          finalMoves.push(move);
-          updatedPositions[nodeId] = to;
-          return;
-        }
-
-        if (node.type === "group") {
-          const resolvedPosition = resolvedGroupPositions[nodeId] ?? to;
-          updatedPositions[nodeId] = resolvedPosition;
-          if (from.x !== resolvedPosition.x || from.y !== resolvedPosition.y) {
-            finalMoves.push({
-              nodeId,
-              from,
-              to: resolvedPosition,
-            });
-          }
-          return;
-        }
-
-        // Calculate dropped absolute position
-        let absTo = { ...to };
-        if (node.parentId) {
-          const parentPos = nodePositionsRef.current[node.parentId] ?? { x: 0, y: 0 };
-          absTo = { x: to.x + parentPos.x, y: to.y + parentPos.y };
-        }
-
-        // Bounding box checking
-        const nodeSize = nodeSizesRef.current[nodeId] ?? estimateNodeSize(node);
-        const centerX = absTo.x + nodeSize.width / 2;
-        const centerY = absTo.y + nodeSize.height / 2;
-
-        let targetGroup: GraphNode | undefined;
-        for (const otherNode of afterGraph.nodes) {
-          if (otherNode.id !== nodeId && otherNode.type === "group") {
-            const gPos = nodePositionsRef.current[otherNode.id] ?? { x: 0, y: 0 };
-            const gSize = nodeSizesRef.current[otherNode.id] ?? DEFAULT_GROUP_SIZE;
-            if (
-              centerX >= gPos.x &&
-              centerX <= gPos.x + gSize.width &&
-              centerY >= gPos.y &&
-              centerY <= gPos.y + gSize.height
-            ) {
-              targetGroup = otherNode;
-              break;
-            }
-          }
-        }
-
-        const oldParentId = node.parentId;
-        const newParentId = targetGroup?.id;
-
-        if (oldParentId === newParentId) {
-          finalMoves.push(move);
-          updatedPositions[nodeId] = to;
-        } else {
-          afterGraph = {
-            ...afterGraph,
-            nodes: afterGraph.nodes.map((n) => {
-              if (n.id !== nodeId) return n;
-
-              let nextTags = [...n.tags];
-              if (oldParentId) {
-                const oldGroup = afterGraph.nodes.find((gn) => gn.id === oldParentId);
-                if (oldGroup && oldGroup.title) {
-                  nextTags = nextTags.filter((t) => t !== oldGroup.title);
-                }
-              }
-              if (newParentId && targetGroup && targetGroup.title) {
-                if (!nextTags.includes(targetGroup.title)) {
-                  nextTags.push(targetGroup.title);
-                }
-              }
-
-              return {
-                ...n,
-                parentId: newParentId,
-                tags: nextTags,
-                updatedAt: new Date().toISOString(),
-              };
-            }),
-          };
-
-          const finalToPos = newParentId
-            ? {
-                x: absTo.x - (nodePositionsRef.current[newParentId]?.x ?? 0),
-                y: absTo.y - (nodePositionsRef.current[newParentId]?.y ?? 0),
-              }
-            : absTo;
-
-          finalMoves.push({
-            nodeId,
-            from,
-            to: finalToPos,
-          });
-          updatedPositions[nodeId] = finalToPos;
-        }
-      });
-
-      const affectedGroups = new Set<string>();
-      meaningfulMoves.forEach((move) => {
-        const node = beforeGraph.nodes.find((n) => n.id === move.nodeId);
-        if (node && node.type !== "group") {
-          if (node.parentId) affectedGroups.add(node.parentId);
-          const targetNode = afterGraph.nodes.find((n) => n.id === move.nodeId);
-          if (targetNode && targetNode.parentId) affectedGroups.add(targetNode.parentId);
-        }
-      });
-
-      let nextPositions = {
-        ...nodePositionsRef.current,
-        ...updatedPositions,
-      };
-      let nextSizes = { ...nodeSizesRef.current };
-
-      affectedGroups.forEach((groupId) => {
-        const adjusted = adjustGroupSizeAndPosition(
-          groupId,
-          afterGraph.nodes,
-          nextPositions,
-          nextSizes
-        );
-        nextPositions = adjusted.positions;
-        nextSizes = adjusted.sizes;
-      });
-
-      const finalAdjustedMoves = finalMoves.map((m) => ({
-        ...m,
-        to: nextPositions[m.nodeId] ?? m.to,
-      }));
-
-      nodePositionsRef.current = nextPositions;
-      setNodePositions(nextPositions);
-      setNodeSizes(nextSizes);
-
-      const graphChanged = afterGraph !== beforeGraph;
-      if (graphChanged) {
-        graphRef.current = afterGraph;
-        setGraph(afterGraph);
-      }
-      setDirty(true);
-
-      pushCommand({
-        type: "move-many",
-        moves: finalAdjustedMoves,
-        graphBefore: graphChanged ? beforeGraph : undefined,
-        graphAfter: graphChanged ? afterGraph : undefined,
-      });
-    },
-    [pushCommand, setDirty]
-  );
-
-  const updateGraphNodesColor = useCallback(
-    (nodeIds: string[], color: string) => {
-      applyGraphUpdate(
-        (currentGraph) => {
-          const uniqueNodeIds = [...new Set(nodeIds)];
-          const hasMeaningfulChange = uniqueNodeIds.some((nodeId) => {
-            const node = currentGraph.nodes.find((currentNode) => currentNode.id === nodeId);
-            return node && (node.color ?? "") !== color;
-          });
-
-          if (!hasMeaningfulChange) {
-            return currentGraph;
-          }
-
-          return uniqueNodeIds.reduce(
-            (nextGraph, nodeId) => updateNodeColor(nextGraph, nodeId, color),
-            currentGraph
-          );
-        },
-        { pushToHistory: true }
-      );
-    },
-    [applyGraphUpdate]
-  );
-
-  const updateGraphNodesLocked = useCallback(
-    (nodeIds: string[], locked: boolean) => {
-      applyGraphUpdate(
-        (currentGraph) => {
-          const uniqueNodeIds = [...new Set(nodeIds)];
-          const hasMeaningfulChange = uniqueNodeIds.some((nodeId) => {
-            const node = currentGraph.nodes.find((currentNode) => currentNode.id === nodeId);
-            return node && Boolean(node.locked) !== locked;
-          });
-
-          if (!hasMeaningfulChange) {
-            return currentGraph;
-          }
-
-          return uniqueNodeIds.reduce(
-            (nextGraph, nodeId) => updateNodeLocked(nextGraph, nodeId, locked),
-            currentGraph
-          );
-        },
-        { pushToHistory: true }
-      );
-    },
-    [applyGraphUpdate]
-  );
-
-  const updateGraphNodesOpacity = useCallback(
-    (nodeIds: string[], opacity: number) => {
-      const currentGraph = graphRef.current;
-      const nextGraph = nodeIds.reduce(
-        (nextGraph, nodeId) => updateNodeOpacity(nextGraph, nodeId, opacity),
-        currentGraph
-      );
-      if (nextGraph !== currentGraph) {
-        graphRef.current = nextGraph;
-        setGraph(nextGraph);
-        setDirty(true);
-      }
-    },
-    [setDirty]
-  );
-
-  const commitGraphNodesOpacity = useCallback(
-    (nodeIds: string[], from: number, to: number) => {
-      const uniqueNodeIds = [...new Set(nodeIds)];
-      const previousOpacity = Math.min(Math.max(from, 0), 1);
-      const nextOpacity = Math.min(Math.max(to, 0), 1);
-      if (previousOpacity === nextOpacity || uniqueNodeIds.length === 0) {
-        return;
-      }
-
-      const currentGraph = graphRef.current;
-      const beforeGraph = uniqueNodeIds.reduce(
-        (nextGraph, nodeId) => updateNodeOpacity(nextGraph, nodeId, previousOpacity),
-        currentGraph
-      );
-      pushCommand({ type: "replace-graph", before: beforeGraph, after: currentGraph });
-    },
-    [pushCommand]
-  );
-
-  const handleNodeResizeEnd = useCallback(
-    (nodeId: string, size: { width: number; height: number }) => {
-      const node = graphRef.current.nodes.find((n) => n.id === nodeId);
-      if (!node) return;
-
-      const finalSize = node.type === "group" ? constrainGroupNodeSize(size) : size;
-      const before = nodeSizesRef.current[nodeId];
-      const fallbackBefore = before ?? estimateNodeSize(node);
-
-      if (before && before.width === finalSize.width && before.height === finalSize.height) {
-        return;
-      }
-
-      if (
-        node.type === "group" &&
-        isGroupPlacementBlocked(
-          nodeId,
-          nodePositionsRef.current[nodeId] ?? { x: 0, y: 0 },
-          finalSize,
-          graphRef.current.nodes,
-          nodePositionsRef.current,
-          nodeSizesRef.current
-        )
-      ) {
-        const revertedSizes = {
-          ...nodeSizesRef.current,
-          [nodeId]: fallbackBefore,
-        };
-        nodeSizesRef.current = revertedSizes;
-        setNodeSizes(revertedSizes);
-        return;
-      }
-
-      let nextSizes = {
-        ...nodeSizesRef.current,
-        [nodeId]: finalSize,
-      };
-      let nextPositions = { ...nodePositionsRef.current };
-
-      const parentId = node.parentId;
-      if (parentId) {
-        const adjusted = adjustGroupSizeAndPosition(
-          parentId,
-          graphRef.current.nodes,
-          nextPositions,
-          nextSizes
-        );
-        nextPositions = adjusted.positions;
-        nextSizes = adjusted.sizes;
-      }
-
-      nodePositionsRef.current = nextPositions;
-      setNodePositions(nextPositions);
-      setNodeSizes(nextSizes);
-      setDirty(true);
-      pushCommand({ type: "resize", nodeId, before, after: finalSize });
-    },
-    [pushCommand, setDirty]
-  );
-
-  const matchGroupNodeSizes = useCallback(
-    (nodeIds: string[]) => {
-      const currentNodes = graphRef.current.nodes;
-      const currentNodeById = new Map(currentNodes.map((node) => [node.id, node]));
-      const orderedGroupIds = [...new Set(nodeIds)].filter(
-        (nodeId) => currentNodeById.get(nodeId)?.type === "group"
-      );
-      const referenceId = orderedGroupIds[0];
-      const referenceNode = referenceId ? currentNodeById.get(referenceId) : undefined;
-      if (!referenceId || !referenceNode || orderedGroupIds.length < 2) {
-        return;
-      }
-
-      const referenceSize = constrainGroupNodeSize(
-        nodeSizesRef.current[referenceId] ?? estimateNodeSize(referenceNode)
-      );
-      const nextSizes = { ...nodeSizesRef.current };
-      const resizes: {
-        nodeId: string;
-        before: NodeSize | undefined;
-        after: NodeSize;
-      }[] = [];
-
-      orderedGroupIds.forEach((nodeId) => {
-        const node = currentNodeById.get(nodeId);
-        if (!node || (nodeId !== referenceId && node.locked)) {
-          return;
-        }
-
-        const before = nodeSizesRef.current[nodeId];
-        const fallbackBefore = before ?? estimateNodeSize(node);
-        if (fallbackBefore.width === referenceSize.width && fallbackBefore.height === referenceSize.height) {
-          return;
-        }
-
-        if (
-          isGroupPlacementBlocked(
-            nodeId,
-            nodePositionsRef.current[nodeId] ?? { x: 0, y: 0 },
-            referenceSize,
-            currentNodes,
-            nodePositionsRef.current,
-            nextSizes
-          )
-        ) {
-          return;
-        }
-
-        nextSizes[nodeId] = referenceSize;
-        resizes.push({ nodeId, before, after: referenceSize });
-      });
-
-      if (resizes.length === 0) {
-        return;
-      }
-
-      nodeSizesRef.current = nextSizes;
-      setNodeSizes(nextSizes);
-      setDirty(true);
-      pushCommand({ type: "resize-many", resizes });
-    },
-    [pushCommand, setDirty]
-  );
+  const {
+    updateGraphNodeColor,
+    updateGraphNodesColor,
+    updateGraphNodeLocked,
+    updateGraphNodesLocked,
+    updateGraphNodeOpacity,
+    commitGraphNodeOpacity,
+    updateGraphNodesOpacity,
+    commitGraphNodesOpacity,
+  } = useGraphNodeAppearanceActions({
+    applyGraphUpdate,
+    graphRef,
+    setGraph,
+    setDirty,
+    pushCommand,
+  });
+
+  const { handleNodeDragEnd, handleNodesDragEnd, handleNodeResizeEnd, matchGroupNodeSizes } =
+    useGraphNodeLayoutActions({
+      graphRef,
+      nodePositionsRef,
+      nodeSizesRef,
+      setGraph,
+      setNodePositions,
+      setNodeSizes,
+      setDirty,
+      pushCommand,
+    });
 
   const handleViewportChange = useCallback(
     (vp: CanvasViewport, options?: ViewportChangeOptions) => {
