@@ -416,7 +416,7 @@ export function useGraphPersistence({
       setGraph(normalizedGraph);
       setNodePositions(normalizedState.nodePositions);
       setNodeSizes(normalizedState.nodeSizes ?? {});
-      setViewport(null);
+      setViewport(normalizedState.viewport);
       setSelectedNodeId(normalizedState.selectedNodeId);
       setSelectedEdgeId(null);
       setEditingNodeId(null);
