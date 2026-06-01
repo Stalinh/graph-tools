@@ -173,6 +173,116 @@ export function deleteNodeDraft(
   };
 }
 
+export function deleteNodesDraft(
+  nodeIds: string[],
+  graph: GraphData,
+  positions: Record<string, CanvasPosition>,
+  sizes: Record<string, NodeSize>
+) {
+  const uniqueNodeIds = [...new Set(nodeIds)];
+  if (uniqueNodeIds.length === 0) {
+    return null;
+  }
+
+  const removals: { nodeId: string; meta: RemoveNodeMeta }[] = [];
+  const originalGraph = graph;
+  const originalPositions = positions;
+  const originalSizes = sizes;
+  let currentGraph = graph;
+  let currentPositions = positions;
+  let currentSizes = sizes;
+  let usedSnapshotCommand = false;
+
+  uniqueNodeIds.forEach((nodeId) => {
+    const nodeToDelete = currentGraph.nodes.find((node) => node.id === nodeId);
+    let graphBeforeRemoval = currentGraph;
+    let positionsBeforeRemoval = currentPositions;
+    let sizesBeforeRemoval = currentSizes;
+
+    if (nodeToDelete?.type === "group") {
+      const detached = detachChildrenFromGroup(
+        nodeId,
+        nodeToDelete.title,
+        graphBeforeRemoval,
+        positionsBeforeRemoval,
+        sizesBeforeRemoval
+      );
+      graphBeforeRemoval = detached.graph;
+      positionsBeforeRemoval = detached.positions;
+      sizesBeforeRemoval = detached.sizes;
+      usedSnapshotCommand = true;
+    }
+
+    const {
+      graph: nextGraph,
+      removedNode,
+      removedEdges,
+      affectedRefs,
+    } = removeNode(graphBeforeRemoval, nodeId);
+    if (!removedNode || removedNode.id !== nodeId) {
+      return;
+    }
+
+    const nextPositions = { ...positionsBeforeRemoval };
+    delete nextPositions[nodeId];
+    const nextSizes = { ...sizesBeforeRemoval };
+    delete nextSizes[nodeId];
+
+    const meta: RemoveNodeMeta = {
+      removedNode,
+      position: currentPositions[nodeId] ?? { x: 0, y: 0 },
+      size: currentSizes[nodeId],
+      removedEdges,
+      affectedRefs,
+    };
+    currentGraph = nextGraph;
+    currentPositions = nextPositions;
+    currentSizes = nextSizes;
+    removals.push({ nodeId, meta });
+  });
+
+  if (removals.length === 0) {
+    return null;
+  }
+
+  const affectedParents = new Set<string>();
+  removals.forEach((removal) => {
+    if (removal.meta.removedNode.parentId) {
+      affectedParents.add(removal.meta.removedNode.parentId);
+    }
+  });
+
+  if (affectedParents.size > 0) {
+    let nextPositions = { ...currentPositions };
+    let nextSizes = { ...currentSizes };
+    affectedParents.forEach((parentId) => {
+      const adjusted = adjustGroupSizeAndPosition(
+        parentId,
+        currentGraph.nodes,
+        nextPositions,
+        nextSizes
+      );
+      nextPositions = adjusted.positions;
+      nextSizes = adjusted.sizes;
+    });
+    currentPositions = nextPositions;
+    currentSizes = nextSizes;
+  }
+
+  return {
+    graph: currentGraph,
+    graphAfter: usedSnapshotCommand ? currentGraph : undefined,
+    graphBefore: usedSnapshotCommand ? originalGraph : undefined,
+    removals,
+    positions: currentPositions,
+    positionsAfter: usedSnapshotCommand ? currentPositions : undefined,
+    positionsBefore: usedSnapshotCommand ? originalPositions : undefined,
+    sizes: currentSizes,
+    sizesAfter: usedSnapshotCommand ? currentSizes : undefined,
+    sizesBefore: usedSnapshotCommand ? originalSizes : undefined,
+  };
+}
+
 function findContainingGroupId(
   position: CanvasPosition,
   nodes: GraphNode[],

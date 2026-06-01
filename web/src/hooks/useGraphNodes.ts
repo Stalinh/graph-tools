@@ -2,7 +2,6 @@ import { useCallback, useRef, useState, type Dispatch, type SetStateAction } fro
 import { getDefaultCardTitle, getDefaultGroupTitle, type Locale } from "../i18n";
 import { deleteContentCacheEntry } from "../lib/cardContentCache";
 import {
-  removeNode,
   updateNodeColor,
   updateNodeFields,
   updateNodeLocked,
@@ -16,16 +15,15 @@ import {
 import {
   adjustGroupSizeAndPosition,
   areViewportsEqual,
-  detachChildrenFromGroup,
   isGroupPlacementBlocked,
   resolveGroupMoveTarget,
   resolveGroupMoveTargets,
 } from "../lib/groupNodeLayout";
-import { createNodeDraft, deleteNodeDraft } from "../lib/graphNodeCommands";
+import { createNodeDraft, deleteNodeDraft, deleteNodesDraft } from "../lib/graphNodeCommands";
 import { estimateNodeSize } from "../lib/graphNodeMetrics";
 import { EMPTY_GRAPH, generateNextId } from "../lib/workspaceState";
 import type { CanvasViewport, GraphData, GraphNode, NodeSize } from "../types";
-import type { CanvasCommand, RemoveManyMeta, RemoveMeta } from "./canvasHistoryTypes";
+import type { CanvasCommand } from "./canvasHistoryTypes";
 
 interface UseGraphNodesOptions {
   locale?: Locale;
@@ -207,100 +205,22 @@ export function useGraphNodes({
   const deleteNodes = useCallback(
     (nodeIds: string[]) => {
       const uniqueNodeIds = [...new Set(nodeIds)];
-      if (uniqueNodeIds.length === 0) {
-        return;
-      }
+      const draft = deleteNodesDraft(
+        uniqueNodeIds,
+        graphRef.current,
+        nodePositionsRef.current,
+        nodeSizesRef.current
+      );
+      if (!draft) return;
+      draft.removals.forEach(({ nodeId }) => deleteContentCacheEntry(nodeId));
 
-      const removals: RemoveManyMeta[] = [];
-      const originalGraph = graphRef.current;
-      const originalPositions = nodePositionsRef.current;
-      const originalSizes = nodeSizesRef.current;
-      let usedSnapshotCommand = false;
+      graphRef.current = draft.graph;
+      nodePositionsRef.current = draft.positions;
+      nodeSizesRef.current = draft.sizes;
 
-      uniqueNodeIds.forEach((nodeId) => {
-        const nodeToDelete = graphRef.current.nodes.find((node) => node.id === nodeId);
-        let graphBeforeRemoval = graphRef.current;
-        let positionsBeforeRemoval = nodePositionsRef.current;
-        let sizesBeforeRemoval = nodeSizesRef.current;
-
-        if (nodeToDelete?.type === "group") {
-          const detached = detachChildrenFromGroup(
-            nodeId,
-            nodeToDelete.title,
-            graphBeforeRemoval,
-            positionsBeforeRemoval,
-            sizesBeforeRemoval
-          );
-          graphBeforeRemoval = detached.graph;
-          positionsBeforeRemoval = detached.positions;
-          sizesBeforeRemoval = detached.sizes;
-          usedSnapshotCommand = true;
-        }
-
-        const {
-          graph: nextGraph,
-          removedNode,
-          removedEdges,
-          affectedRefs,
-        } = removeNode(graphBeforeRemoval, nodeId);
-        if (!removedNode || removedNode.id !== nodeId) {
-          return;
-        }
-        deleteContentCacheEntry(nodeId);
-
-        const removedNodePos = nodePositionsRef.current[nodeId] ?? { x: 0, y: 0 };
-        const removedNodeSize = nodeSizesRef.current[nodeId];
-        const nextPositions = { ...positionsBeforeRemoval };
-        delete nextPositions[nodeId];
-        const nextSizes = { ...sizesBeforeRemoval };
-        delete nextSizes[nodeId];
-
-        graphRef.current = nextGraph;
-        nodePositionsRef.current = nextPositions;
-        nodeSizesRef.current = nextSizes;
-
-        const removeMeta: RemoveMeta = {
-          removedNode,
-          position: removedNodePos,
-          size: removedNodeSize,
-          removedEdges,
-          affectedRefs,
-        };
-        removals.push({ nodeId, meta: removeMeta });
-      });
-
-      if (removals.length === 0) {
-        return;
-      }
-
-      const affectedParents = new Set<string>();
-      removals.forEach((r) => {
-        if (r.meta.removedNode.parentId) {
-          affectedParents.add(r.meta.removedNode.parentId);
-        }
-      });
-
-      if (affectedParents.size > 0) {
-        let nextPositions = { ...nodePositionsRef.current };
-        let nextSizes = { ...nodeSizesRef.current };
-        affectedParents.forEach((parentId) => {
-          const adjusted = adjustGroupSizeAndPosition(
-            parentId,
-            graphRef.current.nodes,
-            nextPositions,
-            nextSizes
-          );
-          nextPositions = adjusted.positions;
-          nextSizes = adjusted.sizes;
-        });
-        nodePositionsRef.current = nextPositions;
-        nodeSizesRef.current = nextSizes;
-        setNodeSizes(nextSizes);
-      }
-
-      setGraph(graphRef.current);
-      setNodePositions(nodePositionsRef.current);
-      setNodeSizes(nodeSizesRef.current);
+      setGraph(draft.graph);
+      setNodePositions(draft.positions);
+      setNodeSizes(draft.sizes);
       setSelectedNodeId(null);
       setSelectedNodeIds([]);
       setEditingNodeId((currentEditingNodeId) =>
@@ -321,13 +241,13 @@ export function useGraphNodes({
       setDirty(true);
       pushCommand({
         type: "remove-many",
-        removals,
-        graphBefore: usedSnapshotCommand ? originalGraph : undefined,
-        graphAfter: usedSnapshotCommand ? graphRef.current : undefined,
-        positionsBefore: usedSnapshotCommand ? originalPositions : undefined,
-        positionsAfter: usedSnapshotCommand ? nodePositionsRef.current : undefined,
-        sizesBefore: usedSnapshotCommand ? originalSizes : undefined,
-        sizesAfter: usedSnapshotCommand ? nodeSizesRef.current : undefined,
+        removals: draft.removals,
+        graphBefore: draft.graphBefore,
+        graphAfter: draft.graphAfter,
+        positionsBefore: draft.positionsBefore,
+        positionsAfter: draft.positionsAfter,
+        sizesBefore: draft.sizesBefore,
+        sizesAfter: draft.sizesAfter,
       });
     },
     [

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { GraphData, GraphNode } from "../types";
 import { DEFAULT_GROUP_SIZE } from "./graphLayout";
-import { createNodeDraft, deleteNodeDraft } from "./graphNodeCommands";
+import { createNodeDraft, deleteNodeDraft, deleteNodesDraft } from "./graphNodeCommands";
 
 const CREATED_AT = "2026-01-01T00:00:00.000Z";
 
@@ -152,6 +152,83 @@ describe("graphNodeCommands", () => {
     expect(detachedChild?.parentId).toBeUndefined();
     expect(detachedChild?.tags).toEqual([]);
     expect(draft?.positions["#child"]).toEqual({ x: 110, y: 220 });
+    expect(draft?.graphBefore).toBe(sourceGraph);
+    expect(draft?.positionsBefore).toBe(positions);
+    expect(draft?.sizesBefore).toBe(sizes);
+    expect(draft?.graphAfter).toBe(draft?.graph);
+  });
+
+  it("returns null for empty or non-matching batch deletes", () => {
+    expect(deleteNodesDraft([], graph([cardNode("#1")]), {}, {})).toBeNull();
+    expect(deleteNodesDraft(["#missing"], graph([cardNode("#1")]), {}, {})).toBeNull();
+  });
+
+  it("deletes multiple nodes and returns batch restore metadata", () => {
+    const first = {
+      ...cardNode("#1", "One"),
+      references: [{ id: "#2", title: "Two" }],
+    };
+    const second = cardNode("#2", "Two");
+    const third = cardNode("#3", "Three");
+    const draft = deleteNodesDraft(
+      ["#2", "#3"],
+      {
+        nodes: [first, second, third],
+        edges: [
+          {
+            id: "edge-#1-#2",
+            sourceId: "#1",
+            targetId: "#2",
+            type: "citation",
+            weight: 1,
+          },
+        ],
+      },
+      {
+        "#1": { x: 0, y: 0 },
+        "#2": { x: 20, y: 30 },
+        "#3": { x: 40, y: 50 },
+      },
+      {
+        "#2": { width: 120, height: 80 },
+        "#3": { width: 130, height: 90 },
+      }
+    );
+
+    expect(draft?.graph.nodes).toEqual([{ ...first, references: [] }]);
+    expect(draft?.positions).toEqual({ "#1": { x: 0, y: 0 } });
+    expect(draft?.sizes).toEqual({});
+    expect(draft?.removals.map((removal) => removal.nodeId)).toEqual(["#2", "#3"]);
+    expect(draft?.removals[0].meta).toMatchObject({
+      removedNode: second,
+      position: { x: 20, y: 30 },
+      size: { width: 120, height: 80 },
+      affectedRefs: [{ ownerId: "#1", refId: "#2" }],
+    });
+    expect(draft?.removals[1].meta).toMatchObject({
+      removedNode: third,
+      position: { x: 40, y: 50 },
+      size: { width: 130, height: 90 },
+      affectedRefs: [],
+    });
+    expect(draft?.graphBefore).toBeUndefined();
+  });
+
+  it("keeps batch snapshot data when deleting a group", () => {
+    const sourceGraph = graph([groupNode("#group", "Group"), cardNode("#child", "Child", "#group")]);
+    const positions = {
+      "#group": { x: 100, y: 200 },
+      "#child": { x: 10, y: 20 },
+    };
+    const sizes = {
+      "#group": DEFAULT_GROUP_SIZE,
+      "#child": { width: 120, height: 80 },
+    };
+    const draft = deleteNodesDraft(["#group"], sourceGraph, positions, sizes);
+
+    expect(draft?.graph.nodes[0].id).toBe("#child");
+    expect(draft?.graph.nodes[0].parentId).toBeUndefined();
+    expect(draft?.positions).toEqual({ "#child": { x: 110, y: 220 } });
     expect(draft?.graphBefore).toBe(sourceGraph);
     expect(draft?.positionsBefore).toBe(positions);
     expect(draft?.sizesBefore).toBe(sizes);
