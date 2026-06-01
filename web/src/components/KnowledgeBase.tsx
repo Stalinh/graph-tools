@@ -384,6 +384,7 @@ export function KnowledgeBase({
           currentFileName={files.currentFileName}
           dirty={status.dirty}
           fileStatus={files.fileStatus}
+          globalPreviewRequestId={files.globalPreviewRequestId}
           quickEditingNodeId={selection.quickEditingNodeId}
           searchQuery={search.debouncedSearch}
           selectedEdgeId={selection.selectedEdgeId}

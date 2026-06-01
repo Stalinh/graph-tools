@@ -40,6 +40,10 @@ interface UpdateGraphNodeOptions {
   pushToHistory?: boolean;
 }
 
+interface ViewportChangeOptions {
+  markDirty?: boolean;
+}
+
 export function useGraphNodes({
   locale = "zh-CN",
   pushCommand,
@@ -926,10 +930,12 @@ export function useGraphNodes({
   );
 
   const handleViewportChange = useCallback(
-    (vp: CanvasViewport) => {
+    (vp: CanvasViewport, options?: ViewportChangeOptions) => {
       if (!areViewportsEqual(viewportRef.current, vp)) {
         setViewport(vp);
-        setDirty(true);
+        if (options?.markDirty !== false) {
+          setDirty(true);
+        }
       }
     },
     [setDirty]

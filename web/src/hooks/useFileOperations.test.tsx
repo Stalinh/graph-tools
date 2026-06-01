@@ -100,6 +100,7 @@ describe("useFileOperations", () => {
       nodePositions: {
         "#1": { x: 10, y: 20 },
       },
+      viewport: { x: 500, y: 300, zoom: 0.25 },
       selectedNodeId: "#1",
     });
     const openedImages = new Map([["images/a.png", new Blob(["image"])]]);
@@ -117,8 +118,10 @@ describe("useFileOperations", () => {
     });
 
     expect(result.current.state.graph.nodes[0].title).toBe("Opened");
+    expect(result.current.state.viewport).toBeNull();
     expect(result.current.images).toBe(openedImages);
     expect(result.current.files.currentFileName).toBe("opened.graph");
+    expect(result.current.files.globalPreviewRequestId).toBe(1);
     expect(result.current.files.fileStatus).toBe("文件已打开。");
     expect(result.current.status).toBe("ready");
     expect(result.current.errorMessage).toBeNull();
@@ -158,7 +161,9 @@ describe("useFileOperations", () => {
 
     expect(fileManager.openDroppedWorkspaceFile).toHaveBeenCalledWith(file);
     expect(result.current.state.graph.nodes[0].title).toBe("Dropped");
+    expect(result.current.state.viewport).toBeNull();
     expect(result.current.files.currentFileName).toBe("dropped.graph");
+    expect(result.current.files.globalPreviewRequestId).toBe(1);
     expect(result.current.files.fileStatus).toBe("拖入的文件已打开，保存时将另存为。");
     expect(result.current.files.pendingAction).toBeNull();
     expect(result.current.dirty).toBe(false);

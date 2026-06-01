@@ -99,4 +99,16 @@ describe("useGraphState", () => {
     expect(result.current.history.undoStack).toHaveLength(1);
     expect(result.current.history.redoStack).toHaveLength(0);
   });
+
+  it("stores an automatic preview viewport without marking the workspace dirty", () => {
+    const { result } = renderHook(() => useGraphStateHarness());
+    const previewViewport = { x: 12, y: 34, zoom: 0.5 };
+
+    act(() => {
+      result.current.graphState.nodes.handleViewportChange(previewViewport, { markDirty: false });
+    });
+
+    expect(result.current.graphState.nodes.viewport).toEqual(previewViewport);
+    expect(result.current.graphState.status.dirty).toBe(false);
+  });
 });

@@ -109,6 +109,7 @@ export function useFileOperations({
   const [fileStatus, setFileStatus] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [pendingDroppedFile, setPendingDroppedFile] = useState<File | null>(null);
+  const [globalPreviewRequestId, setGlobalPreviewRequestId] = useState(0);
 
   useEffect(() => {
     setCurrentFileName(fileManager.getCurrentFileName());
@@ -129,7 +130,7 @@ export function useFileOperations({
   const applyWorkspacePackage = useCallback(
     (pkg: WorkspacePackage, fileName: string | null, openedFromDrop = false) => {
       const migratedState = migrateWorkspaceIds(pkg.state);
-      applyWorkspaceState(migratedState);
+      applyWorkspaceState({ ...migratedState, viewport: null });
       setImages(pkg.images);
       clearHistory();
       setCurrentFileName(fileName);
@@ -145,6 +146,7 @@ export function useFileOperations({
       );
       setErrorMessage(null);
       setDirty(false);
+      setGlobalPreviewRequestId((requestId) => requestId + 1);
     },
     [
       applyWorkspaceState,
@@ -366,6 +368,7 @@ export function useFileOperations({
   return {
     currentFileName,
     fileStatus,
+    globalPreviewRequestId,
     pendingAction,
     setCurrentFileName,
     handleNew,

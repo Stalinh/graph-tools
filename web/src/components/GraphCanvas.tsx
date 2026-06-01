@@ -3,6 +3,8 @@ import {
   ReactFlow,
   SelectionMode,
   applyNodeChanges,
+  useNodesInitialized,
+  useReactFlow,
   type Connection,
   type Edge,
   type EdgeTypes,
@@ -83,6 +85,7 @@ interface GraphCanvasProps {
   currentFileName?: string | null;
   dirty?: boolean;
   fileStatus?: string | null;
+  globalPreviewRequestId?: number;
   quickEditingNodeId?: string | null;
   selectedEdgeId: string | null;
   selectedNodeId: string | null;
@@ -108,7 +111,19 @@ interface GraphCanvasProps {
   onNodeResizeEnd?: (nodeId: string, size: NodeSize) => void;
   onSelectNode: (nodeId: string | null) => void;
   onSelectNodeIds: (nodeIds: string[]) => void;
-  onViewportChange?: (viewport: CanvasViewport) => void;
+  onViewportChange?: (viewport: CanvasViewport, options?: ViewportChangeOptions) => void;
+}
+
+interface ViewportChangeOptions {
+  markDirty?: boolean;
+}
+
+interface GlobalPreviewControllerProps {
+  nodeCount: number;
+  requestId: number;
+  onPreviewEnd: () => void;
+  onPreviewStart: () => void;
+  onPreviewViewportChange: (viewport: CanvasViewport) => void;
 }
 
 const EDGE_STYLE: Record<string, Edge["style"]> = {
@@ -139,6 +154,72 @@ const NODE_TYPES: NodeTypes = {
   groupNode: GroupNode as NodeTypes[string],
 };
 
+function GlobalPreviewController({
+  nodeCount,
+  requestId,
+  onPreviewEnd,
+  onPreviewStart,
+  onPreviewViewportChange,
+}: GlobalPreviewControllerProps) {
+  const flow = useReactFlow();
+  const nodesInitialized = useNodesInitialized({ includeHiddenNodes: true });
+  const handledRequestIdRef = useRef(0);
+
+  useEffect(() => {
+    if (requestId <= 0 || requestId === handledRequestIdRef.current || nodeCount === 0) {
+      return;
+    }
+    if (!nodesInitialized) {
+      return;
+    }
+
+    let cancelled = false;
+    let previewStarted = false;
+    const frame = requestAnimationFrame(() => {
+      if (cancelled) {
+        return;
+      }
+
+      handledRequestIdRef.current = requestId;
+      previewStarted = true;
+      onPreviewStart();
+      void flow
+        .fitView({ duration: 0 })
+        .then(() => {
+          if (!cancelled) {
+            onPreviewViewportChange(flow.getViewport());
+          }
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          requestAnimationFrame(() => {
+            if (!cancelled) {
+              onPreviewEnd();
+            }
+          });
+        });
+    });
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+      if (previewStarted) {
+        onPreviewEnd();
+      }
+    };
+  }, [
+    flow,
+    nodeCount,
+    nodesInitialized,
+    onPreviewEnd,
+    onPreviewStart,
+    onPreviewViewportChange,
+    requestId,
+  ]);
+
+  return null;
+}
+
 export function GraphCanvas({
   graph,
   contextMenu,
@@ -151,6 +232,7 @@ export function GraphCanvas({
   currentFileName = null,
   dirty = false,
   fileStatus = null,
+  globalPreviewRequestId = 0,
   quickEditingNodeId = null,
   selectedEdgeId,
   selectedNodeId,
@@ -185,6 +267,7 @@ export function GraphCanvas({
   const alignmentGuideFrameRef = useRef<number | null>(null);
   const hasJustDraggedRef = useRef(false);
   const lastFocusedNodeIdRef = useRef<string | null>(null);
+  const suppressNextViewportDirtyRef = useRef(false);
   const onSelectNodeRef = useRef(onSelectNode);
   const nodePressedRef = useRef<{ id: string; wasSelected: boolean } | null>(null);
   const handleNodeMouseDownRef = useRef<
@@ -404,6 +487,21 @@ export function GraphCanvas({
       { duration: 180 }
     );
   }, [viewport]);
+
+  const handleGlobalPreviewStart = useCallback(() => {
+    suppressNextViewportDirtyRef.current = true;
+  }, []);
+
+  const handleGlobalPreviewEnd = useCallback(() => {
+    suppressNextViewportDirtyRef.current = false;
+  }, []);
+
+  const handleGlobalPreviewViewportChange = useCallback(
+    (nextViewport: CanvasViewport) => {
+      onViewportChange?.(nextViewport, { markDirty: false });
+    },
+    [onViewportChange]
+  );
 
   const edges = useMemo<Edge[]>(() => {
     const filterMatchesNode = (node: GraphNode) => {
@@ -978,7 +1076,13 @@ export function GraphCanvas({
           reactFlowInstanceRef.current = instance;
         }}
         onEdgeClick={handleEdgeClick}
-        onMoveEnd={(_, nextViewport) => onViewportChange?.(nextViewport)}
+        onMoveEnd={(_, nextViewport) => {
+          const markDirty = !suppressNextViewportDirtyRef.current;
+          onViewportChange?.(nextViewport, { markDirty });
+          if (!markDirty) {
+            suppressNextViewportDirtyRef.current = false;
+          }
+        }}
         onNodeContextMenu={handleNodeContextMenu}
         onNodeClick={handleNodeClick}
         onNodeDrag={handleNodeDrag}
@@ -1080,6 +1184,13 @@ export function GraphCanvas({
         proOptions={{ hideAttribution: true }}
         zoomOnDoubleClick={false}
       >
+        <GlobalPreviewController
+          nodeCount={nodes.length}
+          requestId={globalPreviewRequestId}
+          onPreviewEnd={handleGlobalPreviewEnd}
+          onPreviewStart={handleGlobalPreviewStart}
+          onPreviewViewportChange={handleGlobalPreviewViewportChange}
+        />
         <Background color="var(--color-graph-grid)" gap={GRAPH_GRID_SIZE} size={2} />
         <GraphScaleIndicator
           onZoomIn={handleZoomIn}

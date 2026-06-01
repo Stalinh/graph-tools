@@ -27,6 +27,7 @@ export interface ProjectRecord extends ProjectLine {
 }
 
 export type ProjectRecordField = Exclude<keyof ProjectLine, "id">;
+export type ProjectSubLineField = keyof Omit<ProjectSubLine, "id">;
 
 export interface ProjectColumn {
   field: ProjectRecordField;
