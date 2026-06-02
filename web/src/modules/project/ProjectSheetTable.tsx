@@ -152,7 +152,11 @@ export function ProjectSheetTable({
       <table>
         <colgroup>
           <col className="project-sheet__index-col" />
-          {PROJECT_COLUMNS.map((column) => (
+          {PROJECT_COLUMNS.slice(0, 2).map((column) => (
+            <col key={column.field} style={{ width: column.width }} />
+          ))}
+          <col style={{ width: "120px" }} />
+          {PROJECT_COLUMNS.slice(2).map((column) => (
             <col key={column.field} style={{ width: column.width }} />
           ))}
           <col className="project-sheet__actions-col" />
@@ -160,7 +164,13 @@ export function ProjectSheetTable({
         <thead>
           <tr>
             <th scope="col">{isZh ? "编号" : "No."}</th>
-            {PROJECT_COLUMNS.map((column) => (
+            {PROJECT_COLUMNS.slice(0, 2).map((column) => (
+              <th key={column.field} scope="col">
+                {isZh ? column.labelZh : column.labelEn}
+              </th>
+            ))}
+            <th scope="col">{isZh ? "工作量占比" : "Workload Ratio"}</th>
+            {PROJECT_COLUMNS.slice(2).map((column) => (
               <th key={column.field} scope="col">
                 {isZh ? column.labelZh : column.labelEn}
               </th>
