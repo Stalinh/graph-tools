@@ -269,7 +269,20 @@ export function ProjectSheetTable({
                       </div>
                     )}
                   </th>
-                  {PROJECT_COLUMNS.map((column) => (
+                  {PROJECT_COLUMNS.slice(0, 2).map((column) => (
+                    <td key={column.field}>
+                      {isEditMode
+                        ? renderProjectEditCell(record, column.field)
+                        : renderProjectCell(record, column.field, isZh)}
+                    </td>
+                  ))}
+                  <td
+                    className="project-sheet__project-workload-ratio-cell"
+                    aria-label={isZh ? "工作量占比" : "Workload ratio"}
+                  >
+                    —
+                  </td>
+                  {PROJECT_COLUMNS.slice(2).map((column) => (
                     <td key={column.field}>
                       {isEditMode
                         ? renderProjectEditCell(record, column.field)
