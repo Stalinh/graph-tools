@@ -9,7 +9,7 @@ interface CardEditorChecklistSectionProps {
   onClearCompletedTasks: () => void;
   onSortTasks: () => void;
   onToggleAllTasks: (checked: boolean) => void;
-  onToggleTask: (index: number, checked: boolean) => void;
+  onToggleTask: (taskPath: string, checked: boolean) => void;
   percentage: number;
   tasks: SidebarTaskItem[];
   totalCount: number;
@@ -94,17 +94,19 @@ export function CardEditorChecklistSection({
         <div className="sidebar-todo-list">
           {tasks.map((task) => (
             <div
-              key={task.index}
+              key={task.path}
               className={`sidebar-todo-item ${task.checked ? "is-checked" : ""}`}
+              data-task-path={task.path}
+              style={{ paddingLeft: `${8 + task.depth * 14}px` }}
             >
               <input
                 type="checkbox"
-                id={`sidebar-todo-chk-${nodeId}-${task.index}`}
+                id={`sidebar-todo-chk-${nodeId}-${task.path}`}
                 checked={task.checked}
-                onChange={(event) => onToggleTask(task.index, event.target.checked)}
+                onChange={(event) => onToggleTask(task.path, event.target.checked)}
               />
               <label
-                htmlFor={`sidebar-todo-chk-${nodeId}-${task.index}`}
+                htmlFor={`sidebar-todo-chk-${nodeId}-${task.path}`}
                 className="sidebar-todo-item__text"
               >
                 {task.text}

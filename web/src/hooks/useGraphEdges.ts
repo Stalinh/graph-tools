@@ -2,6 +2,7 @@ import { useCallback, useRef } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { EdgeDirection, EdgeStyle, GraphData } from "../types";
 import type { CanvasCommand } from "./canvasHistoryTypes";
+import { normalizeEdgeStyle } from "../lib/edgeStyles";
 import {
   addCitation,
   removeCitation,
@@ -106,14 +107,15 @@ export function useGraphEdges({
 
   const updateEdgeStyle = useCallback(
     (edgeId: string, style: EdgeStyle) => {
+      const nextStyle = normalizeEdgeStyle(style);
       applyGraphUpdate((currentGraph) => {
         const edge = currentGraph.edges.find((currentEdge) => currentEdge.id === edgeId);
-        const currentStyle = edge?.style === "sketch" ? "sketch" : "note-dash";
-        if (!edge || currentStyle === style) {
+        const currentStyle = normalizeEdgeStyle(edge?.style);
+        if (!edge || currentStyle === nextStyle) {
           return currentGraph;
         }
 
-        return mutatorUpdateEdgeStyle(currentGraph, edgeId, style);
+        return mutatorUpdateEdgeStyle(currentGraph, edgeId, nextStyle);
       });
     },
     [applyGraphUpdate]

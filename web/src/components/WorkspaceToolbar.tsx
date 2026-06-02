@@ -129,6 +129,10 @@ export function WorkspaceToolbar({
           <SearchResultsDropdown
             matchingNodes={matchingNodes}
             searchQuery={searchQuery}
+            onClose={() => {
+              onSearchChange("");
+              searchInputRef.current?.blur();
+            }}
             onNavigate={onResultNavigate}
           />
         ) : null}

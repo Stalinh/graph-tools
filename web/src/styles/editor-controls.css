@@ -479,6 +479,10 @@
   transform-origin: center;
 }
 
+.edge-style-preview--solid .edge-style-preview__line {
+  transform: none;
+}
+
 .edge-style-preview--note-dash .edge-style-preview__line {
   border-top-style: dashed;
 }
@@ -888,4 +892,3 @@
   font-size: 14px;
   font-weight: 600;
 }
-

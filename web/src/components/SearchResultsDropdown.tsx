@@ -7,12 +7,14 @@ import type { GraphNode } from "../types";
 interface SearchResultsDropdownProps {
   matchingNodes: GraphNode[];
   searchQuery: string;
+  onClose: () => void;
   onNavigate: (nodeId: string) => void;
 }
 
 export function SearchResultsDropdown({
   matchingNodes,
   searchQuery,
+  onClose,
   onNavigate,
 }: SearchResultsDropdownProps) {
   const { isZh } = useI18n();
@@ -32,20 +34,33 @@ export function SearchResultsDropdown({
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
+      if (event.isComposing || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      const dropdown = listRef.current;
+      if (!isSearchResultsKeyboardTarget(event, dropdown)) {
+        return;
+      }
+
       if (event.key === "ArrowDown") {
+        if (matchingNodes.length === 0) return;
         event.preventDefault();
         setHighlightIndex((prev) => (prev < matchingNodes.length - 1 ? prev + 1 : 0));
       } else if (event.key === "ArrowUp") {
+        if (matchingNodes.length === 0) return;
         event.preventDefault();
         setHighlightIndex((prev) => (prev > 0 ? prev - 1 : matchingNodes.length - 1));
       } else if (event.key === "Enter") {
+        if (!matchingNodes[highlightIndex]) return;
         event.preventDefault();
-        if (matchingNodes[highlightIndex]) {
-          onNavigate(matchingNodes[highlightIndex].id);
-        }
+        onNavigate(matchingNodes[highlightIndex].id);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
       }
     },
-    [matchingNodes, highlightIndex, onNavigate]
+    [matchingNodes, highlightIndex, onClose, onNavigate]
   );
 
   useEffect(() => {
@@ -81,6 +96,7 @@ export function SearchResultsDropdown({
                 className={`search-result${index === highlightIndex ? " is-highlighted" : ""}`}
                 data-result-index={index}
                 onClick={() => onNavigate(node.id)}
+                onFocus={() => setHighlightIndex(index)}
                 onMouseEnter={() => setHighlightIndex(index)}
               >
                 <span className="search-result__type-icon">
@@ -112,6 +128,49 @@ export function SearchResultsDropdown({
         <kbd>Esc</kbd> {isZh ? "关闭" : "Close"}
       </div>
     </div>
+  );
+}
+
+function getSearchInput(dropdown: HTMLDivElement): HTMLInputElement | null {
+  return (
+    dropdown
+      .closest(".workspace-toolbar__search")
+      ?.querySelector<HTMLInputElement>(".workspace-toolbar__search-input") ?? null
+  );
+}
+
+function getEventTargetNode(event: KeyboardEvent): Node | null {
+  return event.target instanceof Node ? event.target : null;
+}
+
+function getActiveElement(dropdown: HTMLDivElement): Element | null {
+  const activeElement = dropdown.ownerDocument.activeElement;
+  return activeElement instanceof Element ? activeElement : null;
+}
+
+function isDropdownKeyboardTarget(event: KeyboardEvent, dropdown: HTMLDivElement): boolean {
+  const targetNode = getEventTargetNode(event);
+  const activeElement = getActiveElement(dropdown);
+
+  return Boolean(
+    (targetNode && dropdown.contains(targetNode)) ||
+      (activeElement && dropdown.contains(activeElement))
+  );
+}
+
+function isSearchResultsKeyboardTarget(
+  event: KeyboardEvent,
+  dropdown: HTMLDivElement | null
+): boolean {
+  if (!dropdown) return false;
+
+  const searchInput = getSearchInput(dropdown);
+  const targetNode = getEventTargetNode(event);
+  const activeElement = getActiveElement(dropdown);
+
+  return Boolean(
+    (searchInput && (targetNode === searchInput || activeElement === searchInput)) ||
+      isDropdownKeyboardTarget(event, dropdown)
   );
 }
 

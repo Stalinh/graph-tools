@@ -37,9 +37,9 @@ export function useCardEditorChecklist({
   );
 
   const handleToggleTask = useCallback(
-    (indexToToggle: number, checked: boolean) => {
+    (taskPath: string, checked: boolean) => {
       if (!onContentCommit) return;
-      commitChecklistUpdate(setChecklistTaskChecked(contentHtml, indexToToggle, checked));
+      commitChecklistUpdate(setChecklistTaskChecked(contentHtml, taskPath, checked));
     },
     [commitChecklistUpdate, contentHtml, onContentCommit]
   );

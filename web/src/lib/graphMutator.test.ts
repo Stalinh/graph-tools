@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GraphData, GraphNode } from "../types";
+import { EDGE_STYLES } from "./edgeStyles";
 import {
   addCitation,
   removeCitation,
@@ -7,6 +8,7 @@ import {
   reorderReferences,
   restoreNode,
   updateEdgeDirection,
+  updateEdgeStyle,
   updateNodeFields,
   updateNodeOpacity,
 } from "./graphMutator";
@@ -39,6 +41,7 @@ describe("graphMutator", () => {
 
     const linked = addCitation(initial, "#1", "#2");
     expect(linked.edges).toHaveLength(1);
+    expect(linked.edges[0].style).toBe("note-dash");
     expect(linked.nodes.find((node) => node.id === "#1")?.references).toEqual([
       { id: "#2", title: "Two" },
     ]);
@@ -54,6 +57,16 @@ describe("graphMutator", () => {
     expect(bidirectional.nodes.find((node) => node.id === "#2")?.references).toEqual([
       { id: "#1", title: "One" },
     ]);
+  });
+
+  it("updates edge style to every legal style", () => {
+    const linked = addCitation(graph([cardNode("#1", "One"), cardNode("#2", "Two")]), "#1", "#2");
+    let current = linked;
+
+    for (const style of EDGE_STYLES) {
+      current = updateEdgeStyle(current, "edge-#1-#2", style);
+      expect(current.edges[0].style).toBe(style);
+    }
   });
 
   it("removes bidirectional citations from both sides", () => {

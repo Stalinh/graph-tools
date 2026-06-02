@@ -1,5 +1,6 @@
 import type { Edge } from "@xyflow/react";
 import { useMemo } from "react";
+import { normalizeEdgeStyle } from "../../lib/edgeStyles";
 import type { GraphData, GraphNode, WorkspaceNodeFilter } from "../../types";
 import { getEdgeVisualStyle, shouldDimEdgeByFilter } from "./graphUtils";
 
@@ -57,7 +58,7 @@ export function useGraphCanvasEdges({
           direction: edge.direction ?? "unidirectional",
           selected: visualStyle.isSelected,
           color: edge.color,
-          style: edge.style === "sketch" ? "sketch" : "note-dash",
+          style: normalizeEdgeStyle(edge.style),
         },
         style: {
           ...EDGE_STYLE.citation,

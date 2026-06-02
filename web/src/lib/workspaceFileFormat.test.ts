@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GraphNode, WorkspaceState } from "../types";
+import { EDGE_STYLES } from "./edgeStyles";
 import {
   getWorkspaceImagePaths,
   isCanonicalWorkspaceFileName,
@@ -97,6 +98,44 @@ describe("workspaceFileFormat", () => {
     });
 
     expect(parseWorkspaceStateJson(JSON.stringify(state))).toBeNull();
+  });
+
+  it("accepts every edge style and legacy edges without style", () => {
+    const state = workspace({
+      graph: {
+        nodes: [cardNode("#1", "Alpha"), cardNode("#2", "Beta")],
+        edges: [
+          ...EDGE_STYLES.map((style) => ({
+            id: `edge-${style}`,
+            sourceId: "#1",
+            targetId: "#2",
+            type: "citation" as const,
+            weight: 1,
+            style,
+          })),
+          {
+            id: "edge-legacy",
+            sourceId: "#2",
+            targetId: "#1",
+            type: "citation" as const,
+            weight: 1,
+          },
+        ],
+      },
+    });
+
+    expect(parseWorkspaceStateJson(JSON.stringify(state))?.graph.edges.map((edge) => edge.style)).toEqual([
+      ...EDGE_STYLES,
+      undefined,
+    ]);
+
+    const invalidState = workspace();
+    invalidState.graph.edges[0] = {
+      ...invalidState.graph.edges[0],
+      style: "dotted" as never,
+    };
+
+    expect(parseWorkspaceStateJson(JSON.stringify(invalidState))).toBeNull();
   });
 
   it("rejects dangling selected nodes, edges, and references", () => {

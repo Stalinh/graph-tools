@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { getColorLabel, useI18n } from "../i18n";
+import { EDGE_STYLES, normalizeEdgeStyle } from "../lib/edgeStyles";
 import {
   DEFAULT_SUPPORTED_NODE_COLOR,
   SUPPORTED_NODE_COLORS,
@@ -28,16 +29,11 @@ export function EdgeEditor({
 }: EdgeEditorProps) {
   const { isZh, locale } = useI18n();
   const edgeStyleOptions: Array<{ ariaLabel: string; label: string; value: EdgeStyle }> = [
-    {
-      ariaLabel: isZh ? "切换为草图" : "Switch to sketch style",
-      label: isZh ? "草图" : "Sketch",
-      value: "sketch",
-    },
-    {
-      ariaLabel: isZh ? "切换为笔记虚线" : "Switch to note dash style",
-      label: isZh ? "笔记虚线" : "Note dash",
-      value: "note-dash",
-    },
+    ...EDGE_STYLES.map((value) => ({
+      ariaLabel: getEdgeStyleAriaLabel(value, isZh),
+      label: getEdgeStyleLabel(value, isZh),
+      value,
+    })),
   ];
   const edgeColorOptions = SUPPORTED_NODE_COLORS.map((value) => ({
     ariaLabel: isZh
@@ -48,7 +44,7 @@ export function EdgeEditor({
     swatch: getNodeColorCssVar(value, true),
   }));
   const direction: EdgeDirection = edge.direction ?? "unidirectional";
-  const style: EdgeStyle = edge.style === "sketch" ? "sketch" : "note-dash";
+  const style = normalizeEdgeStyle(edge.style);
   const color = edge.color ?? DEFAULT_SUPPORTED_NODE_COLOR;
 
   function toggleDirection() {
@@ -180,4 +176,16 @@ export function EdgeEditor({
       ) : null}
     </div>
   );
+}
+
+function getEdgeStyleLabel(style: EdgeStyle, isZh: boolean) {
+  if (style === "solid") return isZh ? "实线" : "Solid";
+  if (style === "sketch") return isZh ? "草图" : "Sketch";
+  return isZh ? "笔记虚线" : "Note dash";
+}
+
+function getEdgeStyleAriaLabel(style: EdgeStyle, isZh: boolean) {
+  if (style === "solid") return isZh ? "切换为实线" : "Switch to solid style";
+  if (style === "sketch") return isZh ? "切换为草图" : "Switch to sketch style";
+  return isZh ? "切换为笔记虚线" : "Switch to note dash style";
 }

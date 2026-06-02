@@ -1,4 +1,5 @@
 import { useStore, useStoreApi, type Edge, type EdgeProps } from "@xyflow/react";
+import { isEdgeStyle, normalizeEdgeStyle } from "../../lib/edgeStyles";
 import { getNodeColorCssVar } from "../../lib/nodeColors";
 import type { EdgeDirection, EdgeStyle } from "../../types";
 
@@ -98,7 +99,7 @@ export function CitationEdge({
 
   const edgeData = toCitationEdgeData(data);
   const direction: EdgeDirection = edgeData.direction ?? "unidirectional";
-  const edgeStyle: EdgeStyle = edgeData.style === "sketch" ? "sketch" : "note-dash";
+  const edgeStyle = normalizeEdgeStyle(edgeData.style);
   const isSelected = Boolean(edgeData.selected);
   const sourceBox = getCitationNodeBox(sourceNode, source, store);
   const targetBox = getCitationNodeBox(targetNode, target, store);
@@ -265,10 +266,7 @@ function toCitationEdgeData(value: unknown): CitationEdgeData {
         ? candidate.direction
         : undefined,
     selected: typeof candidate.selected === "boolean" ? candidate.selected : undefined,
-    style:
-      candidate.style === "sketch" || candidate.style === "note-dash" || candidate.style === "solid"
-        ? candidate.style
-        : undefined,
+    style: isEdgeStyle(candidate.style) ? candidate.style : undefined,
   };
 }
 

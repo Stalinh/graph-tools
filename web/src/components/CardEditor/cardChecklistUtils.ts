@@ -1,6 +1,8 @@
 export interface SidebarTaskItem {
   checked: boolean;
+  depth: number;
   index: number;
+  path: string;
   text: string;
 }
 
@@ -14,7 +16,7 @@ function createContentDocument(html: string) {
 
 function syncTaskCheckbox(item: Element, checked: boolean) {
   item.setAttribute("data-checked", checked ? "true" : "false");
-  const checkbox = item.querySelector('input[type="checkbox"]');
+  const checkbox = getOwnTaskCheckbox(item);
   if (!checkbox) {
     return;
   }
@@ -26,6 +28,23 @@ function syncTaskCheckbox(item: Element, checked: boolean) {
   }
 }
 
+function getOwnTaskCheckbox(item: Element) {
+  for (const child of Array.from(item.children)) {
+    if (child instanceof HTMLInputElement && child.type === "checkbox") {
+      return child;
+    }
+
+    if (child instanceof HTMLLabelElement) {
+      const checkbox = child.querySelector('input[type="checkbox"]');
+      if (checkbox instanceof HTMLInputElement) {
+        return checkbox;
+      }
+    }
+  }
+
+  return null;
+}
+
 function getDirectTaskItems(list: Element) {
   return Array.from(list.children).filter(
     (child): child is HTMLElement =>
@@ -33,25 +52,156 @@ function getDirectTaskItems(list: Element) {
   );
 }
 
+function getRootTaskLists(doc: Document) {
+  return Array.from(doc.querySelectorAll(TASK_LIST_SELECTOR)).filter(
+    (list): list is HTMLElement =>
+      list instanceof HTMLElement && !list.closest(TASK_ITEM_SELECTOR)
+  );
+}
+
+function getDirectNestedTaskLists(item: Element) {
+  return Array.from(item.querySelectorAll(TASK_LIST_SELECTOR)).filter(
+    (list): list is HTMLElement =>
+      list instanceof HTMLElement && list.closest(TASK_ITEM_SELECTOR) === item
+  );
+}
+
+function getTaskItemText(item: Element) {
+  const body = Array.from(item.children).find(
+    (child) => child instanceof HTMLElement && child.tagName.toLowerCase() === "div"
+  );
+  const textSource = (body || item).cloneNode(true);
+  if (!(textSource instanceof HTMLElement)) {
+    return "";
+  }
+
+  textSource.querySelectorAll(TASK_LIST_SELECTOR).forEach((list) => list.remove());
+  textSource.querySelectorAll("label, input").forEach((control) => control.remove());
+  return textSource.textContent?.replace(/\s+/g, " ").trim() || "";
+}
+
+function createTaskPath(pathSegments: number[]) {
+  return pathSegments.join(".");
+}
+
+function parseTaskPath(path: string) {
+  const segments = path.split(".").map((segment) => Number(segment));
+  if (
+    segments.length < 2 ||
+    segments.some((segment) => !Number.isInteger(segment) || segment < 0)
+  ) {
+    return null;
+  }
+
+  return segments;
+}
+
+function collectChecklistTaskItems(
+  list: Element,
+  listPath: number[],
+  depth: number,
+  tasks: Array<{ depth: number; item: HTMLElement; path: string }>
+) {
+  getDirectTaskItems(list).forEach((item, itemIndex) => {
+    const itemPath = [...listPath, itemIndex];
+    tasks.push({
+      depth,
+      item,
+      path: createTaskPath(itemPath),
+    });
+
+    getDirectNestedTaskLists(item).forEach((nestedList) => {
+      collectChecklistTaskItems(nestedList, itemPath, depth + 1, tasks);
+    });
+  });
+}
+
+function getChecklistTaskItems(doc: Document) {
+  const tasks: Array<{ depth: number; item: HTMLElement; path: string }> = [];
+  getRootTaskLists(doc).forEach((list, listIndex) => {
+    collectChecklistTaskItems(list, [listIndex], 0, tasks);
+  });
+  return tasks;
+}
+
+function findTaskItemByPath(doc: Document, path: string) {
+  const segments = parseTaskPath(path);
+  if (!segments) {
+    return null;
+  }
+
+  let list = getRootTaskLists(doc)[segments[0]];
+  if (!list) {
+    return null;
+  }
+
+  let item: HTMLElement | undefined;
+  for (let segmentIndex = 1; segmentIndex < segments.length; segmentIndex += 1) {
+    item = getDirectTaskItems(list)[segments[segmentIndex]];
+    if (!item) {
+      return null;
+    }
+
+    if (segmentIndex < segments.length - 1) {
+      list = getDirectNestedTaskLists(item)[0];
+      if (!list) {
+        return null;
+      }
+    }
+  }
+
+  return item || null;
+}
+
+function findTaskItem(doc: Document, taskLocator: number | string) {
+  if (typeof taskLocator === "string") {
+    return findTaskItemByPath(doc, taskLocator);
+  }
+
+  const item = doc.querySelectorAll(TASK_ITEM_SELECTOR)[taskLocator];
+  return item instanceof HTMLElement ? item : null;
+}
+
+function pruneEmptyTaskLists(doc: Document) {
+  Array.from(doc.querySelectorAll(TASK_LIST_SELECTOR))
+    .reverse()
+    .forEach((list) => {
+      if (getDirectTaskItems(list).length === 0) {
+        list.remove();
+      }
+    });
+}
+
+function promoteNestedTasksBeforeItem(item: HTMLElement) {
+  const parent = item.parentElement;
+  if (!parent) {
+    return;
+  }
+
+  getDirectNestedTaskLists(item).forEach((nestedList) => {
+    getDirectTaskItems(nestedList).forEach((nestedItem) => {
+      parent.insertBefore(nestedItem, item);
+    });
+  });
+}
+
 export function extractChecklistTasks(html: string): SidebarTaskItem[] {
   if (!html) return [];
   const doc = createContentDocument(html);
-  const items = doc.querySelectorAll(TASK_ITEM_SELECTOR);
-  return Array.from(items).map((item, index) => {
+  return getChecklistTaskItems(doc).map(({ depth, item, path }, index) => {
     const checked = item.getAttribute("data-checked") === "true";
-    const textDiv = item.querySelector("div") || item;
-    const text = textDiv.textContent?.trim() || "";
-    return { index, text, checked };
+    const text = getTaskItemText(item);
+    return { checked, depth, index, path, text };
   });
 }
 
 export function setChecklistTaskChecked(
   html: string,
-  indexToToggle: number,
+  taskLocator: number | string,
   checked: boolean
 ) {
   const doc = createContentDocument(html);
-  const item = doc.querySelectorAll(TASK_ITEM_SELECTOR)[indexToToggle];
+  const item = findTaskItem(doc, taskLocator);
   if (!item) {
     return null;
   }
@@ -67,7 +217,7 @@ export function appendChecklistTask(html: string, text: string) {
   }
 
   const doc = createContentDocument(html);
-  let taskList = doc.querySelector(TASK_LIST_SELECTOR);
+  let taskList = getRootTaskLists(doc)[0];
   if (!taskList) {
     taskList = doc.createElement("ul");
     taskList.setAttribute("data-type", "taskList");
@@ -107,22 +257,25 @@ export function setAllChecklistTasksChecked(html: string, checked: boolean) {
 
 export function clearCompletedChecklistTasks(html: string) {
   const doc = createContentDocument(html);
-  const items = doc.querySelectorAll(TASK_ITEM_SELECTOR);
+  const items = Array.from(doc.querySelectorAll(TASK_ITEM_SELECTOR)).filter(
+    (item): item is HTMLElement => item instanceof HTMLElement
+  );
   let hasChanges = false;
 
-  items.forEach((item) => {
+  items.reverse().forEach((item) => {
     const checked = item.getAttribute("data-checked") === "true";
     if (!checked) {
       return;
     }
 
-    const parent = item.parentElement;
+    promoteNestedTasksBeforeItem(item);
     item.remove();
     hasChanges = true;
-    if (parent && parent.matches(TASK_LIST_SELECTOR) && parent.children.length === 0) {
-      parent.remove();
-    }
   });
+
+  if (hasChanges) {
+    pruneEmptyTaskLists(doc);
+  }
 
   return hasChanges ? doc.body.innerHTML : null;
 }
