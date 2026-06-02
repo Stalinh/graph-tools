@@ -4,6 +4,7 @@ import {
   PROJECT_COLUMNS,
   PROJECT_LEVEL_OPTIONS,
   PROJECT_SUB_LINE_STATUS_OPTIONS,
+  getSubLineWorkloadRatio,
 } from "./projectConfig";
 import { normalizeProjectProgress, normalizeProjectSubLineStatus } from "./projectModel";
 import { ProjectInlineSelect } from "./ProjectInlineSelect";
@@ -83,6 +84,31 @@ function getSubLineStatusToneClassName(status: string) {
   return classNameByStatus[normalizeProjectSubLineStatus(status)];
 }
 
+function renderSubLineWorkloadRatioCell(taskName: string, isZh: boolean) {
+  const ratio = getSubLineWorkloadRatio(taskName);
+  const isMissing = ratio === null;
+  const displayValue = isMissing ? "error" : `${ratio}%`;
+  return (
+    <td
+      className={
+        "project-sheet__subline-workload-ratio-cell" +
+        (isMissing ? " project-sheet__subline-workload-ratio-cell--missing" : "")
+      }
+      title={
+        isMissing
+          ? isZh
+            ? "该子行未配置工作量占比"
+            : "Workload ratio not configured for this subline"
+          : isZh
+            ? `工作量占比 ${displayValue}`
+            : `Workload ratio ${displayValue}`
+      }
+    >
+      {displayValue}
+    </td>
+  );
+}
+
 export function ProjectSheetTable({
   expandedProjectIds,
   isEditMode,
@@ -152,7 +178,11 @@ export function ProjectSheetTable({
       <table>
         <colgroup>
           <col className="project-sheet__index-col" />
-          {PROJECT_COLUMNS.map((column) => (
+          {PROJECT_COLUMNS.slice(0, 2).map((column) => (
+            <col key={column.field} style={{ width: column.width }} />
+          ))}
+          <col style={{ width: "120px" }} />
+          {PROJECT_COLUMNS.slice(2).map((column) => (
             <col key={column.field} style={{ width: column.width }} />
           ))}
           <col className="project-sheet__actions-col" />
@@ -160,7 +190,13 @@ export function ProjectSheetTable({
         <thead>
           <tr>
             <th scope="col">{isZh ? "编号" : "No."}</th>
-            {PROJECT_COLUMNS.map((column) => (
+            {PROJECT_COLUMNS.slice(0, 2).map((column) => (
+              <th key={column.field} scope="col">
+                {isZh ? column.labelZh : column.labelEn}
+              </th>
+            ))}
+            <th scope="col">{isZh ? "工作量占比" : "Workload Ratio"}</th>
+            {PROJECT_COLUMNS.slice(2).map((column) => (
               <th key={column.field} scope="col">
                 {isZh ? column.labelZh : column.labelEn}
               </th>
@@ -259,7 +295,17 @@ export function ProjectSheetTable({
                       </div>
                     )}
                   </th>
-                  {PROJECT_COLUMNS.map((column) => (
+                  {PROJECT_COLUMNS.slice(0, 2).map((column) => (
+                    <td key={column.field}>
+                      {isEditMode
+                        ? renderProjectEditCell(record, column.field)
+                        : renderProjectCell(record, column.field, isZh)}
+                    </td>
+                  ))}
+                  <td className="project-sheet__project-workload-ratio-cell">
+                    —
+                  </td>
+                  {PROJECT_COLUMNS.slice(2).map((column) => (
                     <td key={column.field}>
                       {isEditMode
                         ? renderProjectEditCell(record, column.field)
@@ -337,6 +383,7 @@ export function ProjectSheetTable({
                             </span>
                           )}
                         </td>
+                        {renderSubLineWorkloadRatioCell(subLine.taskName, isZh)}
                         <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
                         <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
                         <td className="project-sheet__subline-detail-design-cell">

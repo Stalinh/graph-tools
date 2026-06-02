@@ -778,3 +778,22 @@
   }
 
 }
+
+.project-sheet__project-workload-ratio-cell {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.project-sheet__subline-workload-ratio-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+  padding-inline: 8px;
+}
+
+.project-sheet__subline-workload-ratio-cell--missing {
+  color: var(--color-danger, #c43d3d);
+  font-weight: 600;
+  font-style: italic;
+}
