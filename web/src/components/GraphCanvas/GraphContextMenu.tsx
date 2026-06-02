@@ -217,7 +217,7 @@ export function GraphContextMenu({
               : "Lock node"}
         </span>
       </button>
-      <button type="button" role="menuitem" disabled={!targetNodeId} onClick={deleteNode}>
+      <button type="button" role="menuitem" className="graph-context-menu__danger" disabled={!targetNodeId} onClick={deleteNode}>
         <Trash2 aria-hidden="true" size={15} />
         <span>{isZh ? "删除选中节点" : "Delete selected node"}</span>
       </button>

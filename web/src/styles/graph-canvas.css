@@ -643,6 +643,19 @@
   cursor: not-allowed;
 }
 
+.graph-context-menu__danger {
+  color: var(--color-text);
+}
+
+.graph-context-menu__danger:hover:not(:disabled) {
+  color: var(--color-error);
+  background: var(--color-error-bg);
+}
+
+.graph-context-menu__danger:hover:not(:disabled) svg {
+  color: var(--color-error);
+}
+
 .graph-context-menu__separator {
   height: 1px;
   margin: 4px;
