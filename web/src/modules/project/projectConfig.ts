@@ -43,3 +43,28 @@ export const PROJECT_DEFAULT_SUB_LINE_TASK_NAMES = [
   "专项-蒸汽",
   "专项-液体模块",
 ];
+
+export const PROJECT_SUB_LINE_WORKLOAD_RATIO: Record<string, number> = {
+  "三维建模": 26.5,
+  "专项-液体模块": 0,
+  "专项-料仓": 7,
+  "专项-风网": 8,
+  "专项-液体": 2.5,
+  "专项-蒸汽": 2,
+  "专项-空压": 2.5,
+  "平台": 7,
+  "评审交底": 4,
+  "主机设备": 11,
+  "输送设备": 6,
+  "常规外购": 1,
+  "个性化外购": 1,
+  "预制件": 10,
+  "溜管": 1.5,
+  "钢材软连接": 7,
+  "辅材": 3,
+};
+
+export function getSubLineWorkloadRatio(taskName: string): number | null {
+  const ratio = PROJECT_SUB_LINE_WORKLOAD_RATIO[taskName];
+  return typeof ratio === "number" ? ratio : null;
+}
