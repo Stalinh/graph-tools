@@ -1,18 +1,17 @@
 import { FileText, Image } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n";
-import { smartMatches } from "../lib/searchUtils";
-import type { GraphNode } from "../types";
+import type { NodeSearchResult, SearchMatch } from "../lib/searchUtils";
 
 interface SearchResultsDropdownProps {
-  matchingNodes: GraphNode[];
+  matchingResults: NodeSearchResult[];
   searchQuery: string;
   onClose: () => void;
   onNavigate: (nodeId: string) => void;
 }
 
 export function SearchResultsDropdown({
-  matchingNodes,
+  matchingResults,
   searchQuery,
   onClose,
   onNavigate,
@@ -23,7 +22,7 @@ export function SearchResultsDropdown({
 
   useEffect(() => {
     setHighlightIndex(0);
-  }, [matchingNodes]);
+  }, [matchingResults]);
 
   useEffect(() => {
     const el = listRef.current?.querySelector(`[data-result-index="${highlightIndex}"]`);
@@ -44,23 +43,23 @@ export function SearchResultsDropdown({
       }
 
       if (event.key === "ArrowDown") {
-        if (matchingNodes.length === 0) return;
+        if (matchingResults.length === 0) return;
         event.preventDefault();
-        setHighlightIndex((prev) => (prev < matchingNodes.length - 1 ? prev + 1 : 0));
+        setHighlightIndex((prev) => (prev < matchingResults.length - 1 ? prev + 1 : 0));
       } else if (event.key === "ArrowUp") {
-        if (matchingNodes.length === 0) return;
+        if (matchingResults.length === 0) return;
         event.preventDefault();
-        setHighlightIndex((prev) => (prev > 0 ? prev - 1 : matchingNodes.length - 1));
+        setHighlightIndex((prev) => (prev > 0 ? prev - 1 : matchingResults.length - 1));
       } else if (event.key === "Enter") {
-        if (!matchingNodes[highlightIndex]) return;
+        if (!matchingResults[highlightIndex]) return;
         event.preventDefault();
-        onNavigate(matchingNodes[highlightIndex].id);
+        onNavigate(matchingResults[highlightIndex].node.id);
       } else if (event.key === "Escape") {
         event.preventDefault();
         onClose();
       }
     },
-    [matchingNodes, highlightIndex, onClose, onNavigate]
+    [matchingResults, highlightIndex, onClose, onNavigate]
   );
 
   useEffect(() => {
@@ -74,20 +73,20 @@ export function SearchResultsDropdown({
     <div className="search-results-dropdown" ref={listRef}>
       <div className="search-results-dropdown__header">
         {isZh
-          ? `找到 ${matchingNodes.length} 个匹配结果`
-          : `${matchingNodes.length} matching result${matchingNodes.length === 1 ? "" : "s"}`}
+          ? `找到 ${matchingResults.length} 个匹配结果`
+          : `${matchingResults.length} matching result${matchingResults.length === 1 ? "" : "s"}`}
       </div>
-      {matchingNodes.length === 0 ? (
+      {matchingResults.length === 0 ? (
         <div className="search-results-dropdown__empty">
           {isZh ? "没有找到匹配的节点" : "No matching nodes found"}
         </div>
       ) : (
         <div className="search-results-dropdown__list">
-          {matchingNodes.map((node, index) => {
-            const matches = smartMatches(node, searchQuery);
+          {matchingResults.map(({ node, matches }, index) => {
             const titleMatch = matches.find((m) => m.field === "title");
             const contentMatch = matches.find((m) => m.field === "content");
-            const preview = contentMatch?.preview ?? titleMatch?.preview ?? "";
+            const previewMatch = contentMatch ?? titleMatch;
+            const preview = previewMatch?.preview ?? "";
 
             return (
               <button
@@ -106,14 +105,14 @@ export function SearchResultsDropdown({
                   <span
                     className="search-result__title"
                     dangerouslySetInnerHTML={{
-                      __html: highlightTitleText(node.title, searchQuery),
+                      __html: highlightTitleText(node.title, titleMatch),
                     }}
                   />
                   {preview ? (
                     <span
                       className="search-result__preview"
                       dangerouslySetInnerHTML={{
-                        __html: highlightPreviewText(preview, searchQuery),
+                        __html: highlightPreviewText(preview, previewMatch),
                       }}
                     />
                   ) : null}
@@ -174,49 +173,32 @@ function isSearchResultsKeyboardTarget(
   );
 }
 
-function highlightTitleText(text: string, query: string): string {
-  if (!query.trim()) return escapeHtml(text);
-  const lowerQuery = query.toLowerCase();
-  const lowerText = text.toLowerCase();
-  const idx = lowerText.indexOf(lowerQuery);
-  if (idx === -1) return escapeHtml(text);
-
-  return (
-    escapeHtml(text.slice(0, idx)) +
-    `<mark>${escapeHtml(text.slice(idx, idx + query.length))}</mark>` +
-    escapeHtml(text.slice(idx + query.length))
-  );
+function highlightTitleText(text: string, match: SearchMatch | undefined): string {
+  return highlightRanges(text, match?.indices ?? []);
 }
 
-function highlightPreviewText(text: string, query: string): string {
-  if (!query.trim()) return escapeHtml(text);
-  return highlightAllMatches(text, query);
+function highlightPreviewText(text: string, match: SearchMatch | undefined): string {
+  return highlightRanges(text, match?.previewIndices ?? []);
 }
 
 function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-function highlightAllMatches(text: string, query: string): string {
-  const trimmedQuery = query.trim();
-  if (!trimmedQuery) return escapeHtml(text);
+function highlightRanges(text: string, indices: [number, number][]): string {
+  if (indices.length === 0) return escapeHtml(text);
 
-  const lowerText = text.toLowerCase();
-  const lowerQuery = trimmedQuery.toLowerCase();
   let result = "";
   let cursor = 0;
 
-  while (cursor < text.length) {
-    const matchIndex = lowerText.indexOf(lowerQuery, cursor);
-    if (matchIndex === -1) {
-      result += escapeHtml(text.slice(cursor));
-      break;
-    }
+  for (const [start, end] of indices) {
+    if (start < cursor || start >= text.length) continue;
 
-    result += escapeHtml(text.slice(cursor, matchIndex));
-    result += `<mark>${escapeHtml(text.slice(matchIndex, matchIndex + trimmedQuery.length))}</mark>`;
-    cursor = matchIndex + trimmedQuery.length;
+    result += escapeHtml(text.slice(cursor, start));
+    result += `<mark>${escapeHtml(text.slice(start, Math.min(end + 1, text.length)))}</mark>`;
+    cursor = Math.min(end + 1, text.length);
   }
 
+  result += escapeHtml(text.slice(cursor));
   return result;
 }

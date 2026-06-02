@@ -1,7 +1,8 @@
 import { FilePlus, FolderOpen, RotateCcw, RotateCw, Save, SaveAll, Search, X } from "lucide-react";
 import type { RefObject } from "react";
 import { useI18n } from "../i18n";
-import type { GraphNode, WorkspaceNodeFilter } from "../types";
+import type { NodeSearchResult } from "../lib/searchUtils";
+import type { WorkspaceNodeFilter } from "../types";
 import { FilterChips } from "./FilterChips";
 import { SearchResultsDropdown } from "./SearchResultsDropdown";
 
@@ -29,7 +30,7 @@ interface WorkspaceToolbarProps {
   nodeFilter: WorkspaceNodeFilter;
   onNodeFilterChange: (filter: WorkspaceNodeFilter) => void;
   showResults: boolean;
-  matchingNodes: GraphNode[];
+  matchingResults: NodeSearchResult[];
   onResultNavigate: (nodeId: string) => void;
 }
 
@@ -73,7 +74,7 @@ export function WorkspaceToolbar({
   nodeFilter,
   onNodeFilterChange,
   showResults,
-  matchingNodes,
+  matchingResults,
   onResultNavigate,
 }: WorkspaceToolbarProps) {
   const { isZh } = useI18n();
@@ -127,7 +128,7 @@ export function WorkspaceToolbar({
         ) : null}
         {showResults ? (
           <SearchResultsDropdown
-            matchingNodes={matchingNodes}
+            matchingResults={matchingResults}
             searchQuery={searchQuery}
             onClose={() => {
               onSearchChange("");

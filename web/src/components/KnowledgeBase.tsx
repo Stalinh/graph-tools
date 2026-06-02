@@ -4,7 +4,7 @@ import { useGraphState } from "../hooks/useGraphState";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { useSearchFilters } from "../hooks/useSearchFilters";
 import { useI18n } from "../i18n";
-import { getMatchingNodes } from "../lib/searchUtils";
+import { getMatchingNodeResults } from "../lib/searchUtils";
 import { loadWorkspaceDraft, saveWorkspaceDraft } from "../lib/workspaceDraftStorage";
 import { migrateWorkspaceIds } from "../lib/workspaceState";
 import type { WorkspaceNodeFilter, WorkspaceState } from "../types";
@@ -48,9 +48,14 @@ export function KnowledgeBase({
 
   const searchFilters = useSearchFilters();
 
-  const matchingNodes = useMemo(
-    () => getMatchingNodes(nodes.graph.nodes, search.debouncedSearch, searchFilters.filters),
+  const matchingNodeResults = useMemo(
+    () => getMatchingNodeResults(nodes.graph.nodes, search.debouncedSearch, searchFilters.filters),
     [nodes.graph.nodes, search.debouncedSearch, searchFilters.filters]
+  );
+
+  const matchingNodes = useMemo(
+    () => matchingNodeResults.map((result) => result.node),
+    [matchingNodeResults]
   );
 
   const matchingNodeIds = useMemo(() => {
@@ -338,7 +343,7 @@ export function KnowledgeBase({
           nodeFilter={nodeFilter}
           onNodeFilterChange={setNodeFilter}
           showResults={search.debouncedSearch.trim().length > 0}
-          matchingNodes={matchingNodes}
+          matchingResults={matchingNodeResults}
           onResultNavigate={handleResultNavigate}
         />
         {draftSaveFailed ? (

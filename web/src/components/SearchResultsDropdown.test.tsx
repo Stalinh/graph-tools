@@ -3,6 +3,7 @@
  */
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { NodeSearchResult } from "../lib/searchUtils";
 import type { GraphNode } from "../types";
 import { SearchResultsDropdown } from "./SearchResultsDropdown";
 
@@ -27,11 +28,23 @@ const matchingNodes: GraphNode[] = [
   },
 ];
 
+const matchingResults: NodeSearchResult[] = matchingNodes.map((node) => ({
+  node,
+  matches: [
+    {
+      field: "title",
+      indices: [[0, 0]],
+      preview: node.title,
+      previewIndices: [[0, 0]],
+    },
+  ],
+}));
+
 afterEach(() => {
   cleanup();
 });
 
-function renderDropdown() {
+function renderDropdown(results = matchingResults, searchQuery = "a") {
   const onClose = vi.fn();
   const onNavigate = vi.fn();
   const view = render(
@@ -40,8 +53,8 @@ function renderDropdown() {
       <div className="workspace-toolbar__search">
         <input className="workspace-toolbar__search-input" aria-label="Search nodes" />
         <SearchResultsDropdown
-          matchingNodes={matchingNodes}
-          searchQuery="a"
+          matchingResults={results}
+          searchQuery={searchQuery}
           onClose={onClose}
           onNavigate={onNavigate}
         />
@@ -128,5 +141,28 @@ describe("SearchResultsDropdown", () => {
 
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onNavigate).not.toHaveBeenCalled();
+  });
+
+  it("renders previews from the provided match results", () => {
+    const { container } = renderDropdown(
+      [
+        {
+          node: matchingNodes[0],
+          matches: [
+            {
+              field: "content",
+              indices: [],
+              preview: "Cached content preview",
+              previewIndices: [],
+            },
+          ],
+        },
+      ],
+      "zz"
+    );
+
+    expect(container.querySelector(".search-result__preview")?.textContent).toBe(
+      "Cached content preview"
+    );
   });
 });
