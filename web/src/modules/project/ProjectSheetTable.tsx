@@ -4,6 +4,7 @@ import {
   PROJECT_COLUMNS,
   PROJECT_LEVEL_OPTIONS,
   PROJECT_SUB_LINE_STATUS_OPTIONS,
+  getSubLineWorkloadRatio,
 } from "./projectConfig";
 import { normalizeProjectProgress, normalizeProjectSubLineStatus } from "./projectModel";
 import { ProjectInlineSelect } from "./ProjectInlineSelect";
@@ -81,6 +82,31 @@ function getSubLineStatusToneClassName(status: string) {
   };
 
   return classNameByStatus[normalizeProjectSubLineStatus(status)];
+}
+
+function renderSubLineWorkloadRatioCell(taskName: string, isZh: boolean) {
+  const ratio = getSubLineWorkloadRatio(taskName);
+  const isMissing = ratio === null;
+  const displayValue = isMissing ? "error" : `${ratio}%`;
+  return (
+    <td
+      className={
+        "project-sheet__subline-workload-ratio-cell" +
+        (isMissing ? " project-sheet__subline-workload-ratio-cell--missing" : "")
+      }
+      title={
+        isMissing
+          ? isZh
+            ? "该子行未配置工作量占比"
+            : "Workload ratio not configured for this subline"
+          : isZh
+            ? `工作量占比 ${displayValue}`
+            : `Workload ratio ${displayValue}`
+      }
+    >
+      {displayValue}
+    </td>
+  );
 }
 
 export function ProjectSheetTable({
@@ -360,6 +386,7 @@ export function ProjectSheetTable({
                             </span>
                           )}
                         </td>
+                        {renderSubLineWorkloadRatioCell(subLine.taskName, isZh)}
                         <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
                         <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
                         <td className="project-sheet__subline-detail-design-cell">
