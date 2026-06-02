@@ -1,4 +1,4 @@
-import type { CanvasPosition, GraphData, GraphEdge, GraphNode, NodeSize } from "../types";
+import type { CanvasPosition, GraphData, GraphNode, NodeSize } from "../types";
 import { DEFAULT_GROUP_SIZE, snapPositionToGrid } from "./graphLayout";
 import {
   adjustGroupSizeAndPosition,
@@ -19,14 +19,6 @@ interface CreateNodeDraftOptions {
   sizes: Record<string, NodeSize>;
   type: GraphNode["type"];
   positions: Record<string, CanvasPosition>;
-}
-
-interface RemoveNodeMeta {
-  removedNode: GraphNode;
-  position: CanvasPosition;
-  size?: NodeSize;
-  removedEdges: GraphEdge[];
-  affectedRefs: { ownerId: string; refId: string }[];
 }
 
 export function createNodeDraft({
@@ -111,36 +103,31 @@ export function deleteNodeDraft(
   sizes: Record<string, NodeSize>
 ) {
   const nodeToDelete = graph.nodes.find((node) => node.id === nodeId);
-  let graphBeforeRemoval = graph;
-  let positionsBeforeRemoval = positions;
-  let sizesBeforeRemoval = sizes;
+  let removalGraph = graph;
+  let removalPositions = positions;
+  let removalSizes = sizes;
 
   if (nodeToDelete?.type === "group") {
     const detached = detachChildrenFromGroup(
       nodeId,
       nodeToDelete.title,
-      graphBeforeRemoval,
-      positionsBeforeRemoval,
-      sizesBeforeRemoval
+      removalGraph,
+      removalPositions,
+      removalSizes
     );
-    graphBeforeRemoval = detached.graph;
-    positionsBeforeRemoval = detached.positions;
-    sizesBeforeRemoval = detached.sizes;
+    removalGraph = detached.graph;
+    removalPositions = detached.positions;
+    removalSizes = detached.sizes;
   }
 
-  const {
-    graph: nextGraph,
-    removedNode,
-    removedEdges,
-    affectedRefs,
-  } = removeNode(graphBeforeRemoval, nodeId);
+  const { graph: nextGraph, removedNode } = removeNode(removalGraph, nodeId);
   if (!removedNode) {
     return null;
   }
 
-  let nextPositions = { ...positionsBeforeRemoval };
+  let nextPositions = { ...removalPositions };
   delete nextPositions[nodeId];
-  let nextSizes = { ...sizesBeforeRemoval };
+  let nextSizes = { ...removalSizes };
   delete nextSizes[nodeId];
 
   const parentId = removedNode.parentId;
@@ -150,26 +137,10 @@ export function deleteNodeDraft(
     nextSizes = adjusted.sizes;
   }
 
-  const meta: RemoveNodeMeta = {
-    removedNode,
-    position: positions[nodeId] ?? { x: 0, y: 0 },
-    size: sizes[nodeId],
-    removedEdges,
-    affectedRefs,
-  };
-  const usedSnapshotCommand = nodeToDelete?.type === "group";
-
   return {
     graph: nextGraph,
-    graphAfter: usedSnapshotCommand ? nextGraph : undefined,
-    graphBefore: usedSnapshotCommand ? graph : undefined,
-    meta,
     positions: nextPositions,
-    positionsAfter: usedSnapshotCommand ? nextPositions : undefined,
-    positionsBefore: usedSnapshotCommand ? positions : undefined,
     sizes: nextSizes,
-    sizesAfter: usedSnapshotCommand ? nextSizes : undefined,
-    sizesBefore: usedSnapshotCommand ? sizes : undefined,
   };
 }
 
@@ -184,71 +155,55 @@ export function deleteNodesDraft(
     return null;
   }
 
-  const removals: { nodeId: string; meta: RemoveNodeMeta }[] = [];
-  const originalGraph = graph;
-  const originalPositions = positions;
-  const originalSizes = sizes;
+  const removedNodeIds: string[] = [];
   let currentGraph = graph;
   let currentPositions = positions;
   let currentSizes = sizes;
-  let usedSnapshotCommand = false;
 
   uniqueNodeIds.forEach((nodeId) => {
     const nodeToDelete = currentGraph.nodes.find((node) => node.id === nodeId);
-    let graphBeforeRemoval = currentGraph;
-    let positionsBeforeRemoval = currentPositions;
-    let sizesBeforeRemoval = currentSizes;
+    let removalGraph = currentGraph;
+    let removalPositions = currentPositions;
+    let removalSizes = currentSizes;
 
     if (nodeToDelete?.type === "group") {
       const detached = detachChildrenFromGroup(
         nodeId,
         nodeToDelete.title,
-        graphBeforeRemoval,
-        positionsBeforeRemoval,
-        sizesBeforeRemoval
+        removalGraph,
+        removalPositions,
+        removalSizes
       );
-      graphBeforeRemoval = detached.graph;
-      positionsBeforeRemoval = detached.positions;
-      sizesBeforeRemoval = detached.sizes;
-      usedSnapshotCommand = true;
+      removalGraph = detached.graph;
+      removalPositions = detached.positions;
+      removalSizes = detached.sizes;
     }
 
-    const {
-      graph: nextGraph,
-      removedNode,
-      removedEdges,
-      affectedRefs,
-    } = removeNode(graphBeforeRemoval, nodeId);
+    const { graph: nextGraph, removedNode } = removeNode(removalGraph, nodeId);
     if (!removedNode || removedNode.id !== nodeId) {
       return;
     }
 
-    const nextPositions = { ...positionsBeforeRemoval };
+    const nextPositions = { ...removalPositions };
     delete nextPositions[nodeId];
-    const nextSizes = { ...sizesBeforeRemoval };
+    const nextSizes = { ...removalSizes };
     delete nextSizes[nodeId];
 
-    const meta: RemoveNodeMeta = {
-      removedNode,
-      position: currentPositions[nodeId] ?? { x: 0, y: 0 },
-      size: currentSizes[nodeId],
-      removedEdges,
-      affectedRefs,
-    };
     currentGraph = nextGraph;
     currentPositions = nextPositions;
     currentSizes = nextSizes;
-    removals.push({ nodeId, meta });
+    removedNodeIds.push(nodeId);
   });
 
-  if (removals.length === 0) {
+  if (removedNodeIds.length === 0) {
     return null;
   }
 
   const affectedParents = new Set<string>();
-  removals.forEach((removal) => {
-    if (removal.meta.removedNode.parentId) {
-      affectedParents.add(removal.meta.removedNode.parentId);
+  removedNodeIds.forEach((nodeId) => {
+    const removedNode = graph.nodes.find((node) => node.id === nodeId);
+    if (removedNode?.parentId) {
+      affectedParents.add(removedNode.parentId);
     }
   });
 
@@ -271,15 +226,9 @@ export function deleteNodesDraft(
 
   return {
     graph: currentGraph,
-    graphAfter: usedSnapshotCommand ? currentGraph : undefined,
-    graphBefore: usedSnapshotCommand ? originalGraph : undefined,
-    removals,
+    removedNodeIds,
     positions: currentPositions,
-    positionsAfter: usedSnapshotCommand ? currentPositions : undefined,
-    positionsBefore: usedSnapshotCommand ? originalPositions : undefined,
     sizes: currentSizes,
-    sizesAfter: usedSnapshotCommand ? currentSizes : undefined,
-    sizesBefore: usedSnapshotCommand ? originalSizes : undefined,
   };
 }
 

@@ -1,9 +1,17 @@
 import { useCallback } from "react";
 import { updateNodeColor, updateNodeLocked, updateNodeOpacity } from "../../lib/graphMutator";
+import { createWorkspacePatchCommand } from "../canvasHistoryPatch";
 import type { ApplyGraphUpdate, GraphNodeActionContext } from "./graphNodeActionTypes";
+import {
+  createWorkspaceSnapshot,
+  type WorkspaceStoreState,
+} from "../useWorkspaceStore";
 
 interface UseGraphNodeAppearanceActionsOptions
-  extends Pick<GraphNodeActionContext, "graphRef" | "setGraph" | "setDirty" | "pushCommand"> {
+  extends Pick<
+    GraphNodeActionContext,
+    "workspaceRef" | "dispatchWorkspaceTransaction"
+  > {
   applyGraphUpdate: ApplyGraphUpdate;
 }
 
@@ -11,10 +19,8 @@ const clampOpacity = (opacity: number) => Math.min(Math.max(opacity, 0), 1);
 
 export function useGraphNodeAppearanceActions({
   applyGraphUpdate,
-  graphRef,
-  setGraph,
-  setDirty,
-  pushCommand,
+  workspaceRef,
+  dispatchWorkspaceTransaction,
 }: UseGraphNodeAppearanceActionsOptions) {
   const updateGraphNodeColor = useCallback(
     (nodeId: string, color: string) => {
@@ -52,15 +58,16 @@ export function useGraphNodeAppearanceActions({
 
   const updateGraphNodeOpacity = useCallback(
     (nodeId: string, opacity: number) => {
-      const currentGraph = graphRef.current;
+      const currentGraph = workspaceRef.current.graph;
       const nextGraph = updateNodeOpacity(currentGraph, nodeId, opacity);
       if (nextGraph !== currentGraph) {
-        graphRef.current = nextGraph;
-        setGraph(nextGraph);
-        setDirty(true);
+        dispatchWorkspaceTransaction({
+          graph: nextGraph,
+          status: { dirty: true },
+        });
       }
     },
-    [graphRef, setDirty, setGraph]
+    [dispatchWorkspaceTransaction, workspaceRef]
   );
 
   const commitGraphNodeOpacity = useCallback(
@@ -71,16 +78,26 @@ export function useGraphNodeAppearanceActions({
         return;
       }
 
-      const currentGraph = graphRef.current;
+      const current = workspaceRef.current;
+      const currentGraph = current.graph;
       const currentNode = currentGraph.nodes.find((node) => node.id === nodeId);
       if (!currentNode) {
         return;
       }
 
       const beforeGraph = updateNodeOpacity(currentGraph, nodeId, previousOpacity);
-      pushCommand({ type: "replace-graph", before: beforeGraph, after: currentGraph });
+      const before: WorkspaceStoreState = { ...current, graph: beforeGraph };
+      dispatchWorkspaceTransaction({
+        history: {
+          type: "push",
+          command: createWorkspacePatchCommand(
+            createWorkspaceSnapshot(before),
+            createWorkspaceSnapshot(current)
+          ),
+        },
+      });
     },
-    [graphRef, pushCommand]
+    [dispatchWorkspaceTransaction, workspaceRef]
   );
 
   const updateGraphNodesColor = useCallback(
@@ -135,18 +152,19 @@ export function useGraphNodeAppearanceActions({
 
   const updateGraphNodesOpacity = useCallback(
     (nodeIds: string[], opacity: number) => {
-      const currentGraph = graphRef.current;
+      const currentGraph = workspaceRef.current.graph;
       const nextGraph = nodeIds.reduce(
         (nextGraph, nodeId) => updateNodeOpacity(nextGraph, nodeId, opacity),
         currentGraph
       );
       if (nextGraph !== currentGraph) {
-        graphRef.current = nextGraph;
-        setGraph(nextGraph);
-        setDirty(true);
+        dispatchWorkspaceTransaction({
+          graph: nextGraph,
+          status: { dirty: true },
+        });
       }
     },
-    [graphRef, setDirty, setGraph]
+    [dispatchWorkspaceTransaction, workspaceRef]
   );
 
   const commitGraphNodesOpacity = useCallback(
@@ -158,14 +176,24 @@ export function useGraphNodeAppearanceActions({
         return;
       }
 
-      const currentGraph = graphRef.current;
+      const current = workspaceRef.current;
+      const currentGraph = current.graph;
       const beforeGraph = uniqueNodeIds.reduce(
         (nextGraph, nodeId) => updateNodeOpacity(nextGraph, nodeId, previousOpacity),
         currentGraph
       );
-      pushCommand({ type: "replace-graph", before: beforeGraph, after: currentGraph });
+      const before: WorkspaceStoreState = { ...current, graph: beforeGraph };
+      dispatchWorkspaceTransaction({
+        history: {
+          type: "push",
+          command: createWorkspacePatchCommand(
+            createWorkspaceSnapshot(before),
+            createWorkspaceSnapshot(current)
+          ),
+        },
+      });
     },
-    [graphRef, pushCommand]
+    [dispatchWorkspaceTransaction, workspaceRef]
   );
 
   return {

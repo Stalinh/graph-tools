@@ -1,73 +1,86 @@
-import { useCallback, useRef } from "react";
-import type { Dispatch, SetStateAction } from "react";
+import { useCallback } from "react";
 import type { EdgeDirection, EdgeStyle, GraphData } from "../types";
-import type { CanvasCommand } from "./canvasHistoryTypes";
 import { normalizeEdgeStyle } from "../lib/edgeStyles";
 import {
   addCitation,
   removeCitation,
+  reorderReferences as mutatorReorderReferences,
   updateEdgeColor as mutatorUpdateEdgeColor,
   updateEdgeDirection as mutatorUpdateEdgeDirection,
   updateEdgeStyle as mutatorUpdateEdgeStyle,
-  reorderReferences as mutatorReorderReferences,
 } from "../lib/graphMutator";
 import { normalizeEdgeColor } from "../lib/nodeColors";
+import {
+  createWorkspacePatchCommandFromTransaction,
+  type WorkspaceStoreController,
+  type WorkspaceTransaction,
+} from "./useWorkspaceStore";
 
-interface UseGraphEdgesOptions {
-  graph: GraphData;
-  setGraph: Dispatch<SetStateAction<GraphData>>;
-  pushCommand: (cmd: CanvasCommand) => void;
-  setDirty: (dirty: boolean) => void;
-  setSelectedNodeId: Dispatch<SetStateAction<string | null>>;
+interface UseGraphEdgesOptions
+  extends Pick<
+    WorkspaceStoreController,
+    "workspaceRef" | "dispatchWorkspaceTransaction"
+  > {}
+
+function withHistory(
+  beforeState: WorkspaceStoreController["workspace"],
+  transaction: WorkspaceTransaction
+): WorkspaceTransaction {
+  return {
+    ...transaction,
+    history: {
+      type: "push",
+      command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
+    },
+  };
 }
 
 export function useGraphEdges({
-  graph,
-  setGraph,
-  pushCommand,
-  setDirty,
-  setSelectedNodeId,
+  workspaceRef,
+  dispatchWorkspaceTransaction,
 }: UseGraphEdgesOptions) {
-  const graphRef = useRef(graph);
-  graphRef.current = graph;
-
   const applyGraphUpdate = useCallback(
     (mutate: (currentGraph: GraphData) => GraphData) => {
-      const currentGraph = graphRef.current;
+      const beforeState = workspaceRef.current;
+      const currentGraph = beforeState.graph;
       const nextGraph = mutate(currentGraph);
       if (nextGraph === currentGraph) {
         return false;
       }
 
-      graphRef.current = nextGraph;
-      setGraph(nextGraph);
-      setDirty(true);
-      pushCommand({ type: "replace-graph", before: currentGraph, after: nextGraph });
+      const transaction: WorkspaceTransaction = {
+        graph: nextGraph,
+        status: { dirty: true },
+      };
+      dispatchWorkspaceTransaction(withHistory(beforeState, transaction));
       return true;
     },
-    [pushCommand, setDirty, setGraph]
+    [dispatchWorkspaceTransaction, workspaceRef]
   );
 
   const createCitation = useCallback(
     (sourceId: string, targetId: string, direction: EdgeDirection = "unidirectional") => {
-      const currentGraph = graphRef.current;
+      const beforeState = workspaceRef.current;
+      const currentGraph = beforeState.graph;
       const nextGraph = addCitation(currentGraph, sourceId, targetId, direction);
       if (nextGraph === currentGraph) {
         return;
       }
 
-      graphRef.current = nextGraph;
-      setGraph(nextGraph);
-      setSelectedNodeId(sourceId);
-      setDirty(true);
-      pushCommand({ type: "link", sourceId, targetId, direction });
+      const transaction: WorkspaceTransaction = {
+        graph: nextGraph,
+        selection: { selectedNodeIds: [sourceId] },
+        status: { dirty: true },
+      };
+      dispatchWorkspaceTransaction(withHistory(beforeState, transaction));
     },
-    [setGraph, pushCommand, setDirty, setSelectedNodeId]
+    [dispatchWorkspaceTransaction, workspaceRef]
   );
 
   const deleteCitation = useCallback(
     (sourceId: string, targetId: string) => {
-      const currentGraph = graphRef.current;
+      const beforeState = workspaceRef.current;
+      const currentGraph = beforeState.graph;
       const deletedEdge = currentGraph.edges.find(
         (e) => e.sourceId === sourceId && e.targetId === targetId
       );
@@ -78,17 +91,13 @@ export function useGraphEdges({
         return;
       }
 
-      graphRef.current = nextGraph;
-      setGraph(nextGraph);
-      setDirty(true);
-      pushCommand({
-        type: "unlink",
-        sourceId,
-        targetId,
-        direction: deletedEdge.direction,
-      });
+      const transaction: WorkspaceTransaction = {
+        graph: nextGraph,
+        status: { dirty: true },
+      };
+      dispatchWorkspaceTransaction(withHistory(beforeState, transaction));
     },
-    [setGraph, pushCommand, setDirty]
+    [dispatchWorkspaceTransaction, workspaceRef]
   );
 
   const updateEdgeDirection = useCallback(

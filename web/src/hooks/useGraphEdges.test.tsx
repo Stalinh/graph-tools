@@ -2,10 +2,10 @@
  * @vitest-environment jsdom
  */
 import { act, renderHook } from "@testing-library/react";
-import { useRef, useState } from "react";
 import { describe, expect, it } from "vitest";
 import type { GraphData, GraphNode } from "../types";
 import { useGraphEdges } from "./useGraphEdges";
+import { useWorkspaceStore } from "./useWorkspaceStore";
 
 function cardNode(id: string, title = id): GraphNode {
   return {
@@ -33,21 +33,18 @@ function graph(edgeStyle?: GraphData["edges"][number]["style"]): GraphData {
 }
 
 function useGraphEdgesHarness(initialGraph: GraphData) {
-  const [currentGraph, setGraph] = useState(initialGraph);
-  const [dirty, setDirty] = useState(false);
-  const [, setSelectedNodeId] = useState<string | null>(null);
-  const commandsRef = useRef<unknown[]>([]);
+  const workspaceStore = useWorkspaceStore({ graph: initialGraph });
   const edges = useGraphEdges({
-    graph: currentGraph,
-    setGraph,
-    pushCommand: (command) => {
-      commandsRef.current.push(command);
-    },
-    setDirty,
-    setSelectedNodeId,
+    workspaceRef: workspaceStore.workspaceRef,
+    dispatchWorkspaceTransaction: workspaceStore.dispatchWorkspaceTransaction,
   });
 
-  return { commands: commandsRef.current, dirty, edges, graph: currentGraph };
+  return {
+    commands: workspaceStore.workspace.history.undoStack,
+    dirty: workspaceStore.workspace.status.dirty,
+    edges,
+    graph: workspaceStore.workspace.graph,
+  };
 }
 
 describe("useGraphEdges", () => {
@@ -61,6 +58,7 @@ describe("useGraphEdges", () => {
     expect(result.current.graph.edges[0].style).toBe("note-dash");
     expect(result.current.dirty).toBe(true);
     expect(result.current.commands).toHaveLength(1);
+    expect(result.current.commands[0]).toMatchObject({ type: "workspace-patch" });
   });
 
   it("treats legacy undefined edge style as note dash", () => {

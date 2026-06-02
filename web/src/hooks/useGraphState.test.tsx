@@ -4,7 +4,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { GraphNode, WorkspaceState } from "../types";
-import { useCanvasHistory } from "./useCanvasHistory";
 import { useGraphState } from "./useGraphState";
 
 function cardNode(id: string, title = id): GraphNode {
@@ -37,9 +36,8 @@ function workspace(): WorkspaceState {
 }
 
 function useGraphStateHarness() {
-  const history = useCanvasHistory();
-  const graphState = useGraphState({ ...history, locale: "zh-CN" });
-  return { graphState, history };
+  const graphState = useGraphState({ locale: "zh-CN" });
+  return { graphState };
 }
 
 describe("useGraphState", () => {
@@ -79,16 +77,18 @@ describe("useGraphState", () => {
     });
 
     expect(result.current.graphState.nodes.graph.nodes).toHaveLength(1);
-    expect(result.current.history.undoStack).toHaveLength(1);
+    expect(result.current.graphState.history.undoStack).toHaveLength(1);
     expect(result.current.graphState.status.dirty).toBe(true);
+    expect(result.current.graphState.selection.selectedNodeId).toBe("#1");
 
     act(() => {
       result.current.graphState.persistence.undo();
     });
 
     expect(result.current.graphState.nodes.graph.nodes).toHaveLength(0);
-    expect(result.current.history.undoStack).toHaveLength(0);
-    expect(result.current.history.redoStack).toHaveLength(1);
+    expect(result.current.graphState.selection.selectedNodeId).toBeNull();
+    expect(result.current.graphState.history.undoStack).toHaveLength(0);
+    expect(result.current.graphState.history.redoStack).toHaveLength(1);
 
     act(() => {
       result.current.graphState.persistence.redo();
@@ -96,8 +96,9 @@ describe("useGraphState", () => {
 
     expect(result.current.graphState.nodes.graph.nodes).toHaveLength(1);
     expect(result.current.graphState.nodes.nodePositions["#1"]).toEqual({ x: 50, y: 60 });
-    expect(result.current.history.undoStack).toHaveLength(1);
-    expect(result.current.history.redoStack).toHaveLength(0);
+    expect(result.current.graphState.selection.selectedNodeId).toBe("#1");
+    expect(result.current.graphState.history.undoStack).toHaveLength(1);
+    expect(result.current.graphState.history.redoStack).toHaveLength(0);
   });
 
   it("stores an automatic preview viewport without marking the workspace dirty", () => {

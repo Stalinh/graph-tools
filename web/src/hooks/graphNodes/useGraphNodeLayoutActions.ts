@@ -12,6 +12,7 @@ import {
   resolveGroupMoveTargets,
 } from "../../lib/groupNodeLayout";
 import type { NodeSize } from "../../types";
+import { createWorkspacePatchCommandFromTransaction } from "../useWorkspaceStore";
 import type { GraphNodeActionContext } from "./graphNodeActionTypes";
 import {
   findContainingGroup,
@@ -24,29 +25,20 @@ import {
 interface UseGraphNodeLayoutActionsOptions
   extends Pick<
     GraphNodeActionContext,
-    | "graphRef"
-    | "nodePositionsRef"
-    | "nodeSizesRef"
-    | "setGraph"
-    | "setNodePositions"
-    | "setNodeSizes"
-    | "setDirty"
-    | "pushCommand"
+    "workspaceRef" | "dispatchWorkspaceTransaction"
   > {}
 
 export function useGraphNodeLayoutActions({
-  graphRef,
-  nodePositionsRef,
-  nodeSizesRef,
-  setGraph,
-  setNodePositions,
-  setNodeSizes,
-  setDirty,
-  pushCommand,
+  workspaceRef,
+  dispatchWorkspaceTransaction,
 }: UseGraphNodeLayoutActionsOptions) {
   const handleNodeDragEnd = useCallback(
     (nodeId: string, from: { x: number; y: number }, to: { x: number; y: number }) => {
-      const currentNodes = graphRef.current.nodes;
+      const beforeState = workspaceRef.current;
+      const beforeGraph = beforeState.graph;
+      const beforePositions = beforeState.nodePositions;
+      const beforeSizes = beforeState.nodeSizes;
+      const currentNodes = beforeGraph.nodes;
       const node = currentNodes.find((n) => n.id === nodeId);
       if (!node) return;
 
@@ -57,44 +49,52 @@ export function useGraphNodeLayoutActions({
           node.id,
           from,
           candidateTo,
-          nodeSizesRef.current[node.id] ?? DEFAULT_GROUP_SIZE,
+          beforeSizes[node.id] ?? DEFAULT_GROUP_SIZE,
           currentNodes,
-          nodePositionsRef.current,
-          nodeSizesRef.current
+          beforePositions,
+          beforeSizes
         );
 
         if (finalTo.x === from.x && finalTo.y === from.y) {
           const revertedPositions = {
-            ...nodePositionsRef.current,
+            ...beforePositions,
             [nodeId]: from,
           };
-          nodePositionsRef.current = revertedPositions;
-          setNodePositions(revertedPositions);
+          dispatchWorkspaceTransaction({ nodePositions: revertedPositions });
           return;
         }
 
         if (from.x !== finalTo.x || from.y !== finalTo.y) {
-          setNodePositions((currentPositions) => ({
-            ...currentPositions,
+          const nextPositions = {
+            ...beforePositions,
             [nodeId]: finalTo,
-          }));
-          setDirty(true);
-          pushCommand({ type: "move", nodeId, from, to: finalTo });
+          };
+          const transaction = {
+            nodePositions: nextPositions,
+            status: { dirty: true },
+          };
+          dispatchWorkspaceTransaction({
+            ...transaction,
+            history: {
+              type: "push",
+              command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
+            },
+          });
         }
         return;
       }
 
       // Calculate dropped absolute position
-      const absTo = getAbsoluteNodePosition(node, to, nodePositionsRef.current);
+      const absTo = getAbsoluteNodePosition(node, to, beforePositions);
 
       // Determine if dropped inside a group node (using center of node)
-      const nodeSize = nodeSizesRef.current[nodeId] ?? estimateNodeSize(node);
+      const nodeSize = beforeSizes[nodeId] ?? estimateNodeSize(node);
       const targetGroup = findContainingGroup({
         nodeId,
         center: getNodeCenter(absTo, nodeSize),
         nodes: currentNodes,
-        positions: nodePositionsRef.current,
-        sizes: nodeSizesRef.current,
+        positions: beforePositions,
+        sizes: beforeSizes,
       });
 
       const oldParentId = node.parentId;
@@ -104,10 +104,10 @@ export function useGraphNodeLayoutActions({
         // Parent didn't change (still same group or still outside)
         if (from.x !== to.x || from.y !== to.y) {
           let nextPositions = {
-            ...nodePositionsRef.current,
+            ...beforePositions,
             [nodeId]: to,
           };
-          let nextSizes = { ...nodeSizesRef.current };
+          let nextSizes = { ...beforeSizes };
 
           if (newParentId) {
             const adjusted = adjustGroupSizeAndPosition(
@@ -120,17 +120,23 @@ export function useGraphNodeLayoutActions({
             nextSizes = adjusted.sizes;
           }
 
-          nodePositionsRef.current = nextPositions;
-          setNodePositions(nextPositions);
-          setNodeSizes(nextSizes);
-          setDirty(true);
-          pushCommand({ type: "move", nodeId, from, to: nextPositions[nodeId] });
+          const transaction = {
+            nodePositions: nextPositions,
+            nodeSizes: nextSizes,
+            status: { dirty: true },
+          };
+          dispatchWorkspaceTransaction({
+            ...transaction,
+            history: {
+              type: "push",
+              command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
+            },
+          });
         }
         return;
       }
 
       // Parent changed, update parentId and tags
-      const beforeGraph = graphRef.current;
       const updatedAt = new Date().toISOString();
       const afterGraph = {
         ...beforeGraph,
@@ -147,13 +153,13 @@ export function useGraphNodeLayoutActions({
         }),
       };
 
-      const finalToPos = getRelativeNodePosition(absTo, newParentId, nodePositionsRef.current);
+      const finalToPos = getRelativeNodePosition(absTo, newParentId, beforePositions);
 
       let nextPositions = {
-        ...nodePositionsRef.current,
+        ...beforePositions,
         [nodeId]: finalToPos,
       };
-      let nextSizes = { ...nodeSizesRef.current };
+      let nextSizes = { ...beforeSizes };
 
       if (newParentId) {
         const adjusted = adjustGroupSizeAndPosition(
@@ -177,37 +183,30 @@ export function useGraphNodeLayoutActions({
         nextSizes = adjusted.sizes;
       }
 
-      graphRef.current = afterGraph;
-      setGraph(afterGraph);
-      nodePositionsRef.current = nextPositions;
-      setNodePositions(nextPositions);
-      setNodeSizes(nextSizes);
-      setDirty(true);
-
-      pushCommand({
-        type: "move",
-        nodeId,
-        from,
-        to: nextPositions[nodeId],
-        graphBefore: beforeGraph,
-        graphAfter: afterGraph,
+      const transaction = {
+        graph: afterGraph,
+        nodePositions: nextPositions,
+        nodeSizes: nextSizes,
+        status: { dirty: true },
+      };
+      dispatchWorkspaceTransaction({
+        ...transaction,
+        history: {
+          type: "push",
+          command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
+        },
       });
     },
-    [
-      graphRef,
-      nodePositionsRef,
-      nodeSizesRef,
-      pushCommand,
-      setDirty,
-      setGraph,
-      setNodePositions,
-      setNodeSizes,
-    ]
+    [dispatchWorkspaceTransaction, workspaceRef]
   );
 
   const handleNodesDragEnd = useCallback(
     (moves: { nodeId: string; from: { x: number; y: number }; to: { x: number; y: number } }[]) => {
-      const currentNodes = graphRef.current.nodes;
+      const beforeState = workspaceRef.current;
+      const beforeGraph = beforeState.graph;
+      const beforePositions = beforeState.nodePositions;
+      const beforeSizes = beforeState.nodeSizes;
+      const currentNodes = beforeGraph.nodes;
       const normalizedMoves = moves.map((move) =>
         currentNodes.some((node) => node.id === move.nodeId && node.type === "group")
           ? { ...move, to: snapPositionToGrid(move.to) }
@@ -220,22 +219,19 @@ export function useGraphNodeLayoutActions({
         return;
       }
 
-      const beforeGraph = graphRef.current;
       let afterGraph = beforeGraph;
-      const finalMoves: typeof moves = [];
       const updatedPositions: Record<string, { x: number; y: number }> = {};
       const resolvedGroupPositions = resolveGroupMoveTargets(
         meaningfulMoves,
         beforeGraph.nodes,
-        nodePositionsRef.current,
-        nodeSizesRef.current
+        beforePositions,
+        beforeSizes
       );
 
       meaningfulMoves.forEach((move) => {
-        const { nodeId, from, to } = move;
+        const { nodeId, to } = move;
         const node = afterGraph.nodes.find((n) => n.id === nodeId);
         if (!node) {
-          finalMoves.push(move);
           updatedPositions[nodeId] = to;
           return;
         }
@@ -243,34 +239,26 @@ export function useGraphNodeLayoutActions({
         if (node.type === "group") {
           const resolvedPosition = resolvedGroupPositions[nodeId] ?? to;
           updatedPositions[nodeId] = resolvedPosition;
-          if (from.x !== resolvedPosition.x || from.y !== resolvedPosition.y) {
-            finalMoves.push({
-              nodeId,
-              from,
-              to: resolvedPosition,
-            });
-          }
           return;
         }
 
         // Calculate dropped absolute position
-        const absTo = getAbsoluteNodePosition(node, to, nodePositionsRef.current);
+        const absTo = getAbsoluteNodePosition(node, to, beforePositions);
 
         // Bounding box checking
-        const nodeSize = nodeSizesRef.current[nodeId] ?? estimateNodeSize(node);
+        const nodeSize = beforeSizes[nodeId] ?? estimateNodeSize(node);
         const targetGroup = findContainingGroup({
           nodeId,
           center: getNodeCenter(absTo, nodeSize),
           nodes: afterGraph.nodes,
-          positions: nodePositionsRef.current,
-          sizes: nodeSizesRef.current,
+          positions: beforePositions,
+          sizes: beforeSizes,
         });
 
         const oldParentId = node.parentId;
         const newParentId = targetGroup?.id;
 
         if (oldParentId === newParentId) {
-          finalMoves.push(move);
           updatedPositions[nodeId] = to;
         } else {
           const updatedAt = new Date().toISOString();
@@ -292,14 +280,9 @@ export function useGraphNodeLayoutActions({
           const finalToPos = getRelativeNodePosition(
             absTo,
             newParentId,
-            nodePositionsRef.current
+            beforePositions
           );
 
-          finalMoves.push({
-            nodeId,
-            from,
-            to: finalToPos,
-          });
           updatedPositions[nodeId] = finalToPos;
         }
       });
@@ -315,10 +298,10 @@ export function useGraphNodeLayoutActions({
       });
 
       let nextPositions = {
-        ...nodePositionsRef.current,
+        ...beforePositions,
         ...updatedPositions,
       };
-      let nextSizes = { ...nodeSizesRef.current };
+      let nextSizes = { ...beforeSizes };
 
       affectedGroups.forEach((groupId) => {
         const adjusted = adjustGroupSizeAndPosition(
@@ -331,48 +314,34 @@ export function useGraphNodeLayoutActions({
         nextSizes = adjusted.sizes;
       });
 
-      const finalAdjustedMoves = finalMoves.map((m) => ({
-        ...m,
-        to: nextPositions[m.nodeId] ?? m.to,
-      }));
-
-      nodePositionsRef.current = nextPositions;
-      setNodePositions(nextPositions);
-      setNodeSizes(nextSizes);
-
-      const graphChanged = afterGraph !== beforeGraph;
-      if (graphChanged) {
-        graphRef.current = afterGraph;
-        setGraph(afterGraph);
-      }
-      setDirty(true);
-
-      pushCommand({
-        type: "move-many",
-        moves: finalAdjustedMoves,
-        graphBefore: graphChanged ? beforeGraph : undefined,
-        graphAfter: graphChanged ? afterGraph : undefined,
+      const transaction = {
+        graph: afterGraph,
+        nodePositions: nextPositions,
+        nodeSizes: nextSizes,
+        status: { dirty: true },
+      };
+      dispatchWorkspaceTransaction({
+        ...transaction,
+        history: {
+          type: "push",
+          command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
+        },
       });
     },
-    [
-      graphRef,
-      nodePositionsRef,
-      nodeSizesRef,
-      pushCommand,
-      setDirty,
-      setGraph,
-      setNodePositions,
-      setNodeSizes,
-    ]
+    [dispatchWorkspaceTransaction, workspaceRef]
   );
 
   const handleNodeResizeEnd = useCallback(
     (nodeId: string, size: { width: number; height: number }) => {
-      const node = graphRef.current.nodes.find((n) => n.id === nodeId);
+      const beforeState = workspaceRef.current;
+      const beforeGraph = beforeState.graph;
+      const beforePositions = beforeState.nodePositions;
+      const beforeSizes = beforeState.nodeSizes;
+      const node = beforeGraph.nodes.find((n) => n.id === nodeId);
       if (!node) return;
 
       const finalSize = node.type === "group" ? constrainGroupNodeSize(size) : size;
-      const before = nodeSizesRef.current[nodeId];
+      const before = beforeSizes[nodeId];
       const fallbackBefore = before ?? estimateNodeSize(node);
 
       if (before && before.width === finalSize.width && before.height === finalSize.height) {
@@ -383,33 +352,32 @@ export function useGraphNodeLayoutActions({
         node.type === "group" &&
         isGroupPlacementBlocked(
           nodeId,
-          nodePositionsRef.current[nodeId] ?? { x: 0, y: 0 },
+          beforePositions[nodeId] ?? { x: 0, y: 0 },
           finalSize,
-          graphRef.current.nodes,
-          nodePositionsRef.current,
-          nodeSizesRef.current
+          beforeGraph.nodes,
+          beforePositions,
+          beforeSizes
         )
       ) {
         const revertedSizes = {
-          ...nodeSizesRef.current,
+          ...beforeSizes,
           [nodeId]: fallbackBefore,
         };
-        nodeSizesRef.current = revertedSizes;
-        setNodeSizes(revertedSizes);
+        dispatchWorkspaceTransaction({ nodeSizes: revertedSizes });
         return;
       }
 
       let nextSizes = {
-        ...nodeSizesRef.current,
+        ...beforeSizes,
         [nodeId]: finalSize,
       };
-      let nextPositions = { ...nodePositionsRef.current };
+      let nextPositions = { ...beforePositions };
 
       const parentId = node.parentId;
       if (parentId) {
         const adjusted = adjustGroupSizeAndPosition(
           parentId,
-          graphRef.current.nodes,
+          beforeGraph.nodes,
           nextPositions,
           nextSizes
         );
@@ -417,26 +385,29 @@ export function useGraphNodeLayoutActions({
         nextSizes = adjusted.sizes;
       }
 
-      nodePositionsRef.current = nextPositions;
-      setNodePositions(nextPositions);
-      setNodeSizes(nextSizes);
-      setDirty(true);
-      pushCommand({ type: "resize", nodeId, before, after: finalSize });
+      const transaction = {
+        nodePositions: nextPositions,
+        nodeSizes: nextSizes,
+        status: { dirty: true },
+      };
+      dispatchWorkspaceTransaction({
+        ...transaction,
+        history: {
+          type: "push",
+          command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
+        },
+      });
     },
-    [
-      graphRef,
-      nodePositionsRef,
-      nodeSizesRef,
-      pushCommand,
-      setDirty,
-      setNodePositions,
-      setNodeSizes,
-    ]
+    [dispatchWorkspaceTransaction, workspaceRef]
   );
 
   const matchGroupNodeSizes = useCallback(
     (nodeIds: string[]) => {
-      const currentNodes = graphRef.current.nodes;
+      const beforeState = workspaceRef.current;
+      const beforeGraph = beforeState.graph;
+      const beforePositions = beforeState.nodePositions;
+      const beforeSizes = beforeState.nodeSizes;
+      const currentNodes = beforeGraph.nodes;
       const currentNodeById = new Map(currentNodes.map((node) => [node.id, node]));
       const orderedGroupIds = [...new Set(nodeIds)].filter(
         (nodeId) => currentNodeById.get(nodeId)?.type === "group"
@@ -448,9 +419,9 @@ export function useGraphNodeLayoutActions({
       }
 
       const referenceSize = constrainGroupNodeSize(
-        nodeSizesRef.current[referenceId] ?? estimateNodeSize(referenceNode)
+        beforeSizes[referenceId] ?? estimateNodeSize(referenceNode)
       );
-      const nextSizes = { ...nodeSizesRef.current };
+      const nextSizes = { ...beforeSizes };
       const resizes: {
         nodeId: string;
         before: NodeSize | undefined;
@@ -463,7 +434,7 @@ export function useGraphNodeLayoutActions({
           return;
         }
 
-        const before = nodeSizesRef.current[nodeId];
+        const before = beforeSizes[nodeId];
         const fallbackBefore = before ?? estimateNodeSize(node);
         if (
           fallbackBefore.width === referenceSize.width &&
@@ -475,10 +446,10 @@ export function useGraphNodeLayoutActions({
         if (
           isGroupPlacementBlocked(
             nodeId,
-            nodePositionsRef.current[nodeId] ?? { x: 0, y: 0 },
+            beforePositions[nodeId] ?? { x: 0, y: 0 },
             referenceSize,
             currentNodes,
-            nodePositionsRef.current,
+            beforePositions,
             nextSizes
           )
         ) {
@@ -493,12 +464,19 @@ export function useGraphNodeLayoutActions({
         return;
       }
 
-      nodeSizesRef.current = nextSizes;
-      setNodeSizes(nextSizes);
-      setDirty(true);
-      pushCommand({ type: "resize-many", resizes });
+      const transaction = {
+        nodeSizes: nextSizes,
+        status: { dirty: true },
+      };
+      dispatchWorkspaceTransaction({
+        ...transaction,
+        history: {
+          type: "push",
+          command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
+        },
+      });
     },
-    [graphRef, nodePositionsRef, nodeSizesRef, pushCommand, setDirty, setNodeSizes]
+    [dispatchWorkspaceTransaction, workspaceRef]
   );
 
   return {

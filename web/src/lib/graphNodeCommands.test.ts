@@ -83,7 +83,7 @@ describe("graphNodeCommands", () => {
     expect(draft.size).toEqual(DEFAULT_GROUP_SIZE);
   });
 
-  it("deletes a card and returns restore metadata for edges and references", () => {
+  it("deletes a card and removes edges, references, positions, and sizes", () => {
     const source = {
       ...cardNode("#1", "One"),
       references: [{ id: "#2", title: "Two" }],
@@ -116,25 +116,10 @@ describe("graphNodeCommands", () => {
     expect(draft?.graph.edges).toEqual([]);
     expect(draft?.positions).toEqual({ "#1": { x: 0, y: 0 } });
     expect(draft?.sizes).toEqual({});
-    expect(draft?.meta).toEqual({
-      removedNode: target,
-      position: { x: 50, y: 60 },
-      size: { width: 120, height: 80 },
-      removedEdges: [
-        {
-          id: "edge-#1-#2",
-          sourceId: "#1",
-          targetId: "#2",
-          type: "citation",
-          weight: 1,
-        },
-      ],
-      affectedRefs: [{ ownerId: "#1", refId: "#2" }],
-    });
-    expect(draft?.graphBefore).toBeUndefined();
+    expect(Object.keys(draft ?? {}).sort()).toEqual(["graph", "positions", "sizes"]);
   });
 
-  it("deletes a group by detaching children and keeping snapshot data for undo", () => {
+  it("deletes a group by detaching children before removal", () => {
     const group = groupNode("#group", "Group");
     const child = cardNode("#child", "Child", "#group");
     const positions = {
@@ -152,10 +137,7 @@ describe("graphNodeCommands", () => {
     expect(detachedChild?.parentId).toBeUndefined();
     expect(detachedChild?.tags).toEqual([]);
     expect(draft?.positions["#child"]).toEqual({ x: 110, y: 220 });
-    expect(draft?.graphBefore).toBe(sourceGraph);
-    expect(draft?.positionsBefore).toBe(positions);
-    expect(draft?.sizesBefore).toBe(sizes);
-    expect(draft?.graphAfter).toBe(draft?.graph);
+    expect(Object.keys(draft ?? {}).sort()).toEqual(["graph", "positions", "sizes"]);
   });
 
   it("returns null for empty or non-matching batch deletes", () => {
@@ -163,7 +145,7 @@ describe("graphNodeCommands", () => {
     expect(deleteNodesDraft(["#missing"], graph([cardNode("#1")]), {}, {})).toBeNull();
   });
 
-  it("deletes multiple nodes and returns batch restore metadata", () => {
+  it("deletes multiple nodes and returns removed ids for cache cleanup", () => {
     const first = {
       ...cardNode("#1", "One"),
       references: [{ id: "#2", title: "Two" }],
@@ -198,23 +180,10 @@ describe("graphNodeCommands", () => {
     expect(draft?.graph.nodes).toEqual([{ ...first, references: [] }]);
     expect(draft?.positions).toEqual({ "#1": { x: 0, y: 0 } });
     expect(draft?.sizes).toEqual({});
-    expect(draft?.removals.map((removal) => removal.nodeId)).toEqual(["#2", "#3"]);
-    expect(draft?.removals[0].meta).toMatchObject({
-      removedNode: second,
-      position: { x: 20, y: 30 },
-      size: { width: 120, height: 80 },
-      affectedRefs: [{ ownerId: "#1", refId: "#2" }],
-    });
-    expect(draft?.removals[1].meta).toMatchObject({
-      removedNode: third,
-      position: { x: 40, y: 50 },
-      size: { width: 130, height: 90 },
-      affectedRefs: [],
-    });
-    expect(draft?.graphBefore).toBeUndefined();
+    expect(draft?.removedNodeIds).toEqual([second.id, third.id]);
   });
 
-  it("keeps batch snapshot data when deleting a group", () => {
+  it("detaches children in batch when deleting a group", () => {
     const sourceGraph = graph([groupNode("#group", "Group"), cardNode("#child", "Child", "#group")]);
     const positions = {
       "#group": { x: 100, y: 200 },
@@ -229,9 +198,12 @@ describe("graphNodeCommands", () => {
     expect(draft?.graph.nodes[0].id).toBe("#child");
     expect(draft?.graph.nodes[0].parentId).toBeUndefined();
     expect(draft?.positions).toEqual({ "#child": { x: 110, y: 220 } });
-    expect(draft?.graphBefore).toBe(sourceGraph);
-    expect(draft?.positionsBefore).toBe(positions);
-    expect(draft?.sizesBefore).toBe(sizes);
-    expect(draft?.graphAfter).toBe(draft?.graph);
+    expect(draft?.removedNodeIds).toEqual(["#group"]);
+    expect(Object.keys(draft ?? {}).sort()).toEqual([
+      "graph",
+      "positions",
+      "removedNodeIds",
+      "sizes",
+    ]);
   });
 });

@@ -1,5 +1,4 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useCanvasHistory } from "../hooks/useCanvasHistory";
 import { useFileOperations } from "../hooks/useFileOperations";
 import { useGraphState } from "../hooks/useGraphState";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
@@ -35,10 +34,9 @@ export function KnowledgeBase({
   droppedWorkspaceFile = null,
   onDroppedWorkspaceFileHandled,
 }: KnowledgeBaseProps) {
-  const history = useCanvasHistory();
   const { isZh, locale } = useI18n();
-  const graphState = useGraphState({ ...history, locale });
-  const { nodes, edges, selection, persistence, search, images, status } = graphState;
+  const graphState = useGraphState({ locale });
+  const { nodes, edges, selection, persistence, history, search, images, status } = graphState;
   const didRestoreDraftRef = useRef(false);
   const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestDraftStateRef = useRef<WorkspaceState | null>(null);

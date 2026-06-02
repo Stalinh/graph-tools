@@ -1,77 +1,70 @@
-import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useCallback } from "react";
 import { getDefaultCardTitle, getDefaultGroupTitle, type Locale } from "../i18n";
 import { deleteContentCacheEntry } from "../lib/cardContentCache";
 import { updateNodeFields } from "../lib/graphMutator";
 import { areViewportsEqual } from "../lib/groupNodeLayout";
 import { createNodeDraft, deleteNodeDraft, deleteNodesDraft } from "../lib/graphNodeCommands";
-import { EMPTY_GRAPH, generateNextId } from "../lib/workspaceState";
-import type { CanvasPosition, CanvasViewport, GraphData, GraphNode, NodeSize } from "../types";
-import type { CanvasCommand } from "./canvasHistoryTypes";
+import { generateNextId } from "../lib/workspaceState";
+import type { CanvasPosition, CanvasViewport, GraphData, GraphNode } from "../types";
 import type { UpdateGraphNodeOptions } from "./graphNodes/graphNodeActionTypes";
 import { useGraphNodeAppearanceActions } from "./graphNodes/useGraphNodeAppearanceActions";
 import { useGraphNodeLayoutActions } from "./graphNodes/useGraphNodeLayoutActions";
+import {
+  createWorkspacePatchCommandFromTransaction,
+  type WorkspaceStoreController,
+  type WorkspaceTransaction,
+} from "./useWorkspaceStore";
 
-interface UseGraphNodesOptions {
+interface UseGraphNodesOptions
+  extends Pick<
+    WorkspaceStoreController,
+    "workspace" | "workspaceRef" | "dispatchWorkspaceTransaction"
+  > {
   locale?: Locale;
-  pushCommand: (cmd: CanvasCommand) => void;
-  setDirty: (dirty: boolean) => void;
-  setSelectedNodeId: Dispatch<SetStateAction<string | null>>;
-  setSelectedNodeIds: Dispatch<SetStateAction<string[]>>;
-  setEditingNodeId: Dispatch<SetStateAction<string | null>>;
-  setQuickEditingNodeId: Dispatch<SetStateAction<string | null>>;
-  setPendingInspectorContentFocusNodeId: Dispatch<SetStateAction<string | null>>;
 }
 
 interface ViewportChangeOptions {
   markDirty?: boolean;
 }
 
+function withHistory(
+  beforeState: WorkspaceStoreController["workspace"],
+  transaction: WorkspaceTransaction
+): WorkspaceTransaction {
+  return {
+    ...transaction,
+    history: {
+      type: "push",
+      command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
+    },
+  };
+}
+
 export function useGraphNodes({
   locale = "zh-CN",
-  pushCommand,
-  setDirty,
-  setSelectedNodeId,
-  setSelectedNodeIds,
-  setEditingNodeId,
-  setQuickEditingNodeId,
-  setPendingInspectorContentFocusNodeId,
+  workspace,
+  workspaceRef,
+  dispatchWorkspaceTransaction,
 }: UseGraphNodesOptions) {
-  const [graph, setGraph] = useState<GraphData>(EMPTY_GRAPH);
-  const [nodePositions, setNodePositions] = useState<Record<string, CanvasPosition>>({});
-  const [nodeSizes, setNodeSizes] = useState<Record<string, NodeSize>>({});
-  const [viewport, setViewport] = useState<CanvasViewport | null>(null);
-
-  const graphRef = useRef(graph);
-  graphRef.current = graph;
-
-  const nodePositionsRef = useRef(nodePositions);
-  nodePositionsRef.current = nodePositions;
-
-  const nodeSizesRef = useRef(nodeSizes);
-  nodeSizesRef.current = nodeSizes;
-
-  const viewportRef = useRef(viewport);
-  viewportRef.current = viewport;
-
   const applyGraphUpdate = useCallback(
     (mutate: (currentGraph: GraphData) => GraphData, options?: UpdateGraphNodeOptions) => {
-      const currentGraph = graphRef.current;
+      const beforeState = workspaceRef.current;
+      const currentGraph = beforeState.graph;
       const nextGraph = mutate(currentGraph);
       if (nextGraph === currentGraph) {
         return false;
       }
 
-      graphRef.current = nextGraph;
-      setGraph(nextGraph);
-      setDirty(true);
-
-      if (options?.pushToHistory) {
-        pushCommand({ type: "replace-graph", before: currentGraph, after: nextGraph });
-      }
-
+      const transaction: WorkspaceTransaction = {
+        graph: nextGraph,
+        status: { dirty: true },
+      };
+      dispatchWorkspaceTransaction(
+        options?.pushToHistory ? withHistory(beforeState, transaction) : transaction
+      );
       return true;
     },
-    [pushCommand, setDirty]
+    [dispatchWorkspaceTransaction, workspaceRef]
   );
 
   const createNode = useCallback(
@@ -81,175 +74,132 @@ export function useGraphNodes({
       imagePath?: string,
       parentId?: string
     ) => {
-      const id = generateNextId(graphRef.current.nodes);
+      const beforeState = workspaceRef.current;
+      const beforeGraph = beforeState.graph;
+      const beforePositions = beforeState.nodePositions;
+      const beforeSizes = beforeState.nodeSizes;
+      const id = generateNextId(beforeGraph.nodes);
       const now = new Date();
       const createdAt = now.toISOString();
       const draft = createNodeDraft({
         createdAt,
         defaultCardTitle: getDefaultCardTitle(locale),
         defaultGroupTitle: getDefaultGroupTitle(locale),
-        graph: graphRef.current,
+        graph: beforeGraph,
         id,
         imagePath,
         parentId,
         position,
-        positions: nodePositionsRef.current,
-        sizes: nodeSizesRef.current,
+        positions: beforePositions,
+        sizes: beforeSizes,
         type,
       });
 
-      graphRef.current = draft.graph;
-      nodePositionsRef.current = draft.positions;
-      nodeSizesRef.current = draft.sizes;
-      setGraph(draft.graph);
-      setNodePositions(draft.positions);
-      setNodeSizes(draft.sizes);
-      setSelectedNodeId(id);
-      setSelectedNodeIds([id]);
-      setQuickEditingNodeId(type === "card" || type === "group" ? id : null);
-      setPendingInspectorContentFocusNodeId(null);
-      setDirty(true);
-      pushCommand({
-        type: "add",
-        nodeId: id,
-        nodeData: draft.node,
-        position: draft.position,
-        size: draft.size,
-      });
+      const transaction: WorkspaceTransaction = {
+        graph: draft.graph,
+        nodePositions: draft.positions,
+        nodeSizes: draft.sizes,
+        selection: {
+          selectedNodeIds: [id],
+          quickEditingNodeId: type === "card" || type === "group" ? id : null,
+          pendingInspectorContentFocusNodeId: null,
+        },
+        status: { dirty: true },
+      };
+      dispatchWorkspaceTransaction(withHistory(beforeState, transaction));
     },
-    [
-      locale,
-      pushCommand,
-      setDirty,
-      setNodePositions,
-      setNodeSizes,
-      setPendingInspectorContentFocusNodeId,
-      setQuickEditingNodeId,
-      setSelectedNodeId,
-      setSelectedNodeIds,
-    ]
+    [dispatchWorkspaceTransaction, locale, workspaceRef]
   );
 
   const deleteNode = useCallback(
     (nodeId: string) => {
+      const beforeState = workspaceRef.current;
+      const beforeGraph = beforeState.graph;
+      const beforePositions = beforeState.nodePositions;
+      const beforeSizes = beforeState.nodeSizes;
       const draft = deleteNodeDraft(
         nodeId,
-        graphRef.current,
-        nodePositionsRef.current,
-        nodeSizesRef.current
+        beforeGraph,
+        beforePositions,
+        beforeSizes
       );
       if (!draft) return;
       deleteContentCacheEntry(nodeId);
 
-      graphRef.current = draft.graph;
-      nodePositionsRef.current = draft.positions;
-      nodeSizesRef.current = draft.sizes;
-
-      setGraph(draft.graph);
-      setNodePositions(draft.positions);
-      setNodeSizes(draft.sizes);
-
-      setSelectedNodeId((currentSelectedNodeId) =>
-        currentSelectedNodeId === nodeId ? null : currentSelectedNodeId
-      );
-      setSelectedNodeIds((currentSelectedNodeIds) =>
-        currentSelectedNodeIds.filter((selectedId) => selectedId !== nodeId)
-      );
-      setEditingNodeId((currentEditingNodeId) =>
-        currentEditingNodeId === nodeId ? null : currentEditingNodeId
-      );
-      setQuickEditingNodeId((currentQuickEditingNodeId) =>
-        currentQuickEditingNodeId === nodeId ? null : currentQuickEditingNodeId
-      );
-      setPendingInspectorContentFocusNodeId((currentPendingNodeId) =>
-        currentPendingNodeId === nodeId ? null : currentPendingNodeId
-      );
-      setDirty(true);
-
-      pushCommand({
-        type: "remove",
-        nodeId,
-        meta: draft.meta,
-        graphBefore: draft.graphBefore,
-        graphAfter: draft.graphAfter,
-        positionsBefore: draft.positionsBefore,
-        positionsAfter: draft.positionsAfter,
-        sizesBefore: draft.sizesBefore,
-        sizesAfter: draft.sizesAfter,
-      });
+      const selectedNodeIds =
+        beforeState.selection.selectedNodeIds[0] === nodeId
+          ? []
+          : beforeState.selection.selectedNodeIds.filter((selectedId) => selectedId !== nodeId);
+      const transaction: WorkspaceTransaction = {
+        graph: draft.graph,
+        nodePositions: draft.positions,
+        nodeSizes: draft.sizes,
+        selection: {
+          selectedNodeIds,
+          editingNodeId:
+            beforeState.selection.editingNodeId === nodeId
+              ? null
+              : beforeState.selection.editingNodeId,
+          quickEditingNodeId:
+            beforeState.selection.quickEditingNodeId === nodeId
+              ? null
+              : beforeState.selection.quickEditingNodeId,
+          pendingInspectorContentFocusNodeId:
+            beforeState.selection.pendingInspectorContentFocusNodeId === nodeId
+              ? null
+              : beforeState.selection.pendingInspectorContentFocusNodeId,
+        },
+        status: { dirty: true },
+      };
+      dispatchWorkspaceTransaction(withHistory(beforeState, transaction));
     },
-    [
-      pushCommand,
-      setDirty,
-      setEditingNodeId,
-      setNodePositions,
-      setNodeSizes,
-      setPendingInspectorContentFocusNodeId,
-      setQuickEditingNodeId,
-      setSelectedNodeId,
-      setSelectedNodeIds,
-    ]
+    [dispatchWorkspaceTransaction, workspaceRef]
   );
 
   const deleteNodes = useCallback(
     (nodeIds: string[]) => {
       const uniqueNodeIds = [...new Set(nodeIds)];
+      const beforeState = workspaceRef.current;
+      const beforeGraph = beforeState.graph;
+      const beforePositions = beforeState.nodePositions;
+      const beforeSizes = beforeState.nodeSizes;
       const draft = deleteNodesDraft(
         uniqueNodeIds,
-        graphRef.current,
-        nodePositionsRef.current,
-        nodeSizesRef.current
+        beforeGraph,
+        beforePositions,
+        beforeSizes
       );
       if (!draft) return;
-      draft.removals.forEach(({ nodeId }) => deleteContentCacheEntry(nodeId));
+      draft.removedNodeIds.forEach((nodeId) => deleteContentCacheEntry(nodeId));
 
-      graphRef.current = draft.graph;
-      nodePositionsRef.current = draft.positions;
-      nodeSizesRef.current = draft.sizes;
-
-      setGraph(draft.graph);
-      setNodePositions(draft.positions);
-      setNodeSizes(draft.sizes);
-      setSelectedNodeId(null);
-      setSelectedNodeIds([]);
-      setEditingNodeId((currentEditingNodeId) =>
-        currentEditingNodeId && uniqueNodeIds.includes(currentEditingNodeId)
-          ? null
-          : currentEditingNodeId
-      );
-      setQuickEditingNodeId((currentQuickEditingNodeId) =>
-        currentQuickEditingNodeId && uniqueNodeIds.includes(currentQuickEditingNodeId)
-          ? null
-          : currentQuickEditingNodeId
-      );
-      setPendingInspectorContentFocusNodeId((currentPendingNodeId) =>
-        currentPendingNodeId && uniqueNodeIds.includes(currentPendingNodeId)
-          ? null
-          : currentPendingNodeId
-      );
-      setDirty(true);
-      pushCommand({
-        type: "remove-many",
-        removals: draft.removals,
-        graphBefore: draft.graphBefore,
-        graphAfter: draft.graphAfter,
-        positionsBefore: draft.positionsBefore,
-        positionsAfter: draft.positionsAfter,
-        sizesBefore: draft.sizesBefore,
-        sizesAfter: draft.sizesAfter,
-      });
+      const removedNodeIds = new Set(uniqueNodeIds);
+      const transaction: WorkspaceTransaction = {
+        graph: draft.graph,
+        nodePositions: draft.positions,
+        nodeSizes: draft.sizes,
+        selection: {
+          selectedNodeIds: [],
+          editingNodeId:
+            beforeState.selection.editingNodeId &&
+            removedNodeIds.has(beforeState.selection.editingNodeId)
+              ? null
+              : beforeState.selection.editingNodeId,
+          quickEditingNodeId:
+            beforeState.selection.quickEditingNodeId &&
+            removedNodeIds.has(beforeState.selection.quickEditingNodeId)
+              ? null
+              : beforeState.selection.quickEditingNodeId,
+          pendingInspectorContentFocusNodeId:
+            beforeState.selection.pendingInspectorContentFocusNodeId &&
+            removedNodeIds.has(beforeState.selection.pendingInspectorContentFocusNodeId)
+              ? null
+              : beforeState.selection.pendingInspectorContentFocusNodeId,
+        },
+        status: { dirty: true },
+      };
+      dispatchWorkspaceTransaction(withHistory(beforeState, transaction));
     },
-    [
-      pushCommand,
-      setDirty,
-      setEditingNodeId,
-      setNodePositions,
-      setNodeSizes,
-      setPendingInspectorContentFocusNodeId,
-      setQuickEditingNodeId,
-      setSelectedNodeId,
-      setSelectedNodeIds,
-    ]
+    [dispatchWorkspaceTransaction, workspaceRef]
   );
 
   const updateGraphNode = useCallback(
@@ -284,45 +234,36 @@ export function useGraphNodes({
     commitGraphNodesOpacity,
   } = useGraphNodeAppearanceActions({
     applyGraphUpdate,
-    graphRef,
-    setGraph,
-    setDirty,
-    pushCommand,
+    workspaceRef,
+    dispatchWorkspaceTransaction,
   });
 
   const { handleNodeDragEnd, handleNodesDragEnd, handleNodeResizeEnd, matchGroupNodeSizes } =
     useGraphNodeLayoutActions({
-      graphRef,
-      nodePositionsRef,
-      nodeSizesRef,
-      setGraph,
-      setNodePositions,
-      setNodeSizes,
-      setDirty,
-      pushCommand,
+      workspaceRef,
+      dispatchWorkspaceTransaction,
     });
 
   const handleViewportChange = useCallback(
     (vp: CanvasViewport, options?: ViewportChangeOptions) => {
-      if (!areViewportsEqual(viewportRef.current, vp)) {
-        setViewport(vp);
-        if (options?.markDirty !== false) {
-          setDirty(true);
-        }
+      const beforeState = workspaceRef.current;
+      if (areViewportsEqual(beforeState.viewport, vp)) {
+        return;
       }
+
+      dispatchWorkspaceTransaction({
+        viewport: vp,
+        status: options?.markDirty === false ? undefined : { dirty: true },
+      });
     },
-    [setDirty]
+    [dispatchWorkspaceTransaction, workspaceRef]
   );
 
   return {
-    graph,
-    setGraph,
-    nodePositions,
-    setNodePositions,
-    nodeSizes,
-    setNodeSizes,
-    viewport,
-    setViewport,
+    graph: workspace.graph,
+    nodePositions: workspace.nodePositions,
+    nodeSizes: workspace.nodeSizes,
+    viewport: workspace.viewport,
     createNode,
     deleteNode,
     deleteNodes,

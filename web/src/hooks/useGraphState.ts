@@ -5,154 +5,120 @@ import { useGraphNodes } from "./useGraphNodes";
 import { useGraphPersistence } from "./useGraphPersistence";
 import { useGraphSearch } from "./useGraphSearch";
 import { useGraphSelection } from "./useGraphSelection";
-import type { CanvasCommand } from "./canvasHistoryTypes";
-import { useSelectionState } from "./useSelectionState";
-import { useWorkspaceStatusState } from "./useWorkspaceStatusState";
+import { useWorkspaceStore } from "./useWorkspaceStore";
 
-type SelectionState = ReturnType<typeof useSelectionState>;
-type StatusState = ReturnType<typeof useWorkspaceStatusState>;
 type SearchState = ReturnType<typeof useGraphSearch>;
 type GraphNodesState = ReturnType<typeof useGraphNodes>;
 type GraphEdgesState = ReturnType<typeof useGraphEdges>;
 type GraphSelectionState = ReturnType<typeof useGraphSelection>;
 type GraphPersistenceState = ReturnType<typeof useGraphPersistence>;
+type WorkspaceStoreState = ReturnType<typeof useWorkspaceStore>;
 
 export interface GraphState {
-  nodes: Omit<GraphNodesState, "setGraph" | "setNodePositions" | "setViewport">;
+  nodes: GraphNodesState;
   edges: GraphEdgesState;
-  selection: SelectionState & GraphSelectionState;
+  selection: {
+    selectedNodeId: string | null;
+    setSelectedNodeId: WorkspaceStoreState["setSelectedNodeId"];
+    selectedNodeIds: string[];
+    setSelectedNodeIds: WorkspaceStoreState["setSelectedNodeIds"];
+    selectedEdgeId: string | null;
+    setSelectedEdgeId: WorkspaceStoreState["setSelectedEdgeId"];
+    contextMenu: WorkspaceStoreState["workspace"]["selection"]["contextMenu"];
+    setContextMenu: WorkspaceStoreState["setContextMenu"];
+    editingNodeId: string | null;
+    setEditingNodeId: WorkspaceStoreState["setEditingNodeId"];
+    quickEditingNodeId: string | null;
+    setQuickEditingNodeId: WorkspaceStoreState["setQuickEditingNodeId"];
+    pendingInspectorContentFocusNodeId: string | null;
+    setPendingInspectorContentFocusNodeId: WorkspaceStoreState["setPendingInspectorContentFocusNodeId"];
+  } & GraphSelectionState;
   persistence: GraphPersistenceState;
+  history: {
+    undoStack: WorkspaceStoreState["workspace"]["history"]["undoStack"];
+    redoStack: WorkspaceStoreState["workspace"]["history"]["redoStack"];
+    clear: WorkspaceStoreState["clearHistory"];
+  };
   search: SearchState;
   images: {
     images: Map<string, Blob>;
     setImages: Dispatch<SetStateAction<Map<string, Blob>>>;
   };
-  status: StatusState;
+  status: {
+    dirty: boolean;
+    setDirty: WorkspaceStoreState["setDirty"];
+    status: WorkspaceStoreState["workspace"]["status"]["status"];
+    setStatus: WorkspaceStoreState["setStatus"];
+    errorMessage: string | null;
+    setErrorMessage: WorkspaceStoreState["setErrorMessage"];
+  };
 }
 
 export interface UseGraphStateOptions {
-  pushCommand: (cmd: CanvasCommand) => void;
-  popUndo: () => CanvasCommand | null;
-  pushRedo: (cmd: CanvasCommand) => void;
-  popRedo: () => CanvasCommand | null;
-  pushUndo: (cmd: CanvasCommand) => void;
-  clear: () => void;
   locale?: Locale;
 }
 
-export function useGraphState(history: UseGraphStateOptions): GraphState {
+export function useGraphState(options: UseGraphStateOptions = {}): GraphState {
   const search = useGraphSearch();
-  const selectionState = useSelectionState();
-  const statusState = useWorkspaceStatusState();
+  const workspaceStore = useWorkspaceStore();
+  const { workspace } = workspaceStore;
+  const selectionState = workspace.selection;
+  const statusState = workspace.status;
+  const selectedNodeId = selectionState.selectedNodeIds[0] ?? null;
 
   const [images, setImages] = useState<Map<string, Blob>>(new Map());
 
   const nodes = useGraphNodes({
-    pushCommand: history.pushCommand,
-    setDirty: statusState.setDirty,
-    setSelectedNodeId: selectionState.setSelectedNodeId,
-    setSelectedNodeIds: selectionState.setSelectedNodeIds,
-    setEditingNodeId: selectionState.setEditingNodeId,
-    setQuickEditingNodeId: selectionState.setQuickEditingNodeId,
-    setPendingInspectorContentFocusNodeId: selectionState.setPendingInspectorContentFocusNodeId,
-    locale: history.locale ?? "zh-CN",
+    workspace,
+    workspaceRef: workspaceStore.workspaceRef,
+    dispatchWorkspaceTransaction: workspaceStore.dispatchWorkspaceTransaction,
+    locale: options.locale ?? "zh-CN",
   });
 
   const selection = useGraphSelection({
-    selectedNodeId: selectionState.selectedNodeId,
-    setSelectedNodeId: selectionState.setSelectedNodeId,
+    selectedNodeId,
+    setSelectedNodeId: workspaceStore.setSelectedNodeId,
     selectedNodeIds: selectionState.selectedNodeIds,
     selectedEdgeId: selectionState.selectedEdgeId,
     editingNodeId: selectionState.editingNodeId,
-    setEditingNodeId: selectionState.setEditingNodeId,
+    setEditingNodeId: workspaceStore.setEditingNodeId,
     contextMenu: selectionState.contextMenu,
-    setContextMenu: selectionState.setContextMenu,
+    setContextMenu: workspaceStore.setContextMenu,
     status: statusState.status,
-    setStatus: statusState.setStatus,
+    setStatus: workspaceStore.setStatus,
     graph: nodes.graph,
   });
 
   const edges = useGraphEdges({
-    graph: nodes.graph,
-    setGraph: nodes.setGraph,
-    pushCommand: history.pushCommand,
-    setDirty: statusState.setDirty,
-    setSelectedNodeId: selectionState.setSelectedNodeId,
+    workspaceRef: workspaceStore.workspaceRef,
+    dispatchWorkspaceTransaction: workspaceStore.dispatchWorkspaceTransaction,
   });
 
   const persistence = useGraphPersistence({
-    graph: nodes.graph,
-    nodePositions: nodes.nodePositions,
-    nodeSizes: nodes.nodeSizes,
-    viewport: nodes.viewport,
-    selectedNodeId: selectionState.selectedNodeId,
-    setDirty: statusState.setDirty,
-    setGraph: nodes.setGraph,
-    setNodePositions: nodes.setNodePositions,
-    setNodeSizes: nodes.setNodeSizes,
-    setViewport: nodes.setViewport,
-    setSelectedNodeId: selectionState.setSelectedNodeId,
-    setSelectedNodeIds: selectionState.setSelectedNodeIds,
-    setSelectedEdgeId: selectionState.setSelectedEdgeId,
-    setEditingNodeId: selectionState.setEditingNodeId,
-    setQuickEditingNodeId: selectionState.setQuickEditingNodeId,
-    setPendingInspectorContentFocusNodeId: selectionState.setPendingInspectorContentFocusNodeId,
-    pushUndo: history.pushUndo,
-    popUndo: history.popUndo,
-    pushRedo: history.pushRedo,
-    popRedo: history.popRedo,
-    clearHistory: history.clear,
+    workspaceRef: workspaceStore.workspaceRef,
+    dispatchWorkspaceTransaction: workspaceStore.dispatchWorkspaceTransaction,
   });
 
   return {
-    nodes: {
-      graph: nodes.graph,
-      nodePositions: nodes.nodePositions,
-      nodeSizes: nodes.nodeSizes,
-      setNodeSizes: nodes.setNodeSizes,
-      viewport: nodes.viewport,
-      createNode: nodes.createNode,
-      deleteNode: nodes.deleteNode,
-      deleteNodes: nodes.deleteNodes,
-      updateGraphNode: nodes.updateGraphNode,
-      commitGraphNode: nodes.commitGraphNode,
-      updateGraphNodeColor: nodes.updateGraphNodeColor,
-      updateGraphNodesColor: nodes.updateGraphNodesColor,
-      updateGraphNodeLocked: nodes.updateGraphNodeLocked,
-      updateGraphNodesLocked: nodes.updateGraphNodesLocked,
-      updateGraphNodeOpacity: nodes.updateGraphNodeOpacity,
-      commitGraphNodeOpacity: nodes.commitGraphNodeOpacity,
-      updateGraphNodesOpacity: nodes.updateGraphNodesOpacity,
-      commitGraphNodesOpacity: nodes.commitGraphNodesOpacity,
-      handleNodeDragEnd: nodes.handleNodeDragEnd,
-      handleNodesDragEnd: nodes.handleNodesDragEnd,
-      handleNodeResizeEnd: nodes.handleNodeResizeEnd,
-      matchGroupNodeSizes: nodes.matchGroupNodeSizes,
-      handleViewportChange: nodes.handleViewportChange,
-    },
-    edges: {
-      createCitation: edges.createCitation,
-      deleteCitation: edges.deleteCitation,
-      updateEdgeColor: edges.updateEdgeColor,
-      updateEdgeDirection: edges.updateEdgeDirection,
-      updateEdgeStyle: edges.updateEdgeStyle,
-      reorderReferences: edges.reorderReferences,
-    },
+    nodes,
+    edges,
     selection: {
-      selectedNodeId: selectionState.selectedNodeId,
-      setSelectedNodeId: selectionState.setSelectedNodeId,
+      selectedNodeId,
+      setSelectedNodeId: workspaceStore.setSelectedNodeId,
       selectedNodeIds: selectionState.selectedNodeIds,
-      setSelectedNodeIds: selectionState.setSelectedNodeIds,
+      setSelectedNodeIds: workspaceStore.setSelectedNodeIds,
       selectedEdgeId: selectionState.selectedEdgeId,
-      setSelectedEdgeId: selectionState.setSelectedEdgeId,
+      setSelectedEdgeId: workspaceStore.setSelectedEdgeId,
       contextMenu: selectionState.contextMenu,
-      setContextMenu: selectionState.setContextMenu,
+      setContextMenu: workspaceStore.setContextMenu,
       editingNodeId: selectionState.editingNodeId,
-      setEditingNodeId: selectionState.setEditingNodeId,
+      setEditingNodeId: workspaceStore.setEditingNodeId,
       quickEditingNodeId: selectionState.quickEditingNodeId,
-      setQuickEditingNodeId: selectionState.setQuickEditingNodeId,
-      pendingInspectorContentFocusNodeId: selectionState.pendingInspectorContentFocusNodeId,
-      setPendingInspectorContentFocusNodeId: selectionState.setPendingInspectorContentFocusNodeId,
+      setQuickEditingNodeId: workspaceStore.setQuickEditingNodeId,
+      pendingInspectorContentFocusNodeId:
+        selectionState.pendingInspectorContentFocusNodeId,
+      setPendingInspectorContentFocusNodeId:
+        workspaceStore.setPendingInspectorContentFocusNodeId,
       selectedNode: selection.selectedNode,
       selectedNodes: selection.selectedNodes,
       editingNode: selection.editingNode,
@@ -162,12 +128,11 @@ export function useGraphState(history: UseGraphStateOptions): GraphState {
       openNodeEditor: selection.openNodeEditor,
       closeContextMenu: selection.closeContextMenu,
     },
-    persistence: {
-      undo: persistence.undo,
-      redo: persistence.redo,
-      createWorkspaceState: persistence.createWorkspaceState,
-      applyWorkspaceState: persistence.applyWorkspaceState,
-      resetToEmpty: persistence.resetToEmpty,
+    persistence,
+    history: {
+      undoStack: workspace.history.undoStack,
+      redoStack: workspace.history.redoStack,
+      clear: workspaceStore.clearHistory,
     },
     search: {
       searchQuery: search.searchQuery,
@@ -181,11 +146,11 @@ export function useGraphState(history: UseGraphStateOptions): GraphState {
     },
     status: {
       dirty: statusState.dirty,
-      setDirty: statusState.setDirty,
+      setDirty: workspaceStore.setDirty,
       status: statusState.status,
-      setStatus: statusState.setStatus,
+      setStatus: workspaceStore.setStatus,
       errorMessage: statusState.errorMessage,
-      setErrorMessage: statusState.setErrorMessage,
+      setErrorMessage: workspaceStore.setErrorMessage,
     },
   };
 }
