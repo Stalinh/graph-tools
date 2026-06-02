@@ -22,6 +22,14 @@ describe("PROJECT_SUB_LINE_WORKLOAD_RATIO", () => {
     expect(getSubLineWorkloadRatio("主机设备")).toBe(11);
   });
 
+  it("returns 0 for 专项-液体模块 (the only zero in the table)", () => {
+    expect(getSubLineWorkloadRatio("专项-液体模块")).toBe(0);
+  });
+
+  it("returns 26.5 for 三维建模 (the only non-integer in the table)", () => {
+    expect(getSubLineWorkloadRatio("三维建模")).toBe(26.5);
+  });
+
   it("sums to 100 across all registered ratios", () => {
     const total = Object.values(PROJECT_SUB_LINE_WORKLOAD_RATIO).reduce(
       (sum, value) => sum + value,

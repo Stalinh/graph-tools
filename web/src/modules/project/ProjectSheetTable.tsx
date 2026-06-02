@@ -302,10 +302,7 @@ export function ProjectSheetTable({
                         : renderProjectCell(record, column.field, isZh)}
                     </td>
                   ))}
-                  <td
-                    className="project-sheet__project-workload-ratio-cell"
-                    aria-label={isZh ? "工作量占比" : "Workload ratio"}
-                  >
+                  <td className="project-sheet__project-workload-ratio-cell">
                     —
                   </td>
                   {PROJECT_COLUMNS.slice(2).map((column) => (
