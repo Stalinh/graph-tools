@@ -1,4 +1,4 @@
-import { Image as ImageIcon, Link2, Lock, LockOpen, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Image as ImageIcon, Link2, Lock, LockOpen, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useI18n } from "../../i18n";
 import { isReferenceableNode } from "../../lib/graphConstraints";
@@ -220,10 +220,6 @@ export function GraphContextMenu({
       <button type="button" role="menuitem" className="graph-context-menu__danger" disabled={!targetNodeId} onClick={deleteNode}>
         <Trash2 aria-hidden="true" size={15} />
         <span>{isZh ? "删除选中节点" : "Delete selected node"}</span>
-      </button>
-      <button type="button" role="menuitem" onClick={onClose}>
-        <X aria-hidden="true" size={15} />
-        <span>{isZh ? "关闭菜单" : "Close menu"}</span>
       </button>
     </div>
   );
