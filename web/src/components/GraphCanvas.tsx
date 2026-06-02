@@ -156,12 +156,14 @@ export function GraphCanvas({
   const lastFocusedNodeIdRef = useRef<string | null>(null);
   const suppressNextViewportDirtyRef = useRef(false);
   const onSelectNodeRef = useRef(onSelectNode);
+  const nodePositionsRef = useRef(nodePositions);
   const nodePressedRef = useRef<{ id: string; wasSelected: boolean } | null>(null);
   const handleNodeMouseDownRef = useRef<
     ((event: ReactMouseEvent<Element>, nodeId: string) => void) | null
   >(null);
 
   onSelectNodeRef.current = onSelectNode;
+  nodePositionsRef.current = nodePositions;
   const {
     clearCitationSelection,
     handleCitationNodeClick,
@@ -212,12 +214,16 @@ export function GraphCanvas({
     selectedNodeIds,
   });
 
+  const dispatchNodeMouseDown = useCallback((event: ReactMouseEvent<Element>, nodeId: string) => {
+    handleNodeMouseDownRef.current?.(event, nodeId);
+  }, []);
+
   const handleQuickAddChild = useCallback(
     (parentId: string) => {
-      const parentPosition = nodePositions?.[parentId] ?? { x: 0, y: 0 };
+      const parentPosition = nodePositionsRef.current?.[parentId] ?? { x: 0, y: 0 };
       onCreateNode("card", { x: parentPosition.x + 50, y: parentPosition.y + 80 }, parentId);
     },
-    [nodePositions, onCreateNode]
+    [onCreateNode]
   );
 
   const [nodes, setNodes] = useState<Node[]>(() =>
@@ -227,7 +233,7 @@ export function GraphCanvas({
       onSelectNode,
       quickEditingNodeId,
       onQuickEditSubmit,
-      [],
+      new Map(),
       nodePositions,
       nodeSizes,
       "",
@@ -236,7 +242,7 @@ export function GraphCanvas({
       "all",
       false,
       false,
-      (event, nodeId) => handleNodeMouseDownRef.current?.(event, nodeId),
+      dispatchNodeMouseDown,
       null,
       handleQuickAddChild,
       handleGroupNodeResize,
@@ -263,14 +269,16 @@ export function GraphCanvas({
   }, [graph.edges, selectedEdgeId]);
 
   useEffect(() => {
-    setNodes((previousNodes) =>
-      createGraphNodes(
+    setNodes((previousNodes) => {
+      const previousNodesById = new Map(previousNodes.map((node) => [node.id, node]));
+
+      return createGraphNodes(
         graph.nodes,
         selectedNodeIds,
         onSelectNodeRef.current,
         quickEditingNodeId,
         onQuickEditSubmit,
-        previousNodes,
+        previousNodesById,
         nodePositions,
         nodeSizes,
         searchQuery,
@@ -279,15 +287,16 @@ export function GraphCanvas({
         nodeFilter,
         Boolean(selectedEdgeId),
         Boolean(pendingCitation),
-        (event, nodeId) => handleNodeMouseDownRef.current?.(event, nodeId),
+        dispatchNodeMouseDown,
         matchingNodeIds ?? null,
         handleQuickAddChild,
         handleGroupNodeResize,
         handleGroupNodeResizeEnd
-      )
-    );
+      );
+    });
   }, [
     connectedNodeIds,
+    dispatchNodeMouseDown,
     graph.nodes,
     images,
     nodeFilter,

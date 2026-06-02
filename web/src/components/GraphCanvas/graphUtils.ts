@@ -29,6 +29,7 @@ type GraphFlowNode = Node<GraphFlowNodeData>;
 
 const SHOULD_USE_TEST_NODE_SIZE_FALLBACK =
   typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent);
+const EMPTY_PREVIOUS_NODES_BY_ID: ReadonlyMap<string, Node> = new Map();
 
 export function createGraphNodes(
   graphNodes: GraphNode[],
@@ -40,7 +41,7 @@ export function createGraphNodes(
     title: string,
     options?: { focusInspectorContent?: boolean }
   ) => void,
-  previousNodes: Node[] = [],
+  previousNodesById: ReadonlyMap<string, Node> = EMPTY_PREVIOUS_NODES_BY_ID,
   savedNodePositions: Record<string, { x: number; y: number }> = {},
   savedNodeSizes: Record<string, { width: number; height: number }> = {},
   searchQuery = "",
@@ -71,7 +72,7 @@ export function createGraphNodes(
   });
 
   return sortedGraphNodes.map((node, index) => {
-    const previousNode = previousNodes.find(({ id }) => id === node.id);
+    const previousNode = previousNodesById.get(node.id);
     const position =
       savedNodePositions[node.id] ??
       previousNode?.position ??
@@ -93,6 +94,7 @@ export function createGraphNodes(
 
     const isMatch = !matchingNodeIds || matchingNodeIds.has(node.id);
     const isConnected = connectedNodeIds.has(node.id);
+    const nodeSearchQuery = searchQuery && isMatch ? searchQuery : undefined;
     const filterOpacity = isVisibleByFilter ? 1 : 0.14;
     const searchOpacity = isMatch ? 1 : 0.3;
     const edgeSelectionOpacity = selectedEdgeActive ? (isConnected ? 1 : 0.14) : 1;
@@ -119,22 +121,38 @@ export function createGraphNodes(
       .filter(Boolean)
       .join(" ");
 
-    const nextNode = {
+    const nextStyle = {
+      opacity: nodeOpacity,
+      ...(size
+        ? {
+            width: size.width,
+            height: size.height,
+          }
+        : {}),
+    } as CSSProperties;
+    const nextData: GraphFlowNodeData = {
+      isSelected,
+      isCitationSelectionActive: citationSelectionActive,
+      isQuickEditing: quickEditingNodeId === node.id,
+      node,
+      onReferenceSelect: onSelectNode,
+      onQuickEditSubmit,
+      imageBlob: node.imagePath ? images.get(node.imagePath) : undefined,
+      onNodeMouseDown,
+      searchQuery: nodeSearchQuery,
+      childCount: childCounts.get(node.id) ?? 0,
+      onQuickAddChild,
+      onNodeResize,
+      onNodeResizeEnd,
+    };
+    const nextNode: GraphFlowNode = {
       id: node.id,
       parentId: node.parentId,
       type: rfNodeType,
       selected: isSelected,
       selectable: !isReferenceDisabled,
       draggable: !node.locked,
-      style: {
-        opacity: nodeOpacity,
-        ...(size
-          ? {
-              width: size.width,
-              height: size.height,
-            }
-          : {}),
-      } as CSSProperties,
+      style: nextStyle,
       ...(size
         ? {
             initialWidth: size.width,
@@ -142,56 +160,54 @@ export function createGraphNodes(
           }
         : {}),
       position,
-      data: {
-        isSelected,
-        isCitationSelectionActive: citationSelectionActive,
-        isQuickEditing: quickEditingNodeId === node.id,
-        node,
-        onReferenceSelect: onSelectNode,
-        onQuickEditSubmit,
-        imageBlob: node.imagePath ? images.get(node.imagePath) : undefined,
-        onNodeMouseDown,
-        searchQuery: searchQuery || undefined,
-        childCount: childCounts.get(node.id) ?? 0,
-        onQuickAddChild,
-        onNodeResize,
-        onNodeResizeEnd,
-      },
+      data: nextData,
       className: classNames,
     };
 
     if (previousNode) {
       const previousData = previousNode.data as Partial<GraphFlowNodeData>;
       const styleChanged =
-        previousNode.style?.opacity !== nextNode.style.opacity ||
-        previousNode.style?.width !== nextNode.style.width ||
-        previousNode.style?.height !== nextNode.style.height;
+        previousNode.style?.opacity !== nextStyle.opacity ||
+        previousNode.style?.width !== nextStyle.width ||
+        previousNode.style?.height !== nextStyle.height;
       const positionChanged =
-        previousNode.position?.x !== nextNode.position.x ||
-        previousNode.position?.y !== nextNode.position.y;
+        previousNode.position?.x !== position.x || previousNode.position?.y !== position.y;
       const dataChanged =
-        previousData.isSelected !== nextNode.data.isSelected ||
-        previousData.isCitationSelectionActive !== nextNode.data.isCitationSelectionActive ||
-        previousData.isQuickEditing !== nextNode.data.isQuickEditing ||
-        previousData.node !== nextNode.data.node ||
-        previousData.imageBlob !== nextNode.data.imageBlob ||
-        previousData.onReferenceSelect !== nextNode.data.onReferenceSelect ||
-        previousData.onQuickEditSubmit !== nextNode.data.onQuickEditSubmit ||
-        previousData.onNodeMouseDown !== nextNode.data.onNodeMouseDown ||
-        previousData.searchQuery !== nextNode.data.searchQuery ||
-        previousData.childCount !== nextNode.data.childCount ||
-        previousData.onQuickAddChild !== nextNode.data.onQuickAddChild ||
-        previousData.onNodeResize !== nextNode.data.onNodeResize ||
-        previousData.onNodeResizeEnd !== nextNode.data.onNodeResizeEnd;
+        previousData.isSelected !== nextData.isSelected ||
+        previousData.isCitationSelectionActive !== nextData.isCitationSelectionActive ||
+        previousData.isQuickEditing !== nextData.isQuickEditing ||
+        previousData.node !== nextData.node ||
+        previousData.imageBlob !== nextData.imageBlob ||
+        previousData.onReferenceSelect !== nextData.onReferenceSelect ||
+        previousData.onQuickEditSubmit !== nextData.onQuickEditSubmit ||
+        previousData.onNodeMouseDown !== nextData.onNodeMouseDown ||
+        previousData.searchQuery !== nextData.searchQuery ||
+        previousData.childCount !== nextData.childCount ||
+        previousData.onQuickAddChild !== nextData.onQuickAddChild ||
+        previousData.onNodeResize !== nextData.onNodeResize ||
+        previousData.onNodeResizeEnd !== nextData.onNodeResizeEnd;
       const otherChanged =
+        previousNode.parentId !== nextNode.parentId ||
         previousNode.selected !== nextNode.selected ||
         previousNode.selectable !== nextNode.selectable ||
         previousNode.draggable !== nextNode.draggable ||
         previousNode.className !== nextNode.className ||
-        previousNode.type !== nextNode.type;
+        previousNode.type !== nextNode.type ||
+        previousNode.initialWidth !== nextNode.initialWidth ||
+        previousNode.initialHeight !== nextNode.initialHeight;
 
       if (!styleChanged && !positionChanged && !dataChanged && !otherChanged) {
         return previousNode;
+      }
+
+      if (!styleChanged) {
+        nextNode.style = previousNode.style;
+      }
+      if (!positionChanged) {
+        nextNode.position = previousNode.position;
+      }
+      if (!dataChanged) {
+        nextNode.data = previousNode.data as GraphFlowNodeData;
       }
     }
 

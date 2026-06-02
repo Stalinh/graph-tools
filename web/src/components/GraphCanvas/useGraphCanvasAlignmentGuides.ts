@@ -14,7 +14,12 @@ export function useGraphCanvasAlignmentGuides({
   onNodeResizeEnd,
 }: UseGraphCanvasAlignmentGuidesOptions) {
   const alignmentGuideFrameRef = useRef<number | null>(null);
+  const graphNodeTypeByIdRef = useRef(graphNodeTypeById);
+  const onNodeResizeEndRef = useRef(onNodeResizeEnd);
   const [alignmentGuides, setAlignmentGuides] = useState<AlignmentGuide[]>([]);
+
+  graphNodeTypeByIdRef.current = graphNodeTypeById;
+  onNodeResizeEndRef.current = onNodeResizeEnd;
 
   const clearAlignmentGuides = useCallback(() => {
     if (alignmentGuideFrameRef.current !== null) {
@@ -32,9 +37,9 @@ export function useGraphCanvasAlignmentGuides({
         return;
       }
 
-      setAlignmentGuides(createAlignmentGuides(container, nodeIds, graphNodeTypeById));
+      setAlignmentGuides(createAlignmentGuides(container, nodeIds, graphNodeTypeByIdRef.current));
     },
-    [containerRef, graphNodeTypeById]
+    [containerRef]
   );
 
   const handleGroupNodeResize = useCallback(
@@ -54,9 +59,9 @@ export function useGraphCanvasAlignmentGuides({
   const handleGroupNodeResizeEnd = useCallback(
     (nodeId: string, size: NodeSize) => {
       clearAlignmentGuides();
-      onNodeResizeEnd?.(nodeId, size);
+      onNodeResizeEndRef.current?.(nodeId, size);
     },
-    [clearAlignmentGuides, onNodeResizeEnd]
+    [clearAlignmentGuides]
   );
 
   useEffect(() => {
