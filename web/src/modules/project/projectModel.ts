@@ -1,4 +1,8 @@
-import { PROJECT_COLUMNS, PROJECT_DEFAULT_SUB_LINE_TASK_NAMES } from './projectConfig';
+import {
+  PROJECT_COLUMNS,
+  PROJECT_DEFAULT_SUB_LINE_TASK_NAMES,
+  getSubLineWorkloadRatio,
+} from './projectConfig';
 import type {
   ProjectLine,
   ProjectRecord,
@@ -60,12 +64,27 @@ export function createProjectLine(values: Partial<Omit<ProjectLine, 'id'>> = {})
   };
 }
 
+export function calculateProjectProgressFromSubLines(subLines: readonly ProjectSubLine[]): string {
+  let progress = 0;
+  for (const subLine of subLines) {
+    if (normalizeProjectSubLineStatus(subLine.status) === '已提资/已完成') {
+      const ratio = getSubLineWorkloadRatio(subLine.taskName);
+      if (ratio !== null) {
+        progress += ratio;
+      }
+    }
+  }
+  return normalizeProjectProgress(progress);
+}
+
 export function createProjectRecord(
   values: Partial<Omit<ProjectLine, 'id'>> & { subLines?: ProjectSubLine[] } = {}
 ): ProjectRecord {
+  const subLines = orderProjectSubLines(values.subLines ?? []);
+  const progress = calculateProjectProgressFromSubLines(subLines);
   return {
-    ...createProjectLine(values),
-    subLines: orderProjectSubLines(values.subLines ?? []),
+    ...createProjectLine({ ...values, progress }),
+    subLines,
   };
 }
 
@@ -289,21 +308,25 @@ export function sanitizeProjectRecord(record: unknown): ProjectRecord | null {
     return null;
   }
 
+  const subLines = Array.isArray(record.subLines) ? record.subLines : [];
+  const orderedSubLines = orderProjectSubLines(
+    subLines.flatMap((subLine) => {
+      const sanitizedSubLine = sanitizeProjectSubLine(subLine);
+      return sanitizedSubLine ? [sanitizedSubLine] : [];
+    })
+  );
+
   const sanitizedRecord = sanitizeProjectLine(record);
   if (!sanitizedRecord) {
     return null;
   }
 
-  const subLines = Array.isArray(record.subLines) ? record.subLines : [];
+  const progress = calculateProjectProgressFromSubLines(orderedSubLines);
 
   return {
     ...sanitizedRecord,
-    subLines: orderProjectSubLines(
-      subLines.flatMap((subLine) => {
-        const sanitizedSubLine = sanitizeProjectSubLine(subLine);
-        return sanitizedSubLine ? [sanitizedSubLine] : [];
-      })
-    ),
+    progress,
+    subLines: orderedSubLines,
   };
 }
 
@@ -393,11 +416,13 @@ export function ensureProjectDefaultSubLines(record: ProjectRecord): ProjectDefa
     (taskName) => !knownTaskNames.has(taskName)
   ).map((taskName) => createProjectSubLine({ taskName }));
   const nextSubLines = orderProjectSubLines([...record.subLines, ...missingSubLines]);
+  const progress = calculateProjectProgressFromSubLines(nextSubLines);
 
   return {
     records: [
       {
         ...record,
+        progress,
         subLines: nextSubLines,
       },
     ],
