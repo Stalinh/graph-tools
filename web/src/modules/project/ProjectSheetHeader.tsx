@@ -119,7 +119,6 @@ export function ProjectSheetHeader({
         <button
           className="project-sheet-page__add-button"
           type="button"
-          disabled={!isEditMode}
           onClick={onAddProjectRecord}
         >
           <Plus size={16} />

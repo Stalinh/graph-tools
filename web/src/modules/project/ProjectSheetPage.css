@@ -1,10 +1,10 @@
 @charset "UTF-8";
 
 .project-sheet-page {
-  --project-subline-bg: color-mix(in srgb, var(--color-surface) 86%, #a5adb5 14%);
+  --project-subline-bg: var(--color-surface-muted);
   --project-subline-bg-hover: color-mix(in srgb, var(--project-subline-bg) 84%, var(--color-primary-bg) 16%);
-  --project-subline-group-border: color-mix(in srgb, var(--color-heading) 82%, transparent);
-  --project-subline-marker: var(--project-subline-group-border);
+  --project-subline-group-border: var(--color-border-strong);
+  --project-subline-marker: var(--color-border);
   --project-subline-row-separator: color-mix(in srgb, var(--color-surface) 72%, var(--project-subline-bg) 28%);
 
   display: grid;
@@ -125,7 +125,7 @@
 
 .project-sheet table {
   width: 100%;
-  min-width: 1668px;
+  min-width: 1205px;
   border-collapse: separate;
   border-spacing: 0;
   color: var(--color-text);
@@ -182,6 +182,19 @@
 .project-sheet tbody tr:hover th,
 .project-sheet tbody tr:hover td {
   background: color-mix(in srgb, var(--color-primary-bg) 42%, var(--color-surface) 58%);
+}
+
+/* Main rows styling */
+.project-sheet .project-sheet__main-row th,
+.project-sheet .project-sheet__main-row td {
+  font-weight: 700;
+  background: var(--color-surface-raised);
+  color: var(--color-heading);
+}
+
+.project-sheet tbody tr.project-sheet__main-row:hover th,
+.project-sheet tbody tr.project-sheet__main-row:hover td {
+  background: var(--color-surface-selected);
 }
 
 .project-sheet__index-col {
@@ -274,10 +287,20 @@
   text-overflow: ellipsis;
 }
 
+.project-sheet__tree-index-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 22px;
+  padding: 0 4px;
+  font-weight: inherit;
+}
+
 .project-sheet__sub-row .project-sheet__tree-index {
   padding: 0 4px;
   border-radius: 4px;
   background: var(--project-subline-bg);
+  color: var(--color-muted);
+  font-weight: 500;
 }
 
 .project-sheet__sub-row th,
@@ -285,6 +308,7 @@
   height: 28px;
   background: var(--project-subline-bg);
   border-bottom-color: var(--project-subline-row-separator);
+  color: var(--color-muted);
 }
 
 .project-sheet__sub-row th {
@@ -336,18 +360,18 @@
   z-index: 1;
   display: block;
   overflow: hidden;
-  color: var(--color-heading);
+  color: var(--color-muted-strong);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 500;
   text-overflow: ellipsis;
 }
 
 .project-subline__detail-design {
   display: block;
   overflow: hidden;
-  color: var(--color-muted-strong);
+  color: var(--color-muted);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 400;
   text-overflow: ellipsis;
 }
 
@@ -541,6 +565,11 @@
     background-color 140ms ease,
     border-color 140ms ease,
     box-shadow 140ms ease;
+}
+
+.project-sheet__sub-row .project-sheet__inline-input {
+  font-weight: 500;
+  color: var(--color-muted-strong);
 }
 
 .project-sheet__inline-input:hover {

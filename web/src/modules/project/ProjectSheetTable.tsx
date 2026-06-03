@@ -16,7 +16,7 @@ import type {
   ProjectSubLineStatus,
 } from "./projectTypes";
 
-const PROJECT_SUB_LINE_TRAILING_COL_SPAN = PROJECT_COLUMNS.length - 5;
+const PROJECT_SUB_LINE_TRAILING_COL_SPAN = PROJECT_COLUMNS.length - 6;
 
 interface ProjectSheetTableProps {
   expandedProjectIds: Set<string>;
@@ -224,7 +224,7 @@ export function ProjectSheetTable({
 
             return (
               <Fragment key={record.id}>
-                <tr>
+                <tr className="project-sheet__main-row">
                   <th
                     className={`project-sheet__tree-header ${
                       hasSubLines ? "project-sheet__tree-header--toggleable" : ""
@@ -263,9 +263,13 @@ export function ProjectSheetTable({
                         ) : (
                           <span className="project-sheet__tree-spacer" aria-hidden="true" />
                         )}
-                        <span className="project-sheet__tree-index" title={record.lineNo}>
-                          {record.lineNo}
-                        </span>
+                        <input
+                          className="project-sheet__inline-input project-sheet__tree-index-input"
+                          aria-label={isZh ? "编号" : "No."}
+                          value={record.lineNo}
+                          onBlur={() => onCommitProjectField(record.id, "lineNo")}
+                          onChange={(event) => onUpdateProjectField(record.id, "lineNo", event.target.value)}
+                        />
                       </div>
                     ) : hasSubLines ? (
                       <button
@@ -382,6 +386,7 @@ export function ProjectSheetTable({
                             </span>
                           )}
                         </td>
+                        <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
                         {renderSubLineWorkloadRatioCell(subLine.taskName, isZh)}
                         <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
                         <td className="project-sheet__subline-detail-design-cell">

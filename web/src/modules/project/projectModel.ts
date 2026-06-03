@@ -164,6 +164,65 @@ export function normalizeProjectLineNo(lineNo: unknown) {
   return typeof lineNo === "string" ? lineNo.trim() : "";
 }
 
+export function compareProjectLineNos(a: string, b: string): number {
+  const aClean = a.trim();
+  const bClean = b.trim();
+
+  // Put empty line numbers at the end
+  if (!aClean && !bClean) return 0;
+  if (!aClean) return 1;
+  if (!bClean) return -1;
+
+  // Extract Year (first 4 characters)
+  const yearStrA = aClean.slice(0, 4);
+  const yearStrB = bClean.slice(0, 4);
+  const yearA = parseInt(yearStrA, 10);
+  const yearB = parseInt(yearStrB, 10);
+
+  const isYearANum = !isNaN(yearA);
+  const isYearBNum = !isNaN(yearB);
+
+  if (isYearANum && isYearBNum) {
+    if (yearA !== yearB) {
+      return yearA - yearB;
+    }
+  } else if (isYearANum) {
+    return -1;
+  } else if (isYearBNum) {
+    return 1;
+  } else {
+    const yearComp = yearStrA.localeCompare(yearStrB);
+    if (yearComp !== 0) return yearComp;
+  }
+
+  // Extract Code (remaining characters)
+  const codeStrA = aClean.slice(4);
+  const codeStrB = bClean.slice(4);
+  const codeA = parseInt(codeStrA, 10);
+  const codeB = parseInt(codeStrB, 10);
+
+  const isCodeANum = !isNaN(codeA);
+  const isCodeBNum = !isNaN(codeB);
+
+  if (isCodeANum && isCodeBNum) {
+    if (codeA !== codeB) {
+      return codeA - codeB;
+    }
+  } else if (isCodeANum) {
+    return -1;
+  } else if (isCodeBNum) {
+    return 1;
+  } else {
+    return codeStrA.localeCompare(codeStrB);
+  }
+
+  return 0;
+}
+
+export function sortProjectRecords(records: ProjectRecord[]): ProjectRecord[] {
+  return [...records].sort((a, b) => compareProjectLineNos(a.lineNo, b.lineNo));
+}
+
 export function normalizeProjectProgress(progress: unknown) {
   const numericProgress =
     typeof progress === "string" || typeof progress === "number"

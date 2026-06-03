@@ -5,17 +5,17 @@ export const PROJECT_COLUMNS: ProjectColumn[] = [
   {
     field: "contractAmount",
     labelZh: "合同额",
-    labelEn: "Contract Amount",
-    width: "150px",
+    labelEn: "Amount",
+    width: "80px",
     inputMode: "decimal",
   },
-  { field: "progress", labelZh: "进度", labelEn: "Progress", width: "170px", inputMode: "decimal" },
+  { field: "projectLevel", labelZh: "项目等级", labelEn: "Level", width: "65px" },
+  { field: "progress", labelZh: "进度", labelEn: "Progress", width: "136px", inputMode: "decimal" },
   { field: "contractNo", labelZh: "合同号", labelEn: "Contract No.", width: "150px" },
-  { field: "detailDesign", labelZh: "细化设计", labelEn: "Detail Design", width: "160px" },
-  { field: "projectNo", labelZh: "项目号", labelEn: "Project No.", width: "140px" },
-  { field: "projectLevel", labelZh: "项目等级", labelEn: "Project Level", width: "130px" },
-  { field: "schemeDesign", labelZh: "方案设计", labelEn: "Scheme Design", width: "160px" },
-  { field: "projectManager", labelZh: "项目经理", labelEn: "Project Manager", width: "140px" },
+  { field: "detailDesign", labelZh: "细化设计", labelEn: "Detail Design", width: "72px" },
+  { field: "projectNo", labelZh: "项目号", labelEn: "Project No.", width: "90px" },
+  { field: "schemeDesign", labelZh: "方案设计", labelEn: "Scheme Design", width: "72px" },
+  { field: "projectManager", labelZh: "项目经理", labelEn: "Project Manager", width: "72px" },
 ];
 
 export const PROJECT_LEVEL_OPTIONS = ["V", "K", "R", "N"];

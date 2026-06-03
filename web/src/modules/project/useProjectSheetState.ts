@@ -10,6 +10,7 @@ import {
   normalizeProjectSubLineTaskName,
   normalizeProjectSubLineStatus,
   sanitizeProjectRecords,
+  sortProjectRecords,
 } from "./projectModel";
 import {
   clearProjectDraftRecords,
@@ -69,7 +70,9 @@ export function useProjectSheetState({
   const [initialDraftState] = useState(loadProjectDraftState);
   const skipInitialDraftSaveRef = useRef(initialDraftState.hasInvalidDraftData);
   const handledDroppedProjectFileIdRef = useRef<number | null>(null);
-  const [records, setRecords] = useState<ProjectRecord[]>(initialDraftState.records);
+  const [records, setRecords] = useState<ProjectRecord[]>(() =>
+    sortProjectRecords(initialDraftState.records)
+  );
   const [isEditMode, setIsEditMode] = useState(false);
   const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(() => new Set());
   const [currentFileName, setCurrentFileName] = useState<string | null>(
@@ -133,7 +136,7 @@ export function useProjectSheetState({
     );
 
   const replaceRecords = (nextRecords: ProjectRecord[], shouldMarkDirty: boolean) => {
-    setRecords(sanitizeProjectRecords(nextRecords));
+    setRecords(sortProjectRecords(sanitizeProjectRecords(nextRecords)));
     setDirty(shouldMarkDirty);
   };
 
@@ -335,7 +338,9 @@ export function useProjectSheetState({
   const enterEditMode = () => setIsEditMode(true);
 
   const enterReadMode = () => {
-    setRecords((currentRecords) => normalizeRecordsForPersistence(currentRecords));
+    setRecords((currentRecords) =>
+      sortProjectRecords(normalizeRecordsForPersistence(currentRecords))
+    );
     setIsEditMode(false);
   };
 
@@ -353,23 +358,29 @@ export function useProjectSheetState({
   };
 
   const addProjectRecord = () => {
-    if (!isEditMode) {
-      return;
-    }
-
     const projectName = getUniqueProjectName(isZh ? "新项目" : "New Project", "");
     const nextRecord = createProjectRecord({
       projectName,
       subLines: createDefaultProjectSubLines(),
     });
 
-    setRecords((currentRecords) => [...currentRecords, nextRecord]);
+    setRecords((currentRecords) => sortProjectRecords([...currentRecords, nextRecord]));
     setExpandedProjectIds((currentIds) => new Set(currentIds).add(nextRecord.id));
     setDirty(true);
   };
 
   const removeRecord = (recordId: string) => {
-    setRecords((currentRecords) => currentRecords.filter((record) => record.id !== recordId));
+    const record = records.find((r) => r.id === recordId);
+    const projectName = record?.projectName || (isZh ? "未命名项目" : "Untitled Project");
+    const confirmMessage = isZh
+      ? `确定要删除项目 "${projectName}" 吗？`
+      : `Are you sure you want to delete the project "${projectName}"?`;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    setRecords((currentRecords) => currentRecords.filter((r) => r.id !== recordId));
     setExpandedProjectIds((currentIds) => {
       const nextIds = new Set(currentIds);
       nextIds.delete(recordId);
@@ -393,8 +404,8 @@ export function useProjectSheetState({
   };
 
   const commitProjectField = (recordId: string, field: ProjectRecordField) => {
-    setRecords((currentRecords) =>
-      currentRecords.map((record) => {
+    setRecords((currentRecords) => {
+      const nextRecords = currentRecords.map((record) => {
         if (record.id !== recordId) {
           return record;
         }
@@ -415,8 +426,13 @@ export function useProjectSheetState({
         }
 
         return record;
-      })
-    );
+      });
+
+      if (field === "lineNo") {
+        return sortProjectRecords(nextRecords);
+      }
+      return nextRecords;
+    });
   };
 
   const updateSubLineField = (
