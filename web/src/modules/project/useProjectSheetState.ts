@@ -11,6 +11,7 @@ import {
   normalizeProjectSubLineStatus,
   sanitizeProjectRecords,
   sortProjectRecords,
+  calculateProjectProgressFromSubLines,
 } from './projectModel';
 import {
   clearProjectDraftRecords,
@@ -96,16 +97,41 @@ export function useProjectSheetState({
     [records]
   );
 
+  const latestRecordsRef = useRef(records);
+  const pendingSaveRef = useRef(false);
+
+  useEffect(() => {
+    latestRecordsRef.current = records;
+  }, [records]);
+
   useEffect(() => {
     if (skipInitialDraftSaveRef.current) {
       skipInitialDraftSaveRef.current = false;
       return;
     }
 
-    if (dirty) {
-      saveProjectDraftRecords(records);
+    if (!dirty) {
+      return;
     }
+
+    pendingSaveRef.current = true;
+    const handler = setTimeout(() => {
+      saveProjectDraftRecords(latestRecordsRef.current);
+      pendingSaveRef.current = false;
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
   }, [dirty, records]);
+
+  useEffect(() => {
+    return () => {
+      if (pendingSaveRef.current) {
+        saveProjectDraftRecords(latestRecordsRef.current);
+      }
+    };
+  }, []);
 
   const getOpenErrorMessage = (error: unknown) => {
     const message = error instanceof Error ? error.message : '';
@@ -440,21 +466,26 @@ export function useProjectSheetState({
     value: string
   ) => {
     setRecords((currentRecords) =>
-      currentRecords.map((record) =>
-        record.id === parentId
-          ? {
-              ...record,
-              subLines: record.subLines.map((subLine) =>
-                subLine.id === subLineId
-                  ? {
-                      ...subLine,
-                      [field]: value,
-                    }
-                  : subLine
-              ),
-            }
-          : record
-      )
+      currentRecords.map((record) => {
+        if (record.id !== parentId) {
+          return record;
+        }
+
+        const nextSubLines = record.subLines.map((subLine) =>
+          subLine.id === subLineId
+            ? {
+                ...subLine,
+                [field]: value,
+              }
+            : subLine
+        );
+
+        return {
+          ...record,
+          subLines: nextSubLines,
+          progress: calculateProjectProgressFromSubLines(nextSubLines),
+        };
+      })
     );
     setDirty(true);
   };
