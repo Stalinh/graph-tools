@@ -37,8 +37,5 @@
     "*.{js,json,css,md}": [
       "prettier --write"
     ]
-  },
-  "dependencies": {
-    "gsap": "^3.15.0"
   }
 }
