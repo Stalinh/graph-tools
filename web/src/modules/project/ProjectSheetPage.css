@@ -384,12 +384,12 @@
 }
 
 .project-sheet .project-sheet__subline-status-cell {
-  text-align: center;
+  text-align: left;
 }
 
 .project-sheet .project-sheet__subline-status-cell .project-sheet__custom-select {
   width: min(124px, 100%);
-  margin: 0 auto;
+  margin: 0;
 }
 
 .project-subline__status {
