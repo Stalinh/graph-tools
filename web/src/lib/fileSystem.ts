@@ -172,19 +172,29 @@ export class WorkspaceFileManager {
     return pkg;
   }
 
-  async saveWorkspaceFile(pkg: WorkspacePackage): Promise<boolean> {
+  async saveWorkspaceFile(pkg: WorkspacePackage): Promise<SaveResult> {
     if (!this.currentFileHandle) {
-      return false;
+      return { success: false, error: 'No active workspace file.' };
     }
 
     try {
       if (!isCanonicalWorkspaceFileName(this.currentFileHandle.name)) {
-        return false;
+        return { success: false, error: 'Invalid workspace file name.' };
       }
       await this.writeGraph(this.currentFileHandle, pkg);
-      return true;
-    } catch {
-      return false;
+      return { success: true };
+    } catch (error) {
+      const message =
+        error instanceof DOMException && error.name === 'AbortError'
+          ? 'cancelled'
+          : error instanceof Error
+            ? error.message
+            : '未知错误';
+      return {
+        success: false,
+        error: message,
+        errorDetail: error instanceof Error ? error : undefined,
+      };
     }
   }
 

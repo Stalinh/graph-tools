@@ -4,7 +4,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import type { WorkspacePackage, WorkspaceFileManager } from '../lib/fileSystem';
+import type { WorkspacePackage, WorkspaceFileManager, SaveResult } from '../lib/fileSystem';
 import type { WorkspaceState } from '../types';
 import { useFileOperations } from './useFileOperations';
 
@@ -32,7 +32,7 @@ function createFileManagerMock(initialFileName: string | null = null) {
     }),
     openWorkspaceFile: vi.fn<() => Promise<WorkspacePackage | null>>(),
     openDroppedWorkspaceFile: vi.fn<(file: File) => Promise<WorkspacePackage>>(),
-    saveWorkspaceFile: vi.fn<(pkg: WorkspacePackage) => Promise<boolean>>(),
+    saveWorkspaceFile: vi.fn<(pkg: WorkspacePackage) => Promise<SaveResult>>(),
     saveWorkspaceFileAs: vi.fn<(pkg: WorkspacePackage) => Promise<string | null>>(async () => {
       currentFileName = 'saved.graph';
       return currentFileName;
@@ -202,5 +202,59 @@ describe('useFileOperations', () => {
     expect(fileManager.saveWorkspaceFileAs).not.toHaveBeenCalled();
     expect(result.current.files.fileStatus).toBe('保存失败：工作区中有图片资源缺失。');
     expect(result.current.errorMessage).toBe('保存失败：工作区中有图片资源缺失。');
+  });
+
+  it('saves workspace file successfully', async () => {
+    const fileManager = createFileManagerMock('opened.graph');
+    fileManager.saveWorkspaceFile.mockResolvedValue({ success: true });
+    const { result } = renderHook(() => useFileOperationsHarness({ fileManager }));
+
+    let saved = false;
+    await act(async () => {
+      saved = await result.current.files.handleSave();
+    });
+
+    expect(saved).toBe(true);
+    expect(fileManager.saveWorkspaceFile).toHaveBeenCalled();
+    expect(result.current.files.fileStatus).toBe('已保存。');
+    expect(result.current.errorMessage).toBeNull();
+  });
+
+  it('shows error description on save failure', async () => {
+    const fileManager = createFileManagerMock('opened.graph');
+    fileManager.saveWorkspaceFile.mockResolvedValue({
+      success: false,
+      error: '磁盘已满',
+    });
+    const { result } = renderHook(() => useFileOperationsHarness({ fileManager }));
+
+    let saved = true;
+    await act(async () => {
+      saved = await result.current.files.handleSave();
+    });
+
+    expect(saved).toBe(false);
+    expect(fileManager.saveWorkspaceFile).toHaveBeenCalled();
+    expect(result.current.files.fileStatus).toBe('保存失败：磁盘已满');
+    expect(result.current.errorMessage).toBe('保存失败：磁盘已满');
+  });
+
+  it('does not show error on save cancellation', async () => {
+    const fileManager = createFileManagerMock('opened.graph');
+    fileManager.saveWorkspaceFile.mockResolvedValue({
+      success: false,
+      error: 'cancelled',
+    });
+    const { result } = renderHook(() => useFileOperationsHarness({ fileManager }));
+
+    let saved = true;
+    await act(async () => {
+      saved = await result.current.files.handleSave();
+    });
+
+    expect(saved).toBe(false);
+    expect(fileManager.saveWorkspaceFile).toHaveBeenCalled();
+    expect(result.current.files.fileStatus).toBeNull();
+    expect(result.current.errorMessage).toBeNull();
   });
 });

@@ -253,15 +253,23 @@ export function useFileOperations({
           return false;
         }
 
-        const ok = await fileManager.saveWorkspaceFile(pkg);
+        const result = await fileManager.saveWorkspaceFile(pkg);
 
-        if (ok) {
+        if (result.success) {
           setFileStatus(locale === 'zh-CN' ? '已保存。' : 'Saved.');
           setErrorMessage(null);
           setDirty(false);
           return true;
         } else {
-          return await handleSaveAs();
+          if (result.error === 'cancelled') {
+            setFileStatus(null);
+            return false;
+          }
+          const isZh = locale === 'zh-CN';
+          const message = isZh ? `保存失败：${result.error}` : `Save failed: ${result.error}`;
+          setFileStatus(message);
+          setErrorMessage(message);
+          return false;
         }
       } catch (error) {
         const message = getSaveWorkspaceErrorMessage(error, locale);
