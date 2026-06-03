@@ -4,6 +4,7 @@ import { AppShell } from './components/AppShell';
 import { KnowledgeBase } from './components/KnowledgeBase';
 import { getStoredLocale, I18nProvider, type Locale } from './i18n';
 import { PROJECT_NAV_ITEM, PROJECT_PAGE_ID } from './modules/project/projectModule';
+import { getHashRoute, onHashRouteChange, setHashRoute } from './lib/hashRouter';
 
 const ProjectSheetPage = lazy(async () => {
   const { ProjectSheetPage } = await import('./modules/project');
@@ -98,9 +99,15 @@ function AppLoadingFallback({ locale }: AppLoadingFallbackProps) {
 }
 
 export function App() {
-  const [page, setPage] = useState<Page>('knowledge-base');
+  const [page, setPage] = useState<Page>(() => getHashRoute() as Page);
   const [locale, setLocale] = useState<Locale>(getStoredLocale);
   const [pendingDroppedFile, setPendingDroppedFile] = useState<PendingDroppedFile | null>(null);
+
+  useEffect(() => {
+    return onHashRouteChange((newPage) => {
+      setPage(newPage as Page);
+    });
+  }, []);
 
   useEffect(() => {
     const handleDragOver = (event: DragEvent) => {
@@ -121,7 +128,9 @@ export function App() {
 
       event.preventDefault();
       setPendingDroppedFile(droppedFile);
-      setPage(droppedFile.kind === 'project' ? PROJECT_PAGE_ID : KNOWLEDGE_BASE_PAGE_ID);
+      const targetPage = droppedFile.kind === 'project' ? PROJECT_PAGE_ID : KNOWLEDGE_BASE_PAGE_ID;
+      setHashRoute(targetPage);
+      setPage(targetPage);
     };
 
     window.addEventListener('dragover', handleDragOver);
@@ -135,7 +144,7 @@ export function App() {
 
   return (
     <I18nProvider locale={locale} setLocale={setLocale}>
-      <AppShell currentPage={page} navItems={APP_NAV_ITEMS} onNavigate={setPage}>
+      <AppShell currentPage={page} navItems={APP_NAV_ITEMS} onNavigate={setHashRoute}>
         <Suspense fallback={<AppLoadingFallback locale={locale} />}>
           <PageContent
             page={page}
