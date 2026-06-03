@@ -33,11 +33,20 @@ export function getRichEditorStats(editor: RichEditorStatsSource | null): RichEd
     }
   });
 
+  let words = 0;
+  if (text) {
+    const cjkReg = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uac00-\ud7af]/g;
+    const cjkCount = (text.match(cjkReg) || []).length;
+    const cleanText = text.replace(cjkReg, ' ');
+    const latinCount = (cleanText.match(/[a-zA-Z0-9_À-ÿ]+/g) || []).length;
+    words = cjkCount + latinCount;
+  }
+
   return {
     characters: text.length,
     checkedTasks,
     totalTasks,
-    words: text ? text.split(/\s+/).filter(Boolean).length : 0,
+    words,
   };
 }
 

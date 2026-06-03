@@ -53,6 +53,16 @@ describe('getRichEditorStats', () => {
     });
   });
 
+  it('counts words correctly for mixed English and Chinese text', () => {
+    const editor = createStatsEditor('Hello 世界!', []);
+    expect(getRichEditorStats(editor)).toEqual({
+      characters: 9,
+      checkedTasks: 0,
+      totalTasks: 0,
+      words: 3, // "Hello" (1) + "世" (1) + "界" (1)
+    });
+  });
+
   it('returns empty stats without an editor', () => {
     expect(getRichEditorStats(null)).toEqual({
       characters: 0,

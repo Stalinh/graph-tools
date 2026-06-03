@@ -57,7 +57,7 @@ describe('ProjectSheetTable workload ratio column', () => {
     expect(within(projectRow!).queryByText('11%')).toBeNull();
   });
 
-  it("renders 'error' for sublines with an unregistered task name", () => {
+  it("renders '未配置' for sublines with an unregistered task name", () => {
     const record = createProjectRecord({
       projectName: 'P3',
       subLines: [createProjectSubLine({ taskName: '未注册任务' })],
@@ -65,7 +65,7 @@ describe('ProjectSheetTable workload ratio column', () => {
     renderTable([record]);
     const subRow = screen.getByTitle('1.未注册任务').closest('tr');
     expect(subRow).toBeTruthy();
-    const cell = within(subRow!).getByText('error');
+    const cell = within(subRow!).getByText('未配置');
     expect(cell.className).toContain('project-sheet__subline-progress-cell--missing');
   });
 

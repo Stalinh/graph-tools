@@ -247,8 +247,8 @@
 }
 
 .project-sheet__tree-cell--toggle-button:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: -2px;
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--color-focus);
 }
 
 .project-sheet__tree-cell--sub {
@@ -939,33 +939,33 @@
   width: 28px !important;
   height: 28px !important;
   border-radius: 6px;
-  background: var(--color-surface) !important;
-  border: 1px solid var(--color-border) !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
   color: var(--color-muted) !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-shadow: none !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .project-sheet__copy-button:hover,
 .project-sheet__download-button:hover {
-  border-color: var(--color-primary) !important;
-  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface) 90%) !important;
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-control-bg)) !important;
   color: var(--color-primary) !important;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  transform: translateY(-1px);
+  border-color: transparent !important;
+  box-shadow: none !important;
+  transform: scale(1.08);
 }
 
 .project-sheet__copy-button:active,
 .project-sheet__download-button:active {
-  transform: translateY(0);
+  transform: scale(0.95);
 }
 
 .project-sheet__copy-button.is-copied,
 .project-sheet__download-button.is-downloaded {
-  border-color: color-mix(in srgb, var(--color-success) 40%, var(--color-border) 60%) !important;
-  background: color-mix(in srgb, var(--color-success) 12%, var(--color-surface) 88%) !important;
+  background: color-mix(in srgb, var(--color-success) 12%, var(--color-surface)) !important;
+  border-color: transparent !important;
   color: var(--color-success) !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-shadow: none !important;
   transform: none !important;
 }
 

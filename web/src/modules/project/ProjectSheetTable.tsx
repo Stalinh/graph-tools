@@ -84,12 +84,13 @@ function getSubLineStatusToneClassName(status: string) {
   return classNameByStatus[normalizeProjectSubLineStatus(status)];
 }
 
-function renderSubLineWorkloadRatioCell(taskName: string, isZh: boolean) {
+function renderSubLineWorkloadRatioCell(taskName: string, isZh: boolean, key?: string) {
   const ratio = getSubLineWorkloadRatio(taskName);
   const isMissing = ratio === null;
-  const displayValue = isMissing ? 'error' : `${ratio}%`;
+  const displayValue = isMissing ? (isZh ? '未配置' : 'Not Configured') : `${ratio}%`;
   return (
     <td
+      key={key}
       className={
         'project-sheet__subline-progress-cell' +
         (isMissing ? ' project-sheet__subline-progress-cell--missing' : '')
@@ -274,8 +275,8 @@ export function ProjectSheetTable({
       )}
       <table style={{ width: `${totalTableWidth}px`, minWidth: `${totalTableWidth}px` }}>
         <colgroup>
-          <col className="project-sheet__index-col" style={{ width: '112px' }} />
           <col className="project-sheet__copy-col" style={{ width: '80px' }} />
+          <col className="project-sheet__index-col" style={{ width: '112px' }} />
           {visibleColumns.map((column) => (
             <col key={column.field} style={{ width: column.width }} />
           ))}
@@ -283,8 +284,8 @@ export function ProjectSheetTable({
         </colgroup>
         <thead>
           <tr>
-            <th scope="col">{isZh ? '编号' : 'No.'}</th>
             <th scope="col">{isZh ? '操作' : 'Actions'}</th>
+            <th scope="col">{isZh ? '编号' : 'No.'}</th>
             {visibleColumns.map((column) => (
               <th
                 key={column.field}
@@ -321,15 +322,39 @@ export function ProjectSheetTable({
               });
             })();
 
-            const visibleTrailingCount = [
-              !hiddenColumns.has('projectNo'),
-              !hiddenColumns.has('schemeDesign'),
-              !hiddenColumns.has('projectManager'),
-            ].filter(Boolean).length;
-
             return (
               <Fragment key={record.id}>
                 <tr className="project-sheet__main-row">
+                  <td>
+                    <div className="project-sheet__row-actions" style={{ gap: '4px' }}>
+                      <button
+                        className={`project-sheet__row-action project-sheet__copy-button ${
+                          copiedRecordId === record.id ? 'is-copied' : ''
+                        }`}
+                        type="button"
+                        aria-label={isZh ? '复制项目' : 'Copy project'}
+                        title={isZh ? '复制项目' : 'Copy project'}
+                        onClick={() => handleCopy(record.id)}
+                      >
+                        {copiedRecordId === record.id ? <Check size={16} /> : <Copy size={16} />}
+                      </button>
+                      <button
+                        className={`project-sheet__row-action project-sheet__download-button ${
+                          downloadedRecordId === record.id ? 'is-downloaded' : ''
+                        }`}
+                        type="button"
+                        aria-label={isZh ? '下载项目' : 'Download project'}
+                        title={isZh ? '下载项目' : 'Download project'}
+                        onClick={() => handleDownload(record.id)}
+                      >
+                        {downloadedRecordId === record.id ? (
+                          <Check size={16} />
+                        ) : (
+                          <Download size={16} />
+                        )}
+                      </button>
+                    </div>
+                  </td>
                   <th
                     className={`project-sheet__tree-header ${
                       hasSubLines ? 'project-sheet__tree-header--toggleable' : ''
@@ -419,36 +444,6 @@ export function ProjectSheetTable({
                       </div>
                     )}
                   </th>
-                  <td>
-                    <div className="project-sheet__row-actions" style={{ gap: '4px' }}>
-                      <button
-                        className={`project-sheet__row-action project-sheet__copy-button ${
-                          copiedRecordId === record.id ? 'is-copied' : ''
-                        }`}
-                        type="button"
-                        aria-label={isZh ? '复制项目' : 'Copy project'}
-                        title={isZh ? '复制项目' : 'Copy project'}
-                        onClick={() => handleCopy(record.id)}
-                      >
-                        {copiedRecordId === record.id ? <Check size={16} /> : <Copy size={16} />}
-                      </button>
-                      <button
-                        className={`project-sheet__row-action project-sheet__download-button ${
-                          downloadedRecordId === record.id ? 'is-downloaded' : ''
-                        }`}
-                        type="button"
-                        aria-label={isZh ? '下载项目' : 'Download project'}
-                        title={isZh ? '下载项目' : 'Download project'}
-                        onClick={() => handleDownload(record.id)}
-                      >
-                        {downloadedRecordId === record.id ? (
-                          <Check size={16} />
-                        ) : (
-                          <Download size={16} />
-                        )}
-                      </button>
-                    </div>
-                  </td>
                   {visibleColumns.map((column) => (
                     <td key={column.field}>
                       {isEditMode
@@ -482,6 +477,7 @@ export function ProjectSheetTable({
                         }`}
                         key={subLine.id}
                       >
+                        <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
                         <th scope="row">
                           <div className="project-sheet__tree-cell project-sheet__tree-cell--sub">
                             <span className="project-sheet__tree-spacer" aria-hidden="true" />
@@ -490,81 +486,95 @@ export function ProjectSheetTable({
                             </span>
                           </div>
                         </th>
-                        <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
-                        {!hiddenColumns.has('projectName') && (
-                          <td className="project-sheet__subline-task-cell">
-                            <span
-                              className="project-subline__task"
-                              title={`${subLineLabels[subLineIndex]}.${subLine.taskName}`}
-                            >
-                              {`${subLineLabels[subLineIndex]}.${subLine.taskName}`}
-                            </span>
-                          </td>
-                        )}
-                        {!hiddenColumns.has('contractAmount') && (
-                          <td className="project-sheet__subline-status-cell">
-                            {isEditMode ? (
-                              <ProjectInlineSelect
-                                className="project-sheet__custom-select--status"
-                                ariaLabel={isZh ? '子行状态' : 'Subline status'}
-                                value={subLine.status}
-                                getOptionToneClassName={getSubLineStatusToneClassName}
-                                options={PROJECT_SUB_LINE_STATUS_OPTIONS.map((status) => ({
-                                  value: status,
-                                  label: status,
-                                }))}
-                                onChange={(nextValue) =>
-                                  onUpdateSubLineField(record.id, subLine.id, 'status', nextValue)
-                                }
-                              />
-                            ) : (
-                              <span className={getSubLineStatusClassName(subLine.status)}>
-                                {subLine.status}
-                              </span>
-                            )}
-                          </td>
-                        )}
-                        {!hiddenColumns.has('projectLevel') && (
-                          <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
-                        )}
-                        {!hiddenColumns.has('progress') &&
-                          renderSubLineWorkloadRatioCell(subLine.taskName, isZh)}
-                        {!hiddenColumns.has('contractNo') && (
-                          <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
-                        )}
-                        {!hiddenColumns.has('detailDesign') && (
-                          <td className="project-sheet__subline-detail-design-cell">
-                            {isEditMode ? (
-                              <input
-                                className="project-sheet__inline-input"
-                                aria-label={isZh ? '细化设计' : 'Detail design'}
-                                value={subLine.detailDesign}
-                                onChange={(event) =>
-                                  onUpdateSubLineField(
-                                    record.id,
-                                    subLine.id,
-                                    'detailDesign',
-                                    event.target.value
-                                  )
-                                }
-                              />
-                            ) : (
-                              <span
-                                className="project-subline__detail-design"
-                                title={subLine.detailDesign}
+                        {visibleColumns.map((column) => {
+                          if (column.field === 'projectName') {
+                            return (
+                              <td key={column.field} className="project-sheet__subline-task-cell">
+                                <span
+                                  className="project-subline__task"
+                                  title={`${subLineLabels[subLineIndex]}.${subLine.taskName}`}
+                                >
+                                  {`${subLineLabels[subLineIndex]}.${subLine.taskName}`}
+                                </span>
+                              </td>
+                            );
+                          }
+                          if (column.field === 'contractAmount') {
+                            return (
+                              <td key={column.field} className="project-sheet__subline-status-cell">
+                                {isEditMode ? (
+                                  <ProjectInlineSelect
+                                    className="project-sheet__custom-select--status"
+                                    ariaLabel={isZh ? '子行状态' : 'Subline status'}
+                                    value={subLine.status}
+                                    getOptionToneClassName={getSubLineStatusToneClassName}
+                                    options={PROJECT_SUB_LINE_STATUS_OPTIONS.map((status) => ({
+                                      value: status,
+                                      label: status,
+                                    }))}
+                                    onChange={(nextValue) =>
+                                      onUpdateSubLineField(
+                                        record.id,
+                                        subLine.id,
+                                        'status',
+                                        nextValue
+                                      )
+                                    }
+                                  />
+                                ) : (
+                                  <span className={getSubLineStatusClassName(subLine.status)}>
+                                    {subLine.status}
+                                  </span>
+                                )}
+                              </td>
+                            );
+                          }
+                          if (column.field === 'progress') {
+                            return renderSubLineWorkloadRatioCell(
+                              subLine.taskName,
+                              isZh,
+                              column.field
+                            );
+                          }
+                          if (column.field === 'detailDesign') {
+                            return (
+                              <td
+                                key={column.field}
+                                className="project-sheet__subline-detail-design-cell"
                               >
-                                {subLine.detailDesign}
-                              </span>
-                            )}
-                          </td>
-                        )}
-                        {visibleTrailingCount > 0 && (
-                          <td
-                            className="project-sheet__subline-empty-cell"
-                            colSpan={visibleTrailingCount}
-                            aria-hidden="true"
-                          />
-                        )}
+                                {isEditMode ? (
+                                  <input
+                                    className="project-sheet__inline-input"
+                                    aria-label={isZh ? '细化设计' : 'Detail design'}
+                                    value={subLine.detailDesign}
+                                    onChange={(event) =>
+                                      onUpdateSubLineField(
+                                        record.id,
+                                        subLine.id,
+                                        'detailDesign',
+                                        event.target.value
+                                      )
+                                    }
+                                  />
+                                ) : (
+                                  <span
+                                    className="project-subline__detail-design"
+                                    title={subLine.detailDesign}
+                                  >
+                                    {subLine.detailDesign}
+                                  </span>
+                                )}
+                              </td>
+                            );
+                          }
+                          return (
+                            <td
+                              key={column.field}
+                              className="project-sheet__subline-empty-cell"
+                              aria-hidden="true"
+                            />
+                          );
+                        })}
                         <td>
                           <div className="project-sheet__row-actions" />
                         </td>
