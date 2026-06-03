@@ -201,23 +201,7 @@ export function ProjectSheetTable({
     }
 
     if (field === 'progress') {
-      return (
-        <div className="project-sheet__inline-progress-control">
-          <input
-            className="project-sheet__inline-input"
-            inputMode="numeric"
-            min={0}
-            max={100}
-            step={1}
-            type="number"
-            aria-label={label}
-            value={value}
-            onBlur={() => onCommitProjectField(record.id, field)}
-            onChange={(event) => onUpdateProjectField(record.id, field, event.target.value)}
-          />
-          <span aria-hidden="true">%</span>
-        </div>
-      );
+      return renderProgressBar(record.progress, isZh ? '项目进度' : 'Project progress');
     }
 
     return (
