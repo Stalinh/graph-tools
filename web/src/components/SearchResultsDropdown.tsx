@@ -1,7 +1,7 @@
-import { FileText, Image } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useI18n } from "../i18n";
-import type { NodeSearchResult, SearchMatch } from "../lib/searchUtils";
+import { FileText, Image } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useI18n } from '../i18n';
+import type { NodeSearchResult, SearchMatch } from '../lib/searchUtils';
 
 interface SearchResultsDropdownProps {
   matchingResults: NodeSearchResult[];
@@ -26,8 +26,8 @@ export function SearchResultsDropdown({
 
   useEffect(() => {
     const el = listRef.current?.querySelector(`[data-result-index="${highlightIndex}"]`);
-    if (el && typeof el.scrollIntoView === "function") {
-      el.scrollIntoView({ block: "nearest" });
+    if (el && typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ block: 'nearest' });
     }
   }, [highlightIndex]);
 
@@ -42,19 +42,19 @@ export function SearchResultsDropdown({
         return;
       }
 
-      if (event.key === "ArrowDown") {
+      if (event.key === 'ArrowDown') {
         if (matchingResults.length === 0) return;
         event.preventDefault();
         setHighlightIndex((prev) => (prev < matchingResults.length - 1 ? prev + 1 : 0));
-      } else if (event.key === "ArrowUp") {
+      } else if (event.key === 'ArrowUp') {
         if (matchingResults.length === 0) return;
         event.preventDefault();
         setHighlightIndex((prev) => (prev > 0 ? prev - 1 : matchingResults.length - 1));
-      } else if (event.key === "Enter") {
+      } else if (event.key === 'Enter') {
         if (!matchingResults[highlightIndex]) return;
         event.preventDefault();
         onNavigate(matchingResults[highlightIndex].node.id);
-      } else if (event.key === "Escape") {
+      } else if (event.key === 'Escape') {
         event.preventDefault();
         onClose();
       }
@@ -63,8 +63,8 @@ export function SearchResultsDropdown({
   );
 
   useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
   if (!searchQuery.trim()) return null;
@@ -74,32 +74,32 @@ export function SearchResultsDropdown({
       <div className="search-results-dropdown__header">
         {isZh
           ? `找到 ${matchingResults.length} 个匹配结果`
-          : `${matchingResults.length} matching result${matchingResults.length === 1 ? "" : "s"}`}
+          : `${matchingResults.length} matching result${matchingResults.length === 1 ? '' : 's'}`}
       </div>
       {matchingResults.length === 0 ? (
         <div className="search-results-dropdown__empty">
-          {isZh ? "没有找到匹配的节点" : "No matching nodes found"}
+          {isZh ? '没有找到匹配的节点' : 'No matching nodes found'}
         </div>
       ) : (
         <div className="search-results-dropdown__list">
           {matchingResults.map(({ node, matches }, index) => {
-            const titleMatch = matches.find((m) => m.field === "title");
-            const contentMatch = matches.find((m) => m.field === "content");
+            const titleMatch = matches.find((m) => m.field === 'title');
+            const contentMatch = matches.find((m) => m.field === 'content');
             const previewMatch = contentMatch ?? titleMatch;
-            const preview = previewMatch?.preview ?? "";
+            const preview = previewMatch?.preview ?? '';
 
             return (
               <button
                 key={node.id}
                 type="button"
-                className={`search-result${index === highlightIndex ? " is-highlighted" : ""}`}
+                className={`search-result${index === highlightIndex ? ' is-highlighted' : ''}`}
                 data-result-index={index}
                 onClick={() => onNavigate(node.id)}
                 onFocus={() => setHighlightIndex(index)}
                 onMouseEnter={() => setHighlightIndex(index)}
               >
                 <span className="search-result__type-icon">
-                  {node.type === "image" ? <Image size={14} /> : <FileText size={14} />}
+                  {node.type === 'image' ? <Image size={14} /> : <FileText size={14} />}
                 </span>
                 <span className="search-result__body">
                   <span
@@ -123,8 +123,8 @@ export function SearchResultsDropdown({
         </div>
       )}
       <div className="search-results-dropdown__footer">
-        <kbd>↑↓</kbd> {isZh ? "导航" : "Navigate"} <kbd>Enter</kbd> {isZh ? "跳转" : "Open"}{" "}
-        <kbd>Esc</kbd> {isZh ? "关闭" : "Close"}
+        <kbd>↑↓</kbd> {isZh ? '导航' : 'Navigate'} <kbd>Enter</kbd> {isZh ? '跳转' : 'Open'}{' '}
+        <kbd>Esc</kbd> {isZh ? '关闭' : 'Close'}
       </div>
     </div>
   );
@@ -133,8 +133,8 @@ export function SearchResultsDropdown({
 function getSearchInput(dropdown: HTMLDivElement): HTMLInputElement | null {
   return (
     dropdown
-      .closest(".workspace-toolbar__search")
-      ?.querySelector<HTMLInputElement>(".workspace-toolbar__search-input") ?? null
+      .closest('.workspace-toolbar__search')
+      ?.querySelector<HTMLInputElement>('.workspace-toolbar__search-input') ?? null
   );
 }
 
@@ -153,7 +153,7 @@ function isDropdownKeyboardTarget(event: KeyboardEvent, dropdown: HTMLDivElement
 
   return Boolean(
     (targetNode && dropdown.contains(targetNode)) ||
-      (activeElement && dropdown.contains(activeElement))
+    (activeElement && dropdown.contains(activeElement))
   );
 }
 
@@ -169,7 +169,7 @@ function isSearchResultsKeyboardTarget(
 
   return Boolean(
     (searchInput && (targetNode === searchInput || activeElement === searchInput)) ||
-      isDropdownKeyboardTarget(event, dropdown)
+    isDropdownKeyboardTarget(event, dropdown)
   );
 }
 
@@ -182,13 +182,13 @@ function highlightPreviewText(text: string, match: SearchMatch | undefined): str
 }
 
 function escapeHtml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function highlightRanges(text: string, indices: [number, number][]): string {
   if (indices.length === 0) return escapeHtml(text);
 
-  let result = "";
+  let result = '';
   let cursor = 0;
 
   for (const [start, end] of indices) {

@@ -10,7 +10,7 @@ export function highlightTextNodes(root: ParentNode, query: string): void {
   }
 
   for (const textNode of textNodes) {
-    const text = textNode.textContent ?? "";
+    const text = textNode.textContent ?? '';
     const lowerText = text.toLowerCase();
     if (!lowerText.includes(lowerQuery)) continue;
 
@@ -28,8 +28,8 @@ export function highlightTextNodes(root: ParentNode, query: string): void {
         fragment.appendChild(document.createTextNode(remaining.slice(0, index)));
       }
 
-      const mark = document.createElement("mark");
-      mark.className = "search-highlight";
+      const mark = document.createElement('mark');
+      mark.className = 'search-highlight';
       mark.textContent = remaining.slice(index, index + query.length);
       fragment.appendChild(mark);
 
@@ -41,16 +41,16 @@ export function highlightTextNodes(root: ParentNode, query: string): void {
 }
 
 export function getMatchPreview(text: string, query: string, contextChars = 30): string {
-  if (!text || !query.trim()) return "";
+  if (!text || !query.trim()) return '';
   const lowerQuery = query.toLowerCase();
   const lowerText = text.toLowerCase();
   const idx = lowerText.indexOf(lowerQuery);
-  if (idx === -1) return "";
+  if (idx === -1) return '';
 
   const start = Math.max(0, idx - contextChars);
   const end = Math.min(text.length, idx + query.length + contextChars);
   let preview = text.slice(start, end);
-  if (start > 0) preview = "..." + preview;
-  if (end < text.length) preview = preview + "...";
+  if (start > 0) preview = '...' + preview;
+  if (end < text.length) preview = preview + '...';
   return preview;
 }

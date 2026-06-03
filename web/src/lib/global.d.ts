@@ -1,5 +1,5 @@
 interface FileSystemHandlePermissionDescriptor {
-  mode?: "read" | "readwrite";
+  mode?: 'read' | 'readwrite';
 }
 
 interface FileSystemCreateWritableOptions {
@@ -7,7 +7,7 @@ interface FileSystemCreateWritableOptions {
 }
 
 interface FileSystemFileHandle {
-  readonly kind: "file";
+  readonly kind: 'file';
   readonly name: string;
   getFile(): Promise<File>;
   createWritable(options?: FileSystemCreateWritableOptions): Promise<FileSystemWritableFileStream>;
@@ -23,7 +23,7 @@ interface FileSystemWritableFileStream extends WritableStream {
 }
 
 interface FileSystemHandle {
-  readonly kind: "file" | "directory";
+  readonly kind: 'file' | 'directory';
   readonly name: string;
   isSameEntry(other: FileSystemHandle): Promise<boolean>;
   queryPermission(descriptor?: FileSystemHandlePermissionDescriptor): Promise<PermissionState>;
@@ -38,12 +38,12 @@ interface OpenFilePickerOptions {
   multiple?: boolean;
   excludeAcceptAllOption?: boolean;
   startIn?:
-    | "desktop"
-    | "documents"
-    | "downloads"
-    | "music"
-    | "pictures"
-    | "videos"
+    | 'desktop'
+    | 'documents'
+    | 'downloads'
+    | 'music'
+    | 'pictures'
+    | 'videos'
     | FileSystemHandle;
 }
 
@@ -55,12 +55,12 @@ interface SaveFilePickerOptions {
   }>;
   excludeAcceptAllOption?: boolean;
   startIn?:
-    | "desktop"
-    | "documents"
-    | "downloads"
-    | "music"
-    | "pictures"
-    | "videos"
+    | 'desktop'
+    | 'documents'
+    | 'downloads'
+    | 'music'
+    | 'pictures'
+    | 'videos'
     | FileSystemHandle;
 }
 

@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import { getColorLabel, useI18n } from "../i18n";
-import { SUPPORTED_NODE_COLORS } from "../lib/nodeColors";
-import type { BacklinkItem, GraphNode } from "../types";
-import { ReferencesPanel } from "./ReferencesPanel";
+import { useEffect, useState } from 'react';
+import { getColorLabel, useI18n } from '../i18n';
+import { SUPPORTED_NODE_COLORS } from '../lib/nodeColors';
+import type { BacklinkItem, GraphNode } from '../types';
+import { ReferencesPanel } from './ReferencesPanel';
 
 interface ImageEditorProps {
   node: GraphNode;
@@ -37,21 +37,21 @@ export function ImageEditor({
   return (
     <div className="editor-panel">
       <section className="field-section">
-        <h3 className="field-label">{isZh ? "属性" : "Properties"}</h3>
+        <h3 className="field-label">{isZh ? '属性' : 'Properties'}</h3>
         <dl className="properties-list">
           <div className="property">
             <dt>ID</dt>
             <dd>{node.id}</dd>
           </div>
           <div className="property">
-            <dt>{isZh ? "类型" : "Type"}</dt>
-            <dd>{isZh ? "图片" : "Image"}</dd>
+            <dt>{isZh ? '类型' : 'Type'}</dt>
+            <dd>{isZh ? '图片' : 'Image'}</dd>
           </div>
         </dl>
       </section>
 
       <section className="field-section">
-        <h3 className="field-label">{isZh ? "标题" : "Title"}</h3>
+        <h3 className="field-label">{isZh ? '标题' : 'Title'}</h3>
         <input
           type="text"
           className="image-editor__title-input"
@@ -62,33 +62,33 @@ export function ImageEditor({
               onTitleCommit?.(draftTitle);
             }
           }}
-          placeholder={isZh ? "填写图片说明..." : "Image description..."}
+          placeholder={isZh ? '填写图片说明...' : 'Image description...'}
         />
       </section>
 
       <section className="field-section">
-        <h3 className="field-label">{isZh ? "颜色" : "Color"}</h3>
+        <h3 className="field-label">{isZh ? '颜色' : 'Color'}</h3>
         <div
           className="color-palette"
           role="radiogroup"
-          aria-label={isZh ? "图片颜色" : "Image color"}
+          aria-label={isZh ? '图片颜色' : 'Image color'}
         >
           <button
             type="button"
             role="radio"
-            aria-checked={(node.color || "") === ""}
-            className={`color-swatch color-swatch--default${(node.color || "") === "" ? " is-active" : ""}`}
-            title={getColorLabel("", locale)}
-            aria-label={getColorLabel("", locale)}
-            onClick={() => onColorChange?.("")}
+            aria-checked={(node.color || '') === ''}
+            className={`color-swatch color-swatch--default${(node.color || '') === '' ? ' is-active' : ''}`}
+            title={getColorLabel('', locale)}
+            aria-label={getColorLabel('', locale)}
+            onClick={() => onColorChange?.('')}
           />
           {SUPPORTED_NODE_COLORS.map((key) => (
             <button
               key={key}
               type="button"
               role="radio"
-              aria-checked={(node.color || "") === key}
-              className={`color-swatch color-swatch--${key}${(node.color || "") === key ? " is-active" : ""}`}
+              aria-checked={(node.color || '') === key}
+              className={`color-swatch color-swatch--${key}${(node.color || '') === key ? ' is-active' : ''}`}
               title={getColorLabel(key, locale)}
               aria-label={getColorLabel(key, locale)}
               onClick={() => onColorChange?.(key)}

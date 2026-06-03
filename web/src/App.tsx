@@ -1,28 +1,28 @@
-import { Suspense, lazy, useEffect, useState } from "react";
-import { BookOpen } from "lucide-react";
-import { AppShell } from "./components/AppShell";
-import { KnowledgeBase } from "./components/KnowledgeBase";
-import { getStoredLocale, I18nProvider, type Locale } from "./i18n";
-import { PROJECT_NAV_ITEM, PROJECT_PAGE_ID } from "./modules/project/projectModule";
+import { Suspense, lazy, useEffect, useState } from 'react';
+import { BookOpen } from 'lucide-react';
+import { AppShell } from './components/AppShell';
+import { KnowledgeBase } from './components/KnowledgeBase';
+import { getStoredLocale, I18nProvider, type Locale } from './i18n';
+import { PROJECT_NAV_ITEM, PROJECT_PAGE_ID } from './modules/project/projectModule';
 
 const ProjectSheetPage = lazy(async () => {
-  const { ProjectSheetPage } = await import("./modules/project");
+  const { ProjectSheetPage } = await import('./modules/project');
   return { default: ProjectSheetPage };
 });
 
-const KNOWLEDGE_BASE_PAGE_ID = "knowledge-base";
+const KNOWLEDGE_BASE_PAGE_ID = 'knowledge-base';
 
 const APP_NAV_ITEMS = [
   {
     page: KNOWLEDGE_BASE_PAGE_ID,
-    labelZh: "知识图谱",
-    labelEn: "Knowledge Graph",
+    labelZh: '知识图谱',
+    labelEn: 'Knowledge Graph',
     icon: BookOpen,
   },
   PROJECT_NAV_ITEM,
 ];
 
-type Page = (typeof APP_NAV_ITEMS)[number]["page"];
+type Page = (typeof APP_NAV_ITEMS)[number]['page'];
 
 interface DroppedFilePayload {
   file: File;
@@ -30,7 +30,7 @@ interface DroppedFilePayload {
 }
 
 interface PendingDroppedFile extends DroppedFilePayload {
-  kind: "project" | "workspace";
+  kind: 'project' | 'workspace';
 }
 
 interface PageContentProps {
@@ -43,13 +43,13 @@ interface AppLoadingFallbackProps {
   locale: Locale;
 }
 
-function getDroppedFileKind(file: File): PendingDroppedFile["kind"] | null {
+function getDroppedFileKind(file: File): PendingDroppedFile['kind'] | null {
   const lowerName = file.name.toLowerCase();
-  if (lowerName.endsWith(".graph")) {
-    return "workspace";
+  if (lowerName.endsWith('.graph')) {
+    return 'workspace';
   }
-  if (lowerName.endsWith(".project")) {
-    return "project";
+  if (lowerName.endsWith('.project')) {
+    return 'project';
   }
   return null;
 }
@@ -73,9 +73,7 @@ function PageContent({ page, pendingDroppedFile, onDroppedFileHandled }: PageCon
     case PROJECT_PAGE_ID:
       return (
         <ProjectSheetPage
-          droppedProjectFile={
-            pendingDroppedFile?.kind === "project" ? pendingDroppedFile : null
-          }
+          droppedProjectFile={pendingDroppedFile?.kind === 'project' ? pendingDroppedFile : null}
           onDroppedProjectFileHandled={onDroppedFileHandled}
         />
       );
@@ -83,7 +81,7 @@ function PageContent({ page, pendingDroppedFile, onDroppedFileHandled }: PageCon
       return (
         <KnowledgeBase
           droppedWorkspaceFile={
-            pendingDroppedFile?.kind === "workspace" ? pendingDroppedFile : null
+            pendingDroppedFile?.kind === 'workspace' ? pendingDroppedFile : null
           }
           onDroppedWorkspaceFileHandled={onDroppedFileHandled}
         />
@@ -94,13 +92,13 @@ function PageContent({ page, pendingDroppedFile, onDroppedFileHandled }: PageCon
 function AppLoadingFallback({ locale }: AppLoadingFallbackProps) {
   return (
     <div className="app-loading-fallback" role="status">
-      {locale === "zh-CN" ? "正在加载..." : "Loading..."}
+      {locale === 'zh-CN' ? '正在加载...' : 'Loading...'}
     </div>
   );
 }
 
 export function App() {
-  const [page, setPage] = useState<Page>("knowledge-base");
+  const [page, setPage] = useState<Page>('knowledge-base');
   const [locale, setLocale] = useState<Locale>(getStoredLocale);
   const [pendingDroppedFile, setPendingDroppedFile] = useState<PendingDroppedFile | null>(null);
 
@@ -109,31 +107,29 @@ export function App() {
       if (!event.dataTransfer?.items.length) {
         return;
       }
-      if (Array.from(event.dataTransfer.items).some((item) => item.kind === "file")) {
+      if (Array.from(event.dataTransfer.items).some((item) => item.kind === 'file')) {
         event.preventDefault();
-        event.dataTransfer.dropEffect = "copy";
+        event.dataTransfer.dropEffect = 'copy';
       }
     };
 
     const handleDrop = (event: DragEvent) => {
-      const droppedFile = getFirstSupportedDroppedFile(
-        Array.from(event.dataTransfer?.files ?? [])
-      );
+      const droppedFile = getFirstSupportedDroppedFile(Array.from(event.dataTransfer?.files ?? []));
       if (!droppedFile) {
         return;
       }
 
       event.preventDefault();
       setPendingDroppedFile(droppedFile);
-      setPage(droppedFile.kind === "project" ? PROJECT_PAGE_ID : KNOWLEDGE_BASE_PAGE_ID);
+      setPage(droppedFile.kind === 'project' ? PROJECT_PAGE_ID : KNOWLEDGE_BASE_PAGE_ID);
     };
 
-    window.addEventListener("dragover", handleDragOver);
-    window.addEventListener("drop", handleDrop);
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('drop', handleDrop);
 
     return () => {
-      window.removeEventListener("dragover", handleDragOver);
-      window.removeEventListener("drop", handleDrop);
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('drop', handleDrop);
     };
   }, []);
 
@@ -145,9 +141,7 @@ export function App() {
             page={page}
             pendingDroppedFile={pendingDroppedFile}
             onDroppedFileHandled={(id) => {
-              setPendingDroppedFile((currentFile) =>
-                currentFile?.id === id ? null : currentFile
-              );
+              setPendingDroppedFile((currentFile) => (currentFile?.id === id ? null : currentFile));
             }}
           />
         </Suspense>

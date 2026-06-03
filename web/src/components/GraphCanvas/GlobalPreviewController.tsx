@@ -1,6 +1,6 @@
-import { useNodesInitialized, useReactFlow } from "@xyflow/react";
-import { useEffect, useRef } from "react";
-import type { CanvasViewport } from "../../types";
+import { useNodesInitialized, useReactFlow } from '@xyflow/react';
+import { useEffect, useRef } from 'react';
+import type { CanvasViewport } from '../../types';
 
 interface GlobalPreviewControllerProps {
   nodeCount: number;

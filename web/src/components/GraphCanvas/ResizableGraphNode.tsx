@@ -1,9 +1,9 @@
-import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
-import { Lock } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
-import { useI18n } from "../../i18n";
-import type { GraphNode } from "../../types";
-import { renderCardContent } from "./GraphNodeContent";
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
+import { Lock } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useI18n } from '../../i18n';
+import type { GraphNode } from '../../types';
+import { renderCardContent } from './GraphNodeContent';
 
 interface ResizableFlowNodeData {
   [key: string]: unknown;
@@ -64,7 +64,7 @@ export function ResizableGraphNode({ data }: NodeProps<Node<ResizableFlowNodeDat
         position={Position.Left}
         type="target"
         isConnectableStart={false}
-        title={isZh ? "拖拽引用连接到这里" : "Drop a citation link here"}
+        title={isZh ? '拖拽引用连接到这里' : 'Drop a citation link here'}
       />
       <Handle
         id="citation-source"
@@ -72,7 +72,7 @@ export function ResizableGraphNode({ data }: NodeProps<Node<ResizableFlowNodeDat
         position={Position.Right}
         type="source"
         isConnectableEnd={false}
-        title={isZh ? "拖拽创建引用" : "Drag to create a citation link"}
+        title={isZh ? '拖拽创建引用' : 'Drag to create a citation link'}
       />
       <div
         className="graph-node__label"
@@ -82,8 +82,8 @@ export function ResizableGraphNode({ data }: NodeProps<Node<ResizableFlowNodeDat
         {node.locked ? (
           <span
             className="graph-node__lock-badge"
-            aria-label={isZh ? "已锁定节点" : "Locked node"}
-            title={isZh ? "已锁定节点" : "Locked node"}
+            aria-label={isZh ? '已锁定节点' : 'Locked node'}
+            title={isZh ? '已锁定节点' : 'Locked node'}
           >
             <Lock aria-hidden="true" size={12} />
           </span>
@@ -94,17 +94,17 @@ export function ResizableGraphNode({ data }: NodeProps<Node<ResizableFlowNodeDat
               ref={titleInputRef}
               type="text"
               className="graph-node__title-input"
-              aria-label={isZh ? "快速编辑卡片标题" : "Quick card title"}
+              aria-label={isZh ? '快速编辑卡片标题' : 'Quick card title'}
               value={draftTitle}
               onBlur={() => commitQuickEdit()}
               onChange={(event) => setDraftTitle(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === "Tab") {
+                if (event.key === 'Enter' || event.key === 'Tab') {
                   event.preventDefault();
                   commitQuickEdit({ focusInspectorContent: true });
                 }
 
-                if (event.key === "Escape") {
+                if (event.key === 'Escape') {
                   event.preventDefault();
                   commitQuickEdit();
                 }
@@ -140,13 +140,13 @@ export function ResizableGraphNode({ data }: NodeProps<Node<ResizableFlowNodeDat
 }
 
 function escapeHtml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function highlightTitleHtml(text: string, query: string): string {
   if (!query.trim()) return escapeHtml(text);
   const lowerQuery = query.toLowerCase();
-  let result = "";
+  let result = '';
   let remaining = text;
   while (remaining.length > 0) {
     const lowerRemaining = remaining.toLowerCase();

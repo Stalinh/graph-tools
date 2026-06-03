@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo } from 'react';
 import {
   appendChecklistTask,
   clearCompletedChecklistTasks,
@@ -6,7 +6,7 @@ import {
   setAllChecklistTasksChecked,
   setChecklistTaskChecked,
   sortChecklistTasks,
-} from "./cardChecklistUtils";
+} from './cardChecklistUtils';
 
 interface UseCardEditorChecklistOptions {
   contentHtml?: string;
@@ -15,7 +15,7 @@ interface UseCardEditorChecklistOptions {
 }
 
 export function useCardEditorChecklist({
-  contentHtml = "",
+  contentHtml = '',
   onContentCommit,
   supportsChecklist,
 }: UseCardEditorChecklistOptions) {

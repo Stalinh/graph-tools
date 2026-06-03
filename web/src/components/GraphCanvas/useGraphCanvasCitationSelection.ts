@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
-import { isReferenceableNode } from "../../lib/graphConstraints";
-import { hasCitationBetweenNodes } from "../../lib/graphMutator";
-import type { EdgeDirection, GraphData } from "../../types";
+import { useCallback, useEffect, useState } from 'react';
+import { isReferenceableNode } from '../../lib/graphConstraints';
+import { hasCitationBetweenNodes } from '../../lib/graphMutator';
+import type { EdgeDirection, GraphData } from '../../types';
 
 interface PendingCitation {
   direction: EdgeDirection;
@@ -10,8 +10,8 @@ interface PendingCitation {
 }
 
 interface UseGraphCanvasCitationSelectionOptions {
-  graphEdges: GraphData["edges"];
-  graphNodes: GraphData["nodes"];
+  graphEdges: GraphData['edges'];
+  graphNodes: GraphData['nodes'];
   isZh: boolean;
   onCreateCitation: (sourceId: string, targetId: string, direction: EdgeDirection) => void;
   onEdgeSelect: (edgeId: string | null) => void;
@@ -38,8 +38,8 @@ export function useGraphCanvasCitationSelection({
         direction,
         sourceId: null,
         message: isZh
-          ? "选择被引用内容：点击第 1 个节点，Esc 取消"
-          : "Choose the cited content: click the first node, or press Esc to cancel",
+          ? '选择被引用内容：点击第 1 个节点，Esc 取消'
+          : 'Choose the cited content: click the first node, or press Esc to cancel',
       });
       onEdgeSelect(null);
       onSelectNode(null);
@@ -53,13 +53,13 @@ export function useGraphCanvasCitationSelection({
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         setPendingCitation(null);
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [pendingCitation]);
 
   const handleCitationNodeClick = useCallback(
@@ -73,8 +73,8 @@ export function useGraphCanvasCitationSelection({
         setPendingCitation({
           ...pendingCitation,
           message: isZh
-            ? "分组节点不能参与引用，请选择卡片或图片节点"
-            : "Group nodes cannot be linked. Choose a card or image node.",
+            ? '分组节点不能参与引用，请选择卡片或图片节点'
+            : 'Group nodes cannot be linked. Choose a card or image node.',
         });
         return true;
       }
@@ -83,8 +83,8 @@ export function useGraphCanvasCitationSelection({
           ...pendingCitation,
           sourceId: nodeId,
           message: isZh
-            ? "选择引用它的内容：点击第 2 个节点完成，Esc 取消"
-            : "Choose the source content: click the second node to finish, or press Esc to cancel",
+            ? '选择引用它的内容：点击第 2 个节点完成，Esc 取消'
+            : 'Choose the source content: click the second node to finish, or press Esc to cancel',
         });
         onSelectNode(nodeId);
         onEdgeSelect(null);
@@ -95,8 +95,8 @@ export function useGraphCanvasCitationSelection({
         setPendingCitation({
           ...pendingCitation,
           message: isZh
-            ? "不能引用自身，请选择另一个节点"
-            : "A node cannot link to itself. Choose another node.",
+            ? '不能引用自身，请选择另一个节点'
+            : 'A node cannot link to itself. Choose another node.',
         });
         return true;
       }
@@ -105,8 +105,8 @@ export function useGraphCanvasCitationSelection({
         setPendingCitation({
           ...pendingCitation,
           message: isZh
-            ? "引用已存在，请选择另一个节点"
-            : "That link already exists. Choose another node.",
+            ? '引用已存在，请选择另一个节点'
+            : 'That link already exists. Choose another node.',
         });
         return true;
       }

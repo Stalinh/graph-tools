@@ -1,7 +1,7 @@
-import { defineConfig } from "vite";
+import { defineConfig } from 'vite';
 
 function normalizeModuleId(id: string): string {
-  return id.replace(/\\/g, "/");
+  return id.replace(/\\/g, '/');
 }
 
 function matchesNodeModule(normalizedId: string, packagePath: string): boolean {
@@ -19,35 +19,35 @@ export const CONTENT_SECURITY_POLICY = [
   "base-uri 'self'",
   "form-action 'none'",
   "frame-ancestors 'none'",
-].join("; ");
+].join('; ');
 
 export function manualChunks(id: string): string | undefined {
   const normalizedId = normalizeModuleId(id);
 
-  if (!normalizedId.includes("/node_modules/")) {
+  if (!normalizedId.includes('/node_modules/')) {
     return undefined;
   }
 
   if (
-    matchesNodeModule(normalizedId, "react/") ||
-    matchesNodeModule(normalizedId, "react-dom/") ||
-    matchesNodeModule(normalizedId, "scheduler/")
+    matchesNodeModule(normalizedId, 'react/') ||
+    matchesNodeModule(normalizedId, 'react-dom/') ||
+    matchesNodeModule(normalizedId, 'scheduler/')
   ) {
-    return "react-vendor";
+    return 'react-vendor';
   }
 
-  if (matchesNodeModule(normalizedId, "@xyflow/")) {
-    return "flow-vendor";
+  if (matchesNodeModule(normalizedId, '@xyflow/')) {
+    return 'flow-vendor';
   }
 
   if (
-    matchesNodeModule(normalizedId, "@tiptap/") ||
-    matchesNodeModule(normalizedId, "@prosemirror/") ||
-    matchesNodeModule(normalizedId, "prosemirror-") ||
-    matchesNodeModule(normalizedId, "orderedmap/") ||
-    matchesNodeModule(normalizedId, "rope-sequence/")
+    matchesNodeModule(normalizedId, '@tiptap/') ||
+    matchesNodeModule(normalizedId, '@prosemirror/') ||
+    matchesNodeModule(normalizedId, 'prosemirror-') ||
+    matchesNodeModule(normalizedId, 'orderedmap/') ||
+    matchesNodeModule(normalizedId, 'rope-sequence/')
   ) {
-    return "editor-vendor";
+    return 'editor-vendor';
   }
 
   return undefined;
@@ -56,9 +56,9 @@ export function manualChunks(id: string): string | undefined {
 export default defineConfig({
   server: {
     headers: {
-      "Content-Security-Policy": CONTENT_SECURITY_POLICY,
-      "Referrer-Policy": "no-referrer",
-      "X-Content-Type-Options": "nosniff",
+      'Content-Security-Policy': CONTENT_SECURITY_POLICY,
+      'Referrer-Policy': 'no-referrer',
+      'X-Content-Type-Options': 'nosniff',
     },
   },
   build: {

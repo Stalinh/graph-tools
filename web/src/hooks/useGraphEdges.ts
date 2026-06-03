@@ -1,6 +1,6 @@
-import { useCallback } from "react";
-import type { EdgeDirection, EdgeStyle, GraphData } from "../types";
-import { normalizeEdgeStyle } from "../lib/edgeStyles";
+import { useCallback } from 'react';
+import type { EdgeDirection, EdgeStyle, GraphData } from '../types';
+import { normalizeEdgeStyle } from '../lib/edgeStyles';
 import {
   addCitation,
   removeCitation,
@@ -8,28 +8,27 @@ import {
   updateEdgeColor as mutatorUpdateEdgeColor,
   updateEdgeDirection as mutatorUpdateEdgeDirection,
   updateEdgeStyle as mutatorUpdateEdgeStyle,
-} from "../lib/graphMutator";
-import { normalizeEdgeColor } from "../lib/nodeColors";
+} from '../lib/graphMutator';
+import { normalizeEdgeColor } from '../lib/nodeColors';
 import {
   createWorkspacePatchCommandFromTransaction,
   type WorkspaceStoreController,
   type WorkspaceTransaction,
-} from "./useWorkspaceStore";
+} from './useWorkspaceStore';
 
-interface UseGraphEdgesOptions
-  extends Pick<
-    WorkspaceStoreController,
-    "workspaceRef" | "dispatchWorkspaceTransaction"
-  > {}
+interface UseGraphEdgesOptions extends Pick<
+  WorkspaceStoreController,
+  'workspaceRef' | 'dispatchWorkspaceTransaction'
+> {}
 
 function withHistory(
-  beforeState: WorkspaceStoreController["workspace"],
+  beforeState: WorkspaceStoreController['workspace'],
   transaction: WorkspaceTransaction
 ): WorkspaceTransaction {
   return {
     ...transaction,
     history: {
-      type: "push",
+      type: 'push',
       command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
     },
   };
@@ -59,7 +58,7 @@ export function useGraphEdges({
   );
 
   const createCitation = useCallback(
-    (sourceId: string, targetId: string, direction: EdgeDirection = "unidirectional") => {
+    (sourceId: string, targetId: string, direction: EdgeDirection = 'unidirectional') => {
       const beforeState = workspaceRef.current;
       const currentGraph = beforeState.graph;
       const nextGraph = addCitation(currentGraph, sourceId, targetId, direction);
@@ -104,7 +103,7 @@ export function useGraphEdges({
     (edgeId: string, direction: EdgeDirection) => {
       applyGraphUpdate((currentGraph) => {
         const edge = currentGraph.edges.find((currentEdge) => currentEdge.id === edgeId);
-        if (!edge || (edge.direction ?? "unidirectional") === direction) {
+        if (!edge || (edge.direction ?? 'unidirectional') === direction) {
           return currentGraph;
         }
 

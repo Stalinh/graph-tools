@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import type { GraphContextMenuState, GraphData, GraphEdge, GraphNode } from "../types";
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import type { GraphContextMenuState, GraphData, GraphEdge, GraphNode } from '../types';
 
 interface UseGraphSelectionOptions {
   selectedNodeId: string | null;
@@ -10,8 +10,8 @@ interface UseGraphSelectionOptions {
   setEditingNodeId: (id: string | null) => void;
   contextMenu: GraphContextMenuState | null;
   setContextMenu: (state: GraphContextMenuState | null) => void;
-  status: "loading" | "ready" | "error";
-  setStatus: (s: "loading" | "ready" | "error") => void;
+  status: 'loading' | 'ready' | 'error';
+  setStatus: (s: 'loading' | 'ready' | 'error') => void;
   graph: GraphData;
 }
 
@@ -34,7 +34,7 @@ export function useGraphSelection(options: UseGraphSelectionOptions) {
       return;
     }
     hasInitializedStatusRef.current = true;
-    setStatus("ready");
+    setStatus('ready');
   }, [setStatus]);
 
   const closeContextMenu = useCallback(() => {

@@ -1,26 +1,23 @@
-import type { CSSProperties, ReactNode } from "react";
-import type { Locale } from "../../i18n";
-import {
-  getContentCacheEntry,
-  rememberContentCacheEntry,
-} from "../../lib/cardContentCache";
-import type { GraphNode, ReferenceItem } from "../../types";
+import type { CSSProperties, ReactNode } from 'react';
+import type { Locale } from '../../i18n';
+import { getContentCacheEntry, rememberContentCacheEntry } from '../../lib/cardContentCache';
+import type { GraphNode, ReferenceItem } from '../../types';
 
-const globalParser = typeof window !== "undefined" ? new DOMParser() : null;
+const globalParser = typeof window !== 'undefined' ? new DOMParser() : null;
 
 const INLINE_REFERENCE_TOKEN_PATTERN = /(\[#\d+\])/g;
 const INLINE_REFERENCE_TOKEN_EXACT_PATTERN = /^\[(#\d+)\]$/;
 const SUPPORTED_CONTENT_BACKGROUND_COLORS = new Set([
-  "#fef08a",
-  "#bbf7d0",
-  "#bfdbfe",
-  "#e9d5ff",
-  "#fed7aa",
-  "#fecaca",
+  '#fef08a',
+  '#bbf7d0',
+  '#bfdbfe',
+  '#e9d5ff',
+  '#fed7aa',
+  '#fecaca',
 ]);
 
 function getReferenceAriaLabel(reference: ReferenceItem, locale: Locale) {
-  const isZh = locale === "zh-CN";
+  const isZh = locale === 'zh-CN';
   return isZh
     ? `打开画布引用 ${reference.id}: ${reference.title}`
     : `Open canvas reference ${reference.id}: ${reference.title}`;
@@ -30,7 +27,7 @@ export function renderCardContent(
   node: GraphNode,
   onReferenceSelect: (nodeId: string | null) => void,
   searchQuery?: string,
-  locale: Locale = "en-US"
+  locale: Locale = 'en-US'
 ): ReactNode {
   if (!node.contentHtml) {
     return null;
@@ -52,7 +49,7 @@ export function renderCardContent(
       return null;
     }
 
-    const doc = globalParser.parseFromString(node.contentHtml, "text/html");
+    const doc = globalParser.parseFromString(node.contentHtml, 'text/html');
     const children = Array.from(doc.body.childNodes);
 
     const elements =
@@ -76,7 +73,7 @@ export function renderCardContent(
     return null;
   }
 
-  const doc = globalParser.parseFromString(node.contentHtml, "text/html");
+  const doc = globalParser.parseFromString(node.contentHtml, 'text/html');
   const children = Array.from(doc.body.childNodes);
 
   return children.length > 0
@@ -96,18 +93,18 @@ export function renderCardContent(
 function parseInlineStyle(style: string): CSSProperties {
   const result: Record<string, string> = {};
   const allowedProperties = new Set([
-    "color",
-    "backgroundColor",
-    "textDecoration",
-    "textDecorationLine",
-    "textDecorationColor",
+    'color',
+    'backgroundColor',
+    'textDecoration',
+    'textDecorationLine',
+    'textDecorationColor',
   ]);
 
-  for (const part of style.split(";")) {
+  for (const part of style.split(';')) {
     const trimmed = part.trim();
     if (!trimmed) continue;
 
-    const colonIndex = trimmed.indexOf(":");
+    const colonIndex = trimmed.indexOf(':');
     if (colonIndex === -1) continue;
 
     const property = trimmed.slice(0, colonIndex).trim();
@@ -125,7 +122,7 @@ function parseInlineStyle(style: string): CSSProperties {
 }
 
 function isAllowedInlineStyleValue(property: string, value: string) {
-  if (property !== "backgroundColor") {
+  if (property !== 'backgroundColor') {
     return true;
   }
 
@@ -141,16 +138,16 @@ function sanitizeBackgroundColor(value: string | undefined) {
 }
 
 function sanitizeHref(url: string): string {
-  if (!url) return "#";
+  if (!url) return '#';
   const trimmed = url.trim().toLowerCase();
   if (
-    trimmed.startsWith("http://") ||
-    trimmed.startsWith("https://") ||
-    trimmed.startsWith("mailto:")
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('mailto:')
   ) {
     return url;
   }
-  return "#";
+  return '#';
 }
 
 function renderContentNode(
@@ -163,7 +160,7 @@ function renderContentNode(
 ): ReactNode {
   if (domNode.nodeType === Node.TEXT_NODE) {
     return renderTextWithReferences(
-      domNode.textContent ?? "",
+      domNode.textContent ?? '',
       key,
       graphNode,
       onReferenceSelect,
@@ -180,52 +177,52 @@ function renderContentNode(
     renderContentNode(child, `${key}-${index}`, graphNode, onReferenceSelect, locale, searchQuery)
   );
 
-  if (domNode.tagName === "P") {
+  if (domNode.tagName === 'P') {
     return <p key={key}>{children}</p>;
   }
 
-  if (domNode.tagName === "H1") {
+  if (domNode.tagName === 'H1') {
     return <h1 key={key}>{children}</h1>;
   }
 
-  if (domNode.tagName === "H2") {
+  if (domNode.tagName === 'H2') {
     return <h2 key={key}>{children}</h2>;
   }
 
-  if (domNode.tagName === "H3") {
+  if (domNode.tagName === 'H3') {
     return <h3 key={key}>{children}</h3>;
   }
 
-  if (domNode.tagName === "BLOCKQUOTE") {
+  if (domNode.tagName === 'BLOCKQUOTE') {
     return <blockquote key={key}>{children}</blockquote>;
   }
 
-  if (domNode.tagName === "PRE") {
+  if (domNode.tagName === 'PRE') {
     return <pre key={key}>{children}</pre>;
   }
 
-  if (domNode.tagName === "CODE") {
+  if (domNode.tagName === 'CODE') {
     return <code key={key}>{children}</code>;
   }
 
-  if (domNode.tagName === "HR") {
+  if (domNode.tagName === 'HR') {
     return <hr key={key} />;
   }
 
-  if (domNode.tagName === "DIV") {
+  if (domNode.tagName === 'DIV') {
     return <div key={key}>{children}</div>;
   }
 
-  if (domNode.tagName === "LABEL") {
+  if (domNode.tagName === 'LABEL') {
     return <label key={key}>{children}</label>;
   }
 
-  if (domNode.tagName === "INPUT") {
-    const type = domNode.getAttribute("type");
-    if (type === "checkbox") {
+  if (domNode.tagName === 'INPUT') {
+    const type = domNode.getAttribute('type');
+    if (type === 'checkbox') {
       const checked =
-        domNode.hasAttribute("checked") ||
-        domNode.getAttribute("checked") === "checked" ||
+        domNode.hasAttribute('checked') ||
+        domNode.getAttribute('checked') === 'checked' ||
         (domNode as HTMLInputElement).checked;
       return (
         <input
@@ -240,43 +237,43 @@ function renderContentNode(
     }
   }
 
-  if (domNode.tagName === "OL") {
+  if (domNode.tagName === 'OL') {
     return <ol key={key}>{children}</ol>;
   }
 
-  if (domNode.tagName === "UL") {
-    const isTaskList = domNode.getAttribute("data-type") === "taskList";
+  if (domNode.tagName === 'UL') {
+    const isTaskList = domNode.getAttribute('data-type') === 'taskList';
     return (
       <ul
         key={key}
-        className={isTaskList ? "graph-node__task-list" : undefined}
-        data-type={domNode.getAttribute("data-type") ?? undefined}
+        className={isTaskList ? 'graph-node__task-list' : undefined}
+        data-type={domNode.getAttribute('data-type') ?? undefined}
       >
         {children}
       </ul>
     );
   }
 
-  if (domNode.tagName === "LI") {
-    const isTaskItem = domNode.getAttribute("data-type") === "taskItem";
+  if (domNode.tagName === 'LI') {
+    const isTaskItem = domNode.getAttribute('data-type') === 'taskItem';
     return (
       <li
         key={key}
-        className={isTaskItem ? "graph-node__task-item" : undefined}
-        data-type={domNode.getAttribute("data-type") ?? undefined}
-        data-checked={domNode.getAttribute("data-checked") ?? undefined}
+        className={isTaskItem ? 'graph-node__task-item' : undefined}
+        data-type={domNode.getAttribute('data-type') ?? undefined}
+        data-checked={domNode.getAttribute('data-checked') ?? undefined}
       >
         {children}
       </li>
     );
   }
 
-  if (domNode.tagName === "BR") {
+  if (domNode.tagName === 'BR') {
     return <br key={key} />;
   }
 
-  if (domNode.tagName === "A") {
-    const href = domNode.getAttribute("href") ?? "";
+  if (domNode.tagName === 'A') {
+    const href = domNode.getAttribute('href') ?? '';
     const sanitized = sanitizeHref(href);
 
     return (
@@ -293,24 +290,24 @@ function renderContentNode(
     );
   }
 
-  if (domNode.tagName === "STRONG" || domNode.tagName === "B") {
+  if (domNode.tagName === 'STRONG' || domNode.tagName === 'B') {
     return <strong key={key}>{children}</strong>;
   }
 
-  if (domNode.tagName === "EM" || domNode.tagName === "I") {
+  if (domNode.tagName === 'EM' || domNode.tagName === 'I') {
     return <em key={key}>{children}</em>;
   }
 
-  if (domNode.tagName === "U") {
+  if (domNode.tagName === 'U') {
     return <u key={key}>{children}</u>;
   }
 
-  if (domNode.tagName === "S" || domNode.tagName === "DEL") {
+  if (domNode.tagName === 'S' || domNode.tagName === 'DEL') {
     return <s key={key}>{children}</s>;
   }
 
-  if (domNode.tagName === "SPAN") {
-    const style = domNode.getAttribute("style") ?? undefined;
+  if (domNode.tagName === 'SPAN') {
+    const style = domNode.getAttribute('style') ?? undefined;
 
     return (
       <span key={key} style={style ? parseInlineStyle(style) : undefined}>
@@ -319,8 +316,8 @@ function renderContentNode(
     );
   }
 
-  if (domNode.tagName === "MARK") {
-    const markColor = sanitizeBackgroundColor(domNode.getAttribute("data-color") ?? undefined);
+  if (domNode.tagName === 'MARK') {
+    const markColor = sanitizeBackgroundColor(domNode.getAttribute('data-color') ?? undefined);
 
     return (
       <mark key={key} style={markColor ? { backgroundColor: markColor } : undefined}>

@@ -1,10 +1,10 @@
-import { FilePlus, FolderOpen, RotateCcw, RotateCw, Save, SaveAll, Search, X } from "lucide-react";
-import type { RefObject } from "react";
-import { useI18n } from "../i18n";
-import type { NodeSearchResult } from "../lib/searchUtils";
-import type { WorkspaceNodeFilter } from "../types";
-import { FilterChips } from "./FilterChips";
-import { SearchResultsDropdown } from "./SearchResultsDropdown";
+import { FilePlus, FolderOpen, RotateCcw, RotateCw, Save, SaveAll, Search, X } from 'lucide-react';
+import type { RefObject } from 'react';
+import { useI18n } from '../i18n';
+import type { NodeSearchResult } from '../lib/searchUtils';
+import type { WorkspaceNodeFilter } from '../types';
+import { FilterChips } from './FilterChips';
+import { SearchResultsDropdown } from './SearchResultsDropdown';
 
 interface WorkspaceToolbarProps {
   nodeCount: number;
@@ -41,12 +41,12 @@ type NavigatorWithUserAgentData = Navigator & {
 };
 
 function isMacPlatform() {
-  if (typeof navigator === "undefined") {
+  if (typeof navigator === 'undefined') {
     return false;
   }
 
   const nav = navigator as NavigatorWithUserAgentData;
-  const platform = nav.userAgentData?.platform || navigator.platform || navigator.userAgent || "";
+  const platform = nav.userAgentData?.platform || navigator.platform || navigator.userAgent || '';
   return /Mac|iPod|iPhone|iPad/i.test(platform);
 }
 
@@ -79,7 +79,7 @@ export function WorkspaceToolbar({
 }: WorkspaceToolbarProps) {
   const { isZh } = useI18n();
   const isMac = isMacPlatform();
-  const searchPlaceholder = `${isZh ? "搜索节点" : "Search nodes"}... (${isMac ? "⌘K" : "Ctrl+K"})`;
+  const searchPlaceholder = `${isZh ? '搜索节点' : 'Search nodes'}... (${isMac ? '⌘K' : 'Ctrl+K'})`;
 
   return (
     <div className="workspace-toolbar">
@@ -117,9 +117,9 @@ export function WorkspaceToolbar({
           <button
             className="workspace-toolbar__search-clear"
             type="button"
-            aria-label={isZh ? "清除搜索" : "Clear search"}
+            aria-label={isZh ? '清除搜索' : 'Clear search'}
             onClick={() => {
-              onSearchChange("");
+              onSearchChange('');
               searchInputRef.current?.focus();
             }}
           >
@@ -131,7 +131,7 @@ export function WorkspaceToolbar({
             matchingResults={matchingResults}
             searchQuery={searchQuery}
             onClose={() => {
-              onSearchChange("");
+              onSearchChange('');
               searchInputRef.current?.blur();
             }}
             onNavigate={onResultNavigate}
@@ -139,12 +139,12 @@ export function WorkspaceToolbar({
         ) : null}
       </div>
       <div className="toolbar-divider" />
-      <div className="workspace-toolbar__actions" aria-label={isZh ? "文件操作" : "File actions"}>
+      <div className="workspace-toolbar__actions" aria-label={isZh ? '文件操作' : 'File actions'}>
         <button
           className="toolbar-button workspace-toolbar__icon-button"
           type="button"
-          aria-label={isZh ? "新建空白画布" : "Create new canvas"}
-          title={isZh ? "新建空白画布" : "Create new canvas"}
+          aria-label={isZh ? '新建空白画布' : 'Create new canvas'}
+          title={isZh ? '新建空白画布' : 'Create new canvas'}
           onClick={() => onNew()}
         >
           <FilePlus size={14} />
@@ -152,8 +152,8 @@ export function WorkspaceToolbar({
         <button
           className="toolbar-button workspace-toolbar__icon-button"
           type="button"
-          aria-label={isZh ? "打开 Graph 文件" : "Open .graph file"}
-          title={isZh ? "打开 Graph 文件" : "Open .graph file"}
+          aria-label={isZh ? '打开 Graph 文件' : 'Open .graph file'}
+          title={isZh ? '打开 Graph 文件' : 'Open .graph file'}
           onClick={() => void onOpen()}
         >
           <FolderOpen size={14} />
@@ -161,8 +161,8 @@ export function WorkspaceToolbar({
         <button
           className="toolbar-button workspace-toolbar__icon-button"
           type="button"
-          aria-label={isZh ? "保存到当前文件" : "Save to current file"}
-          title={isZh ? "保存到当前文件" : "Save to current file"}
+          aria-label={isZh ? '保存到当前文件' : 'Save to current file'}
+          title={isZh ? '保存到当前文件' : 'Save to current file'}
           onClick={() => void onSave()}
         >
           <Save size={14} />
@@ -170,8 +170,8 @@ export function WorkspaceToolbar({
         <button
           className="toolbar-button workspace-toolbar__icon-button"
           type="button"
-          aria-label={isZh ? "另存为新文件" : "Save as new file"}
-          title={isZh ? "另存为新文件" : "Save as new file"}
+          aria-label={isZh ? '另存为新文件' : 'Save as new file'}
+          title={isZh ? '另存为新文件' : 'Save as new file'}
           onClick={() => void onSaveAs()}
         >
           <SaveAll size={14} />
@@ -180,13 +180,13 @@ export function WorkspaceToolbar({
       <div className="toolbar-divider" />
       <div
         className="workspace-toolbar__actions"
-        aria-label={isZh ? "历史操作" : "History actions"}
+        aria-label={isZh ? '历史操作' : 'History actions'}
       >
         <button
           className="toolbar-button workspace-toolbar__icon-button"
           type="button"
-          aria-label={isZh ? "撤销" : "Undo"}
-          title={isZh ? "撤销" : "Undo"}
+          aria-label={isZh ? '撤销' : 'Undo'}
+          title={isZh ? '撤销' : 'Undo'}
           onClick={onUndo}
           disabled={!canUndo}
         >
@@ -195,8 +195,8 @@ export function WorkspaceToolbar({
         <button
           className="toolbar-button workspace-toolbar__icon-button"
           type="button"
-          aria-label={isZh ? "重做" : "Redo"}
-          title={isZh ? "重做" : "Redo"}
+          aria-label={isZh ? '重做' : 'Redo'}
+          title={isZh ? '重做' : 'Redo'}
           onClick={onRedo}
           disabled={!canRedo}
         >

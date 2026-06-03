@@ -1,20 +1,20 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useFileOperations } from "../hooks/useFileOperations";
-import { useGraphState } from "../hooks/useGraphState";
-import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
-import { useSearchFilters } from "../hooks/useSearchFilters";
-import { useI18n } from "../i18n";
-import { getMatchingNodeResults } from "../lib/searchUtils";
-import { loadWorkspaceDraft, saveWorkspaceDraft } from "../lib/workspaceDraftStorage";
-import { migrateWorkspaceIds } from "../lib/workspaceState";
-import type { WorkspaceNodeFilter, WorkspaceState } from "../types";
-import { GraphCanvas } from "./GraphCanvas";
-import { Inspector } from "./Inspector";
-import { UnsavedChangesModal } from "./UnsavedChangesModal";
-import { WorkspaceToolbar } from "./WorkspaceToolbar";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useFileOperations } from '../hooks/useFileOperations';
+import { useGraphState } from '../hooks/useGraphState';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useSearchFilters } from '../hooks/useSearchFilters';
+import { useI18n } from '../i18n';
+import { getMatchingNodeResults } from '../lib/searchUtils';
+import { loadWorkspaceDraft, saveWorkspaceDraft } from '../lib/workspaceDraftStorage';
+import { migrateWorkspaceIds } from '../lib/workspaceState';
+import type { WorkspaceNodeFilter, WorkspaceState } from '../types';
+import { GraphCanvas } from './GraphCanvas';
+import { Inspector } from './Inspector';
+import { UnsavedChangesModal } from './UnsavedChangesModal';
+import { WorkspaceToolbar } from './WorkspaceToolbar';
 
 const RichEditorModal = lazy(async () => {
-  const module = await import("./RichEditorModal");
+  const module = await import('./RichEditorModal');
   return { default: module.RichEditorModal };
 });
 
@@ -41,7 +41,7 @@ export function KnowledgeBase({
   const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestDraftStateRef = useRef<WorkspaceState | null>(null);
   const handledDroppedWorkspaceFileIdRef = useRef<number | null>(null);
-  const [nodeFilter, setNodeFilter] = useState<WorkspaceNodeFilter>("all");
+  const [nodeFilter, setNodeFilter] = useState<WorkspaceNodeFilter>('all');
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null);
   const [draftSaveFailed, setDraftSaveFailed] = useState(false);
   const [isInspectorCollapsed, setIsInspectorCollapsed] = useState(false);
@@ -76,7 +76,7 @@ export function KnowledgeBase({
   const missingImageAssetCount = useMemo(
     () =>
       nodes.graph.nodes.filter(
-        (node) => node.type === "image" && node.imagePath && !images.images.has(node.imagePath)
+        (node) => node.type === 'image' && node.imagePath && !images.images.has(node.imagePath)
       ).length,
     [nodes.graph.nodes, images.images]
   );
@@ -153,7 +153,7 @@ export function KnowledgeBase({
       selection.setSelectedEdgeId(null);
       selection.setQuickEditingNodeId(null);
       selection.setPendingInspectorContentFocusNodeId(
-        options?.focusInspectorContent && currentNode.type === "card" ? nodeId : null
+        options?.focusInspectorContent && currentNode.type === 'card' ? nodeId : null
       );
     },
     [
@@ -204,7 +204,7 @@ export function KnowledgeBase({
   const handleDropImages = useCallback(
     (files: File[], position: { x: number; y: number }) => {
       files.forEach((file, index) => {
-        const ext = file.name.split(".").pop() || "png";
+        const ext = file.name.split('.').pop() || 'png';
         const path = `images/img_${Date.now()}_${index}_${Math.random().toString(36).substring(2, 15)}.${ext}`;
         images.setImages((prev) => {
           const next = new Map(prev);
@@ -215,7 +215,7 @@ export function KnowledgeBase({
           x: position.x + index * 20,
           y: position.y + index * 20,
         };
-        nodes.createNode("image", dropPos, path);
+        nodes.createNode('image', dropPos, path);
       });
     },
     [nodes.createNode, images.setImages]
@@ -229,17 +229,17 @@ export function KnowledgeBase({
     didRestoreDraftRef.current = true;
     const draft = loadWorkspaceDraft();
     if (!draft) {
-      status.setStatus("ready");
+      status.setStatus('ready');
       return;
     }
 
     persistence.applyWorkspaceState(migrateWorkspaceIds(draft));
-    status.setStatus("ready");
+    status.setStatus('ready');
     status.setErrorMessage(null);
   }, [persistence, status]);
 
   useEffect(() => {
-    if (!didRestoreDraftRef.current || status.status !== "ready") {
+    if (!didRestoreDraftRef.current || status.status !== 'ready') {
       return;
     }
 
@@ -270,17 +270,17 @@ export function KnowledgeBase({
   useEffect(() => {
     const handlePageHide = () => flushDraftSave(false);
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
+      if (document.visibilityState === 'hidden') {
         flushDraftSave(false);
       }
     };
 
-    window.addEventListener("pagehide", handlePageHide);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      window.removeEventListener("pagehide", handlePageHide);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener('pagehide', handlePageHide);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [flushDraftSave]);
 
@@ -289,13 +289,13 @@ export function KnowledgeBase({
       const active = document.activeElement;
       if (
         active instanceof HTMLElement &&
-        (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)
+        (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)
       ) {
         return;
       }
 
       const files = Array.from(event.clipboardData?.files ?? []).filter((f) =>
-        f.type.startsWith("image/")
+        f.type.startsWith('image/')
       );
       if (files.length === 0) return;
 
@@ -303,14 +303,14 @@ export function KnowledgeBase({
       handleDropImages(files, { x: 0, y: 0 });
     };
 
-    window.addEventListener("paste", handlePaste);
-    return () => window.removeEventListener("paste", handlePaste);
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
   }, [handleDropImages]);
 
   return (
     <section
-      className={`knowledge-base ${isInspectorCollapsed ? "is-inspector-collapsed" : ""}`}
-      aria-label={isZh ? "知识图谱工作区" : "Knowledge graph workspace"}
+      className={`knowledge-base ${isInspectorCollapsed ? 'is-inspector-collapsed' : ''}`}
+      aria-label={isZh ? '知识图谱工作区' : 'Knowledge graph workspace'}
     >
       <div className="graph-zone">
         <WorkspaceToolbar
@@ -350,13 +350,13 @@ export function KnowledgeBase({
           <div className="graph-message" role="alert">
             {isZh
               ? [
-                  "本地草稿保存失败。",
-                  "请使用“另存为”导出 .graph 文件，避免刷新后丢失未保存内容。",
-                ].join("")
+                  '本地草稿保存失败。',
+                  '请使用“另存为”导出 .graph 文件，避免刷新后丢失未保存内容。',
+                ].join('')
               : [
-                  "Saving the local draft failed. ",
-                  "Use Save As to export a .graph file so unsaved work is not lost on refresh.",
-                ].join("")}
+                  'Saving the local draft failed. ',
+                  'Use Save As to export a .graph file so unsaved work is not lost on refresh.',
+                ].join('')}
           </div>
         ) : null}
         {missingImageAssetCount > 0 ? (
@@ -364,10 +364,10 @@ export function KnowledgeBase({
             {isZh
               ? [
                   `${missingImageAssetCount} 个图片资源缺失。`,
-                  "请打开原 .graph 文件或重新拖入图片后再保存。",
-                ].join("")
+                  '请打开原 .graph 文件或重新拖入图片后再保存。',
+                ].join('')
               : `${missingImageAssetCount} image asset${
-                  missingImageAssetCount === 1 ? "" : "s"
+                  missingImageAssetCount === 1 ? '' : 's'
                 } missing. Open the original .graph file or drop the image again before saving.`}
           </div>
         ) : null}
@@ -463,11 +463,11 @@ export function KnowledgeBase({
         sourceNode={selection.selectedEdgeSourceNode}
         targetNode={selection.selectedEdgeTargetNode}
       />
-      {selection.editingNode && selection.editingNode.type === "card" ? (
+      {selection.editingNode && selection.editingNode.type === 'card' ? (
         <Suspense
           fallback={
             <div className="modal-loading-fallback" role="status">
-              {isZh ? "正在加载编辑器..." : "Loading editor..."}
+              {isZh ? '正在加载编辑器...' : 'Loading editor...'}
             </div>
           }
         >
@@ -481,17 +481,17 @@ export function KnowledgeBase({
       {files.pendingAction ? (
         <UnsavedChangesModal
           actionLabel={
-            files.pendingAction === "new"
+            files.pendingAction === 'new'
               ? isZh
-                ? "新建画布"
-                : "creating a new canvas"
-              : files.pendingAction === "open-dropped"
+                ? '新建画布'
+                : 'creating a new canvas'
+              : files.pendingAction === 'open-dropped'
                 ? isZh
-                  ? "打开拖入的文件"
-                  : "opening the dropped file"
+                  ? '打开拖入的文件'
+                  : 'opening the dropped file'
                 : isZh
-                  ? "打开其他文件"
-                  : "opening another file"
+                  ? '打开其他文件'
+                  : 'opening another file'
           }
           onCancel={files.cancelPendingAction}
           onDiscard={() => {

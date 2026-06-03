@@ -1,9 +1,9 @@
-import type { Node } from "@xyflow/react";
-import type { CSSProperties, MouseEvent } from "react";
-import { isReferenceableNode } from "../../lib/graphConstraints";
-import { constrainGroupNodeSize } from "../../lib/graphLayout";
-import { estimateNodeSize } from "../../lib/graphNodeMetrics";
-import type { EntityType, GraphNode } from "../../types";
+import type { Node } from '@xyflow/react';
+import type { CSSProperties, MouseEvent } from 'react';
+import { isReferenceableNode } from '../../lib/graphConstraints';
+import { constrainGroupNodeSize } from '../../lib/graphLayout';
+import { estimateNodeSize } from '../../lib/graphNodeMetrics';
+import type { EntityType, GraphNode } from '../../types';
 
 interface GraphFlowNodeData extends Record<string, unknown> {
   childCount: number;
@@ -28,7 +28,7 @@ interface GraphFlowNodeData extends Record<string, unknown> {
 type GraphFlowNode = Node<GraphFlowNodeData>;
 
 const SHOULD_USE_TEST_NODE_SIZE_FALLBACK =
-  typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent);
+  typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
 const EMPTY_PREVIOUS_NODES_BY_ID: ReadonlyMap<string, Node> = new Map();
 
 export function createGraphNodes(
@@ -44,10 +44,10 @@ export function createGraphNodes(
   previousNodesById: ReadonlyMap<string, Node> = EMPTY_PREVIOUS_NODES_BY_ID,
   savedNodePositions: Record<string, { x: number; y: number }> = {},
   savedNodeSizes: Record<string, { width: number; height: number }> = {},
-  searchQuery = "",
+  searchQuery = '',
   connectedNodeIds: Set<string> = new Set(),
   images: Map<string, Blob> = new Map(),
-  nodeFilter: EntityType | "locked" | "all" = "all",
+  nodeFilter: EntityType | 'locked' | 'all' = 'all',
   selectedEdgeActive = false,
   citationSelectionActive = false,
   onNodeMouseDown?: (event: MouseEvent, nodeId: string) => void,
@@ -66,8 +66,8 @@ export function createGraphNodes(
   });
 
   const sortedGraphNodes = [...graphNodes].sort((a, b) => {
-    if (a.type === "group" && b.type !== "group") return -1;
-    if (a.type !== "group" && b.type === "group") return 1;
+    if (a.type === 'group' && b.type !== 'group') return -1;
+    if (a.type !== 'group' && b.type === 'group') return 1;
     return 0;
   });
 
@@ -80,15 +80,15 @@ export function createGraphNodes(
     const fallbackSize = SHOULD_USE_TEST_NODE_SIZE_FALLBACK ? estimateNodeSize(node) : null;
     const savedSize = savedNodeSizes[node.id];
     const size =
-      node.type === "group" && savedSize
+      node.type === 'group' && savedSize
         ? constrainGroupNodeSize(savedSize)
         : savedSize || fallbackSize;
     const rfNodeType =
-      node.type === "image" ? "imageNode" : node.type === "group" ? "groupNode" : "cardNode";
+      node.type === 'image' ? 'imageNode' : node.type === 'group' ? 'groupNode' : 'cardNode';
     const isVisibleByFilter =
-      nodeFilter === "all"
+      nodeFilter === 'all'
         ? true
-        : nodeFilter === "locked"
+        : nodeFilter === 'locked'
           ? Boolean(node.locked)
           : node.type === nodeFilter;
 
@@ -109,17 +109,17 @@ export function createGraphNodes(
     const isSelected = selectedNodeIdSet.has(node.id);
     const isReferenceDisabled = citationSelectionActive && !isReferenceableNode(node);
     const classNames = [
-      "graph-node",
+      'graph-node',
       `graph-node--${node.type}`,
-      node.locked ? "is-locked" : "",
-      isSelected ? "is-selected" : "",
-      isReferenceDisabled ? "is-citation-disabled" : "",
-      isConnected ? "is-edge-connected" : "",
-      !isVisibleByFilter ? "is-filter-dimmed" : "",
-      matchingNodeIds ? (isMatch ? "is-search-match" : "is-search-dimmed") : "",
+      node.locked ? 'is-locked' : '',
+      isSelected ? 'is-selected' : '',
+      isReferenceDisabled ? 'is-citation-disabled' : '',
+      isConnected ? 'is-edge-connected' : '',
+      !isVisibleByFilter ? 'is-filter-dimmed' : '',
+      matchingNodeIds ? (isMatch ? 'is-search-match' : 'is-search-dimmed') : '',
     ]
       .filter(Boolean)
-      .join(" ");
+      .join(' ');
 
     const nextStyle = {
       opacity: nodeOpacity,

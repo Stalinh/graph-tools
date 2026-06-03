@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
-import { getColorLabel, getNodeTypeLabel, useI18n } from "../i18n";
-import { SUPPORTED_NODE_COLORS } from "../lib/nodeColors";
-import type { BacklinkItem, GraphNode } from "../types";
-import { CardEditorChecklistSection } from "./CardEditor/CardEditorChecklistSection";
-import { useCardEditorChecklist } from "./CardEditor/useCardEditorChecklist";
-import { ReferencesPanel } from "./ReferencesPanel";
+import { getColorLabel, getNodeTypeLabel, useI18n } from '../i18n';
+import { SUPPORTED_NODE_COLORS } from '../lib/nodeColors';
+import type { BacklinkItem, GraphNode } from '../types';
+import { CardEditorChecklistSection } from './CardEditor/CardEditorChecklistSection';
+import { useCardEditorChecklist } from './CardEditor/useCardEditorChecklist';
+import { ReferencesPanel } from './ReferencesPanel';
 
 interface CardEditorProps {
   node: GraphNode;
@@ -44,7 +44,7 @@ export function CardEditor({
   const titleInputRef = useRef<HTMLTextAreaElement | null>(null);
   const tagInputRef = useRef<HTMLInputElement | null>(null);
 
-  const supportsChecklist = node.type === "card";
+  const supportsChecklist = node.type === 'card';
   const checklist = useCardEditorChecklist({
     contentHtml: node.contentHtml,
     onContentCommit,
@@ -58,7 +58,7 @@ export function CardEditor({
 
   useEffect(() => {
     if (tagInputRef.current) {
-      tagInputRef.current.value = "";
+      tagInputRef.current.value = '';
     }
   }, [node.id]);
 
@@ -81,16 +81,16 @@ export function CardEditor({
   return (
     <div className="editor-panel">
       <section className="field-section">
-        <h3 className="field-label">{isZh ? "属性" : "Properties"}</h3>
+        <h3 className="field-label">{isZh ? '属性' : 'Properties'}</h3>
         <dl className="properties-list">
           <div className="property">
-            <dt>{isZh ? "标题" : "Title"}</dt>
+            <dt>{isZh ? '标题' : 'Title'}</dt>
             <dd>
               {isEditingTitle ? (
                 <textarea
                   ref={titleInputRef}
                   className="image-editor__title-input property-input property-input--center card-editor__title-input"
-                  aria-label={isZh ? "卡片标题" : "Card title"}
+                  aria-label={isZh ? '卡片标题' : 'Card title'}
                   rows={3}
                   value={draftTitle}
                   onBlur={() => {
@@ -103,18 +103,18 @@ export function CardEditor({
                     setDraftTitle(event.target.value);
                   }}
                   onKeyDown={(event) => {
-                    if (event.key === "Escape") {
+                    if (event.key === 'Escape') {
                       setDraftTitle(node.title);
                       setIsEditingTitle(false);
                     }
                   }}
-                  placeholder={isZh ? "未命名卡片" : "Untitled card"}
+                  placeholder={isZh ? '未命名卡片' : 'Untitled card'}
                 />
               ) : (
                 <button
                   type="button"
                   className="property-value-button property-value-button--center"
-                  aria-label={isZh ? "编辑卡片标题" : "Edit card title"}
+                  aria-label={isZh ? '编辑卡片标题' : 'Edit card title'}
                   onClick={() => setIsEditingTitle(true)}
                 >
                   {node.title}
@@ -127,35 +127,35 @@ export function CardEditor({
             <dd>{node.id}</dd>
           </div>
           <div className="property">
-            <dt>{isZh ? "类型" : "Type"}</dt>
+            <dt>{isZh ? '类型' : 'Type'}</dt>
             <dd>{getNodeTypeLabel(node.type, locale)}</dd>
           </div>
         </dl>
       </section>
 
       <section className="field-section">
-        <h3 className="field-label">{isZh ? "颜色" : "Color"}</h3>
+        <h3 className="field-label">{isZh ? '颜色' : 'Color'}</h3>
         <div
           className="color-palette"
           role="radiogroup"
-          aria-label={isZh ? "卡片颜色" : "Card color"}
+          aria-label={isZh ? '卡片颜色' : 'Card color'}
         >
           <button
             type="button"
             role="radio"
-            aria-checked={(node.color || "") === ""}
-            className={`color-swatch color-swatch--default${(node.color || "") === "" ? " is-active" : ""}`}
-            title={getColorLabel("", locale)}
-            aria-label={getColorLabel("", locale)}
-            onClick={() => onColorChange?.("")}
+            aria-checked={(node.color || '') === ''}
+            className={`color-swatch color-swatch--default${(node.color || '') === '' ? ' is-active' : ''}`}
+            title={getColorLabel('', locale)}
+            aria-label={getColorLabel('', locale)}
+            onClick={() => onColorChange?.('')}
           />
           {SUPPORTED_NODE_COLORS.map((key) => (
             <button
               key={key}
               type="button"
               role="radio"
-              aria-checked={(node.color || "") === key}
-              className={`color-swatch color-swatch--${key}${(node.color || "") === key ? " is-active" : ""}`}
+              aria-checked={(node.color || '') === key}
+              className={`color-swatch color-swatch--${key}${(node.color || '') === key ? ' is-active' : ''}`}
               title={getColorLabel(key, locale)}
               aria-label={getColorLabel(key, locale)}
               onClick={() => onColorChange?.(key)}
@@ -165,7 +165,7 @@ export function CardEditor({
       </section>
 
       <section className="field-section">
-        <h3 className="field-label">{isZh ? "标签" : "Tags"}</h3>
+        <h3 className="field-label">{isZh ? '标签' : 'Tags'}</h3>
         <div className="tags-editor">
           {node.tags.map((tag) => (
             <span key={tag} className="tag-pill">
@@ -187,10 +187,10 @@ export function CardEditor({
             ref={tagInputRef}
             className="tag-input"
             type="text"
-            placeholder={isZh ? "输入标签后回车" : "Type a tag and press Enter"}
+            placeholder={isZh ? '输入标签后回车' : 'Type a tag and press Enter'}
             defaultValue=""
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === 'Enter') {
                 e.preventDefault();
                 const input = tagInputRef.current;
                 if (!input) return;
@@ -199,9 +199,9 @@ export function CardEditor({
                 if (!node.tags.includes(trimmed)) {
                   onTagsChange?.([...node.tags, trimmed]);
                 }
-                input.value = "";
+                input.value = '';
               }
-              if (e.key === "Backspace" && !tagInputRef.current?.value && node.tags.length > 0) {
+              if (e.key === 'Backspace' && !tagInputRef.current?.value && node.tags.length > 0) {
                 onTagsChange?.(node.tags.slice(0, -1));
               }
             }}
@@ -227,7 +227,7 @@ export function CardEditor({
 
       {node.customFields && node.customFields.length > 0 && (
         <section className="field-section">
-          <h3 className="field-label">{isZh ? "自定义字段" : "Custom fields"}</h3>
+          <h3 className="field-label">{isZh ? '自定义字段' : 'Custom fields'}</h3>
           <dl className="custom-fields-list">
             {node.customFields.map((field) => (
               <div key={field.id} className="custom-field">
@@ -239,7 +239,7 @@ export function CardEditor({
         </section>
       )}
 
-      {node.type !== "group" ? (
+      {node.type !== 'group' ? (
         <ReferencesPanel
           node={node}
           allNodes={allNodes}

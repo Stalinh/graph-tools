@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import type { Locale } from "../i18n";
+import type { ReactNode } from 'react';
+import type { Locale } from '../i18n';
 
 interface CacheEntry {
   contentHtml: string;

@@ -1,10 +1,12 @@
-import type { Node, ReactFlowInstance } from "@xyflow/react";
-import { useCallback, useEffect, useRef, type MouseEvent as ReactMouseEvent, type RefObject } from "react";
+import type { Node, ReactFlowInstance } from '@xyflow/react';
 import {
-  combineScreenRects,
-  getAutoPanDelta,
-  getNodeElement,
-} from "./canvasInteractionUtils";
+  useCallback,
+  useEffect,
+  useRef,
+  type MouseEvent as ReactMouseEvent,
+  type RefObject,
+} from 'react';
+import { combineScreenRects, getAutoPanDelta, getNodeElement } from './canvasInteractionUtils';
 
 const DRAG_AUTO_PAN_EDGE_THRESHOLD = 24;
 const DRAG_AUTO_PAN_STEP = 24;

@@ -1,7 +1,7 @@
-import type { WorkspaceState } from "../types";
-import { parseWorkspaceStateJson, serializeWorkspaceState } from "./workspaceFileFormat";
+import type { WorkspaceState } from '../types';
+import { parseWorkspaceStateJson, serializeWorkspaceState } from './workspaceFileFormat';
 
-const WORKSPACE_DRAFT_STORAGE_KEY = "local-kg-workspace-draft";
+const WORKSPACE_DRAFT_STORAGE_KEY = 'local-kg-workspace-draft';
 
 export function loadWorkspaceDraft(): WorkspaceState | null {
   try {
@@ -27,7 +27,7 @@ export function saveWorkspaceDraft(state: WorkspaceState): boolean {
     localStorage.setItem(WORKSPACE_DRAFT_STORAGE_KEY, serializeWorkspaceState(state));
     return true;
   } catch (error) {
-    console.warn("Failed to save workspace draft to localStorage.", error);
+    console.warn('Failed to save workspace draft to localStorage.', error);
     return false;
   }
 }

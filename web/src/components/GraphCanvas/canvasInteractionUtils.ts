@@ -1,10 +1,10 @@
-import type { Node, NodeChange } from "@xyflow/react";
+import type { Node, NodeChange } from '@xyflow/react';
 import {
   DEFAULT_GROUP_SIZE,
   constrainGroupNodeSize,
   snapPositionToGrid,
-} from "../../lib/graphLayout";
-import type { CanvasPosition, GraphNode, NodeSize } from "../../types";
+} from '../../lib/graphLayout';
+import type { CanvasPosition, GraphNode, NodeSize } from '../../types';
 
 const ALIGNMENT_GUIDE_THRESHOLD = 5;
 const GROUP_COLLISION_TOLERANCE = 0.5;
@@ -23,7 +23,7 @@ export interface ScreenRect {
 
 export interface AlignmentGuide {
   id: string;
-  orientation: "horizontal" | "vertical";
+  orientation: 'horizontal' | 'vertical';
   offset: number;
   start: number;
   end: number;
@@ -31,11 +31,11 @@ export interface AlignmentGuide {
 
 interface AlignmentAnchor {
   coordinate: number;
-  key: "center" | "end" | "start";
+  key: 'center' | 'end' | 'start';
 }
 
 interface AlignmentGuideCandidate extends AlignmentGuide {
-  anchorKey: AlignmentAnchor["key"];
+  anchorKey: AlignmentAnchor['key'];
   distance: number;
 }
 
@@ -113,17 +113,17 @@ function clampGuideCoordinate(value: number, min: number, max: number) {
 
 export function getNodeElement(container: HTMLDivElement, nodeId: string) {
   return (
-    Array.from(container.querySelectorAll<HTMLElement>(".react-flow__node[data-id]")).find(
-      (element) => element.getAttribute("data-id") === nodeId
+    Array.from(container.querySelectorAll<HTMLElement>('.react-flow__node[data-id]')).find(
+      (element) => element.getAttribute('data-id') === nodeId
     ) ?? null
   );
 }
 
 function getAlignmentNodeType(
   draggedNodeIds: string[],
-  nodeTypeById: ReadonlyMap<string, GraphNode["type"]>
+  nodeTypeById: ReadonlyMap<string, GraphNode['type']>
 ) {
-  let alignmentType: GraphNode["type"] | null = null;
+  let alignmentType: GraphNode['type'] | null = null;
 
   for (const nodeId of draggedNodeIds) {
     const nodeType = nodeTypeById.get(nodeId);
@@ -140,7 +140,7 @@ function getAlignmentNodeType(
 }
 
 function selectAlignmentGuides(candidates: AlignmentGuideCandidate[]) {
-  const bestByAnchorKey = new Map<AlignmentAnchor["key"], AlignmentGuideCandidate>();
+  const bestByAnchorKey = new Map<AlignmentAnchor['key'], AlignmentGuideCandidate>();
 
   candidates.forEach((candidate) => {
     const previous = bestByAnchorKey.get(candidate.anchorKey);
@@ -149,10 +149,10 @@ function selectAlignmentGuides(candidates: AlignmentGuideCandidate[]) {
     }
   });
 
-  const selectedCandidates = [bestByAnchorKey.get("start"), bestByAnchorKey.get("end")].filter(
+  const selectedCandidates = [bestByAnchorKey.get('start'), bestByAnchorKey.get('end')].filter(
     (candidate): candidate is AlignmentGuideCandidate => candidate !== undefined
   );
-  const centerCandidate = bestByAnchorKey.get("center");
+  const centerCandidate = bestByAnchorKey.get('center');
   if (centerCandidate && selectedCandidates.length < 2) {
     selectedCandidates.push(centerCandidate);
   }
@@ -165,7 +165,7 @@ function selectAlignmentGuides(candidates: AlignmentGuideCandidate[]) {
 export function createAlignmentGuides(
   container: HTMLDivElement,
   draggedNodeIds: string[],
-  nodeTypeById: ReadonlyMap<string, GraphNode["type"]>
+  nodeTypeById: ReadonlyMap<string, GraphNode['type']>
 ): AlignmentGuide[] {
   const alignmentNodeType = getAlignmentNodeType(draggedNodeIds, nodeTypeById);
   if (!alignmentNodeType) {
@@ -184,20 +184,20 @@ export function createAlignmentGuides(
   const bounds = container.getBoundingClientRect();
   const draggedRect = combineScreenRects(draggedElements);
   const draggedVerticalAnchors: AlignmentAnchor[] = [
-    { coordinate: draggedRect.left, key: "start" },
-    { coordinate: (draggedRect.left + draggedRect.right) / 2, key: "center" },
-    { coordinate: draggedRect.right, key: "end" },
+    { coordinate: draggedRect.left, key: 'start' },
+    { coordinate: (draggedRect.left + draggedRect.right) / 2, key: 'center' },
+    { coordinate: draggedRect.right, key: 'end' },
   ];
   const draggedHorizontalAnchors: AlignmentAnchor[] = [
-    { coordinate: draggedRect.top, key: "start" },
-    { coordinate: (draggedRect.top + draggedRect.bottom) / 2, key: "center" },
-    { coordinate: draggedRect.bottom, key: "end" },
+    { coordinate: draggedRect.top, key: 'start' },
+    { coordinate: (draggedRect.top + draggedRect.bottom) / 2, key: 'center' },
+    { coordinate: draggedRect.bottom, key: 'end' },
   ];
   const verticalCandidates: AlignmentGuideCandidate[] = [];
   const horizontalCandidates: AlignmentGuideCandidate[] = [];
 
-  for (const element of container.querySelectorAll<HTMLElement>(".react-flow__node[data-id]")) {
-    const nodeId = element.getAttribute("data-id");
+  for (const element of container.querySelectorAll<HTMLElement>('.react-flow__node[data-id]')) {
+    const nodeId = element.getAttribute('data-id');
     if (!nodeId || draggedIdSet.has(nodeId) || nodeTypeById.get(nodeId) !== alignmentNodeType) {
       continue;
     }
@@ -208,14 +208,14 @@ export function createAlignmentGuides(
     }
 
     const otherVerticalAnchors: AlignmentAnchor[] = [
-      { coordinate: otherRect.left, key: "start" },
-      { coordinate: (otherRect.left + otherRect.right) / 2, key: "center" },
-      { coordinate: otherRect.right, key: "end" },
+      { coordinate: otherRect.left, key: 'start' },
+      { coordinate: (otherRect.left + otherRect.right) / 2, key: 'center' },
+      { coordinate: otherRect.right, key: 'end' },
     ];
     const otherHorizontalAnchors: AlignmentAnchor[] = [
-      { coordinate: otherRect.top, key: "start" },
-      { coordinate: (otherRect.top + otherRect.bottom) / 2, key: "center" },
-      { coordinate: otherRect.bottom, key: "end" },
+      { coordinate: otherRect.top, key: 'start' },
+      { coordinate: (otherRect.top + otherRect.bottom) / 2, key: 'center' },
+      { coordinate: otherRect.bottom, key: 'end' },
     ];
 
     for (const draggedAnchor of draggedVerticalAnchors) {
@@ -229,7 +229,7 @@ export function createAlignmentGuides(
           anchorKey: draggedAnchor.key,
           distance,
           id: `v-${nodeId}-${draggedAnchor.key}-${otherAnchor.key}`,
-          orientation: "vertical",
+          orientation: 'vertical',
           offset: clampGuideCoordinate(otherAnchor.coordinate - bounds.left, 0, bounds.width),
           start: clampGuideCoordinate(
             Math.min(draggedRect.top, otherRect.top) - bounds.top,
@@ -256,7 +256,7 @@ export function createAlignmentGuides(
           anchorKey: draggedAnchor.key,
           distance,
           id: `h-${nodeId}-${draggedAnchor.key}-${otherAnchor.key}`,
-          orientation: "horizontal",
+          orientation: 'horizontal',
           offset: clampGuideCoordinate(otherAnchor.coordinate - bounds.top, 0, bounds.height),
           start: clampGuideCoordinate(
             Math.min(draggedRect.left, otherRect.left) - bounds.left,
@@ -332,7 +332,7 @@ function resolveGroupDragPosition(
   movingGroupIds: Set<string>
 ) {
   const staticGroups = graphNodes.filter(
-    (node) => node.type === "group" && node.id !== nodeId && !movingGroupIds.has(node.id)
+    (node) => node.type === 'group' && node.id !== nodeId && !movingGroupIds.has(node.id)
   );
   const canvasNodeMap = new Map(currentCanvasNodes.map((node) => [node.id, node]));
   const currentRect = getNodeRect(from, size);
@@ -382,11 +382,7 @@ function resolveGroupDragPosition(
         nextX + size.width > otherRect.left
       ) {
         nextX = Math.min(nextX, otherRect.left - size.width);
-      } else if (
-        !movingRight &&
-        currentRect.left >= otherRect.right &&
-        nextX < otherRect.right
-      ) {
+      } else if (!movingRight && currentRect.left >= otherRect.right && nextX < otherRect.right) {
         nextX = Math.max(nextX, otherRect.right);
       }
     });
@@ -437,11 +433,7 @@ function resolveGroupDragPosition(
         nextY + size.height > otherRect.top
       ) {
         nextY = Math.min(nextY, otherRect.top - size.height);
-      } else if (
-        !movingDown &&
-        xResolvedRect.top >= otherRect.bottom &&
-        nextY < otherRect.bottom
-      ) {
+      } else if (!movingDown && xResolvedRect.top >= otherRect.bottom && nextY < otherRect.bottom) {
         nextY = Math.max(nextY, otherRect.bottom);
       }
     });
@@ -486,30 +478,32 @@ export function normalizeGroupCollisionChanges(
   const movingGroupIds = new Set(
     changes
       .flatMap((change) =>
-        change.type === "position" &&
-        "id" in change &&
-        typeof change.id === "string" &&
+        change.type === 'position' &&
+        'id' in change &&
+        typeof change.id === 'string' &&
         Boolean(change.position)
           ? [change.id]
           : []
       )
-      .filter((id) => graphNodeMap.get(id)?.type === "group")
+      .filter((id) => graphNodeMap.get(id)?.type === 'group')
   );
   const resolvedPositions = new Map<string, CanvasPosition>();
 
   return changes.map((change) => {
-    if (change.type === "dimensions" && graphNodeMap.get(change.id)?.type === "group") {
+    if (change.type === 'dimensions' && graphNodeMap.get(change.id)?.type === 'group') {
       return {
         ...change,
-        dimensions: change.dimensions ? constrainGroupNodeSize(change.dimensions) : change.dimensions,
+        dimensions: change.dimensions
+          ? constrainGroupNodeSize(change.dimensions)
+          : change.dimensions,
       };
     }
 
-    if (change.type !== "position" || !change.position) {
+    if (change.type !== 'position' || !change.position) {
       return change;
     }
 
-    if (graphNodeMap.get(change.id)?.type !== "group") {
+    if (graphNodeMap.get(change.id)?.type !== 'group') {
       return change;
     }
 

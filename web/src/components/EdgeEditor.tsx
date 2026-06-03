@@ -1,12 +1,12 @@
-import type { CSSProperties } from "react";
-import { getColorLabel, useI18n } from "../i18n";
-import { EDGE_STYLES, normalizeEdgeStyle } from "../lib/edgeStyles";
+import type { CSSProperties } from 'react';
+import { getColorLabel, useI18n } from '../i18n';
+import { EDGE_STYLES, normalizeEdgeStyle } from '../lib/edgeStyles';
 import {
   DEFAULT_SUPPORTED_NODE_COLOR,
   SUPPORTED_NODE_COLORS,
   getNodeColorCssVar,
-} from "../lib/nodeColors";
-import type { EdgeDirection, EdgeStyle, GraphEdge, GraphNode } from "../types";
+} from '../lib/nodeColors';
+import type { EdgeDirection, EdgeStyle, GraphEdge, GraphNode } from '../types';
 
 interface EdgeEditorProps {
   edge: GraphEdge;
@@ -43,30 +43,30 @@ export function EdgeEditor({
     value,
     swatch: getNodeColorCssVar(value, true),
   }));
-  const direction: EdgeDirection = edge.direction ?? "unidirectional";
+  const direction: EdgeDirection = edge.direction ?? 'unidirectional';
   const style = normalizeEdgeStyle(edge.style);
   const color = edge.color ?? DEFAULT_SUPPORTED_NODE_COLOR;
 
   function toggleDirection() {
-    const next: EdgeDirection = direction === "unidirectional" ? "bidirectional" : "unidirectional";
+    const next: EdgeDirection = direction === 'unidirectional' ? 'bidirectional' : 'unidirectional';
     onDirectionChange(edge.id, next);
   }
   const directionLabel =
-    direction === "unidirectional"
+    direction === 'unidirectional'
       ? isZh
-        ? "单向引用 →"
-        : "One-way link →"
+        ? '单向引用 →'
+        : 'One-way link →'
       : isZh
-        ? "双向引用 —"
-        : "Two-way link —";
+        ? '双向引用 —'
+        : 'Two-way link —';
 
   return (
     <div className="editor-panel">
       <section className="field-section">
-        <h3 className="field-label">{isZh ? "属性" : "Properties"}</h3>
+        <h3 className="field-label">{isZh ? '属性' : 'Properties'}</h3>
         <dl className="properties-list">
           <div className="property">
-            <dt>{isZh ? "方向" : "Direction"}</dt>
+            <dt>{isZh ? '方向' : 'Direction'}</dt>
             <dd
               className="property--clickable"
               role="button"
@@ -78,7 +78,7 @@ export function EdgeEditor({
               }
               onClick={toggleDirection}
               onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
+                if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   toggleDirection();
                 }
@@ -88,28 +88,28 @@ export function EdgeEditor({
             </dd>
           </div>
           <div className="property">
-            <dt>{isZh ? "源节点" : "Source"}</dt>
+            <dt>{isZh ? '源节点' : 'Source'}</dt>
             <dd>{sourceNode?.title ?? edge.sourceId}</dd>
           </div>
           <div className="property">
-            <dt>{isZh ? "目标节点" : "Target"}</dt>
+            <dt>{isZh ? '目标节点' : 'Target'}</dt>
             <dd>{targetNode?.title ?? edge.targetId}</dd>
           </div>
         </dl>
       </section>
 
       <section className="field-section">
-        <h3 className="field-label">{isZh ? "外观" : "Appearance"}</h3>
+        <h3 className="field-label">{isZh ? '外观' : 'Appearance'}</h3>
         <div
           className="property-segmented-control"
           role="group"
-          aria-label={isZh ? "连线样式" : "Edge style"}
+          aria-label={isZh ? '连线样式' : 'Edge style'}
         >
           {edgeStyleOptions.map((option) => (
             <button
               key={option.value}
               type="button"
-              className={`property-segmented-control__button${style === option.value ? " is-active" : ""}`}
+              className={`property-segmented-control__button${style === option.value ? ' is-active' : ''}`}
               aria-label={option.ariaLabel}
               aria-pressed={style === option.value}
               onClick={() => onStyleChange(edge.id, option.value)}
@@ -121,7 +121,7 @@ export function EdgeEditor({
                 style={{ color: getNodeColorCssVar(color, true) }}
               >
                 <span className="edge-style-preview__line" />
-                {option.value === "sketch" ? (
+                {option.value === 'sketch' ? (
                   <span className="edge-style-preview__line edge-style-preview__line--secondary" />
                 ) : null}
               </span>
@@ -132,7 +132,7 @@ export function EdgeEditor({
         <div
           className="edge-color-picker"
           role="group"
-          aria-label={isZh ? "连线颜色" : "Edge color"}
+          aria-label={isZh ? '连线颜色' : 'Edge color'}
         >
           {edgeColorOptions.map((option) => {
             const isActive = color === option.value;
@@ -140,7 +140,7 @@ export function EdgeEditor({
               <button
                 key={option.label}
                 type="button"
-                className={`edge-color-swatch${isActive ? " is-active" : ""}`}
+                className={`edge-color-swatch${isActive ? ' is-active' : ''}`}
                 aria-label={option.ariaLabel}
                 aria-pressed={isActive}
                 title={option.label}
@@ -149,7 +149,7 @@ export function EdgeEditor({
               >
                 <span
                   className="edge-color-swatch__dot"
-                  style={{ "--edge-swatch-color": option.swatch } as CSSProperties}
+                  style={{ '--edge-swatch-color': option.swatch } as CSSProperties}
                   aria-hidden="true"
                 />
               </button>
@@ -170,7 +170,7 @@ export function EdgeEditor({
                 : `Delete link from ${sourceNode?.title ?? edge.sourceId} to ${targetNode?.title ?? edge.targetId}`
             }
           >
-            {isZh ? "删除引线" : "Delete link"}
+            {isZh ? '删除引线' : 'Delete link'}
           </button>
         </section>
       ) : null}
@@ -179,13 +179,13 @@ export function EdgeEditor({
 }
 
 function getEdgeStyleLabel(style: EdgeStyle, isZh: boolean) {
-  if (style === "solid") return isZh ? "实线" : "Solid";
-  if (style === "sketch") return isZh ? "草图" : "Sketch";
-  return isZh ? "笔记虚线" : "Note dash";
+  if (style === 'solid') return isZh ? '实线' : 'Solid';
+  if (style === 'sketch') return isZh ? '草图' : 'Sketch';
+  return isZh ? '笔记虚线' : 'Note dash';
 }
 
 function getEdgeStyleAriaLabel(style: EdgeStyle, isZh: boolean) {
-  if (style === "solid") return isZh ? "切换为实线" : "Switch to solid style";
-  if (style === "sketch") return isZh ? "切换为草图" : "Switch to sketch style";
-  return isZh ? "切换为笔记虚线" : "Switch to note dash style";
+  if (style === 'solid') return isZh ? '切换为实线' : 'Switch to solid style';
+  if (style === 'sketch') return isZh ? '切换为草图' : 'Switch to sketch style';
+  return isZh ? '切换为笔记虚线' : 'Switch to note dash style';
 }

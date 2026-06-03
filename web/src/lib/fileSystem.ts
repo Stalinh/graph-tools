@@ -1,5 +1,5 @@
-import { unzip, zip, type Unzipped } from "fflate";
-import type { WorkspaceState } from "../types";
+import { unzip, zip, type Unzipped } from 'fflate';
+import type { WorkspaceState } from '../types';
 import {
   WORKSPACE_FILE_DESCRIPTION,
   WORKSPACE_GRAPH_FILE_NAME,
@@ -12,7 +12,7 @@ import {
   isWorkspaceImagePath,
   parseWorkspaceStateJson,
   serializeWorkspaceState,
-} from "./workspaceFileFormat";
+} from './workspaceFileFormat';
 
 const MAX_WORKSPACE_ARCHIVE_BYTES = 50 * 1024 * 1024;
 const MAX_WORKSPACE_UNZIPPED_BYTES = 100 * 1024 * 1024;
@@ -36,7 +36,7 @@ function readBlobAsArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as ArrayBuffer);
     reader.onerror = () =>
-      reject(new Error("Failed to read workspace file data.", { cause: reader.error }));
+      reject(new Error('Failed to read workspace file data.', { cause: reader.error }));
     reader.readAsArrayBuffer(blob);
   });
 }
@@ -67,7 +67,7 @@ function unzipWorkspaceArchive(data: Uint8Array): Promise<Unzipped> {
             }
             totalUnzippedBytes += entry.originalSize;
             if (totalUnzippedBytes > MAX_WORKSPACE_UNZIPPED_BYTES) {
-              throw new Error("Workspace archive expands to too much data.");
+              throw new Error('Workspace archive expands to too much data.');
             }
             return true;
           } catch (error) {
@@ -153,7 +153,7 @@ export class WorkspaceFileManager {
       this.currentFileHandle = fileHandle;
       return pkg;
     } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
+      if (error instanceof DOMException && error.name === 'AbortError') {
         return null;
       }
       throw error;
@@ -199,7 +199,7 @@ export class WorkspaceFileManager {
       this.currentFileHandle = fileHandle;
       return fileHandle.name;
     } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
+      if (error instanceof DOMException && error.name === 'AbortError') {
         return null;
       }
       throw error;
@@ -225,11 +225,11 @@ export class WorkspaceFileManager {
 
   private async readWorkspaceFile(file: File): Promise<WorkspacePackage> {
     if (!isWorkspaceArchiveFileName(file.name)) {
-      throw new Error("Unsupported workspace file type.");
+      throw new Error('Unsupported workspace file type.');
     }
 
     if (file.size > MAX_WORKSPACE_ARCHIVE_BYTES) {
-      throw new Error("Workspace archive is too large.");
+      throw new Error('Workspace archive is too large.');
     }
 
     const buffer = await readFileAsArrayBuffer(file);
@@ -244,7 +244,7 @@ export class WorkspaceFileManager {
       }
       actualUnzippedBytes += data.byteLength;
       if (actualUnzippedBytes > MAX_WORKSPACE_UNZIPPED_BYTES) {
-        throw new Error("Workspace archive expands to too much data.");
+        throw new Error('Workspace archive expands to too much data.');
       }
 
       if (path === WORKSPACE_JSON_ENTRY) {
@@ -256,7 +256,7 @@ export class WorkspaceFileManager {
     }
 
     if (!state) {
-      throw new Error("Invalid .graph workspace: missing or invalid workspace.json");
+      throw new Error('Invalid .graph workspace: missing or invalid workspace.json');
     }
 
     const images = new Map<string, Blob>();

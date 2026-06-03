@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import type { GraphNode, NodeSize } from "../../types";
-import { createAlignmentGuides, type AlignmentGuide } from "./canvasInteractionUtils";
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import type { GraphNode, NodeSize } from '../../types';
+import { createAlignmentGuides, type AlignmentGuide } from './canvasInteractionUtils';
 
 interface UseGraphCanvasAlignmentGuidesOptions {
   containerRef: RefObject<HTMLDivElement | null>;
-  graphNodeTypeById: Map<string, GraphNode["type"]>;
+  graphNodeTypeById: Map<string, GraphNode['type']>;
   onNodeResizeEnd?: (nodeId: string, size: NodeSize) => void;
 }
 

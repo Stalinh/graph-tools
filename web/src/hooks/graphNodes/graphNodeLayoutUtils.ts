@@ -1,5 +1,5 @@
-import { DEFAULT_GROUP_SIZE } from "../../lib/graphLayout";
-import type { CanvasPosition, GraphNode, NodeSize } from "../../types";
+import { DEFAULT_GROUP_SIZE } from '../../lib/graphLayout';
+import type { CanvasPosition, GraphNode, NodeSize } from '../../types';
 
 interface FindContainingGroupOptions {
   nodeId: string;
@@ -63,7 +63,7 @@ export function findContainingGroup({
   sizes,
 }: FindContainingGroupOptions) {
   return nodes.find((node) => {
-    if (node.id === nodeId || node.type !== "group") {
+    if (node.id === nodeId || node.type !== 'group') {
       return false;
     }
 

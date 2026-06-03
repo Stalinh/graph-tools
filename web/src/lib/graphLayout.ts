@@ -1,4 +1,4 @@
-import type { CanvasPosition, NodeSize } from "../types";
+import type { CanvasPosition, NodeSize } from '../types';
 
 export const GRAPH_GRID_SIZE = 20;
 

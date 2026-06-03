@@ -1,15 +1,9 @@
-import { useCallback } from "react";
-import type { GraphData, WorkspaceState } from "../types";
-import {
-  clearContentCache,
-  deleteContentCacheEntry,
-} from "../lib/cardContentCache";
-import { normalizeWorkspaceState } from "../lib/workspaceState";
-import type { CanvasHistoryWorkspaceState } from "./canvasHistoryTypes";
-import type {
-  WorkspaceStoreController,
-  WorkspaceTransaction,
-} from "./useWorkspaceStore";
+import { useCallback } from 'react';
+import type { GraphData, WorkspaceState } from '../types';
+import { clearContentCache, deleteContentCacheEntry } from '../lib/cardContentCache';
+import { normalizeWorkspaceState } from '../lib/workspaceState';
+import type { CanvasHistoryWorkspaceState } from './canvasHistoryTypes';
+import type { WorkspaceStoreController, WorkspaceTransaction } from './useWorkspaceStore';
 
 function deleteRemovedContentCacheEntries(currentGraph: GraphData, nextGraph: GraphData) {
   const nextNodeIds = new Set(nextGraph.nodes.map((node) => node.id));
@@ -20,11 +14,10 @@ function deleteRemovedContentCacheEntries(currentGraph: GraphData, nextGraph: Gr
   });
 }
 
-interface UseGraphPersistenceOptions
-  extends Pick<
-    WorkspaceStoreController,
-    "workspaceRef" | "dispatchWorkspaceTransaction"
-  > {}
+interface UseGraphPersistenceOptions extends Pick<
+  WorkspaceStoreController,
+  'workspaceRef' | 'dispatchWorkspaceTransaction'
+> {}
 
 function workspaceTransactionFromHistoryState(
   state: CanvasHistoryWorkspaceState
@@ -55,7 +48,7 @@ export function useGraphPersistence({
       ...workspaceTransactionFromHistoryState(cmd.before),
       status: { dirty: true },
       history: {
-        type: "replace",
+        type: 'replace',
         undoStack: current.history.undoStack.slice(0, -1),
         redoStack: [...current.history.redoStack, cmd],
       },
@@ -72,28 +65,25 @@ export function useGraphPersistence({
       ...workspaceTransactionFromHistoryState(cmd.after),
       status: { dirty: true },
       history: {
-        type: "replace",
+        type: 'replace',
         undoStack: [...current.history.undoStack, cmd],
         redoStack: current.history.redoStack.slice(0, -1),
       },
     });
   }, [dispatchWorkspaceTransaction, workspaceRef]);
 
-  const createWorkspaceState = useCallback(
-    (): WorkspaceState => {
-      const current = workspaceRef.current;
-      return normalizeWorkspaceState({
-        version: 1,
-        savedAt: new Date().toISOString(),
-        graph: current.graph,
-        nodePositions: current.nodePositions,
-        nodeSizes: current.nodeSizes,
-        viewport: current.viewport,
-        selectedNodeId: current.selection.selectedNodeIds[0] ?? null,
-      });
-    },
-    [workspaceRef]
-  );
+  const createWorkspaceState = useCallback((): WorkspaceState => {
+    const current = workspaceRef.current;
+    return normalizeWorkspaceState({
+      version: 1,
+      savedAt: new Date().toISOString(),
+      graph: current.graph,
+      nodePositions: current.nodePositions,
+      nodeSizes: current.nodeSizes,
+      viewport: current.viewport,
+      selectedNodeId: current.selection.selectedNodeIds[0] ?? null,
+    });
+  }, [workspaceRef]);
 
   const applyWorkspaceState = useCallback(
     (state: WorkspaceState) => {
@@ -114,9 +104,7 @@ export function useGraphPersistence({
         nodeSizes: normalizedState.nodeSizes ?? {},
         viewport: normalizedState.viewport,
         selection: {
-          selectedNodeIds: normalizedState.selectedNodeId
-            ? [normalizedState.selectedNodeId]
-            : [],
+          selectedNodeIds: normalizedState.selectedNodeId ? [normalizedState.selectedNodeId] : [],
           selectedEdgeId: null,
           contextMenu: null,
           editingNodeId: null,
@@ -124,7 +112,7 @@ export function useGraphPersistence({
           pendingInspectorContentFocusNodeId: null,
         },
         status: { dirty: false },
-        history: { type: "clear" },
+        history: { type: 'clear' },
       });
       clearContentCache();
     },
@@ -146,7 +134,7 @@ export function useGraphPersistence({
         pendingInspectorContentFocusNodeId: null,
       },
       status: { dirty: false },
-      history: { type: "clear" },
+      history: { type: 'clear' },
     });
     clearContentCache();
   }, [dispatchWorkspaceTransaction]);

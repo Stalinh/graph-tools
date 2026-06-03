@@ -9,8 +9,8 @@ import {
   type NodeMouseHandler,
   type NodeTypes,
   type ReactFlowInstance,
-} from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import {
   type MouseEvent as ReactMouseEvent,
   type DragEvent as ReactDragEvent,
@@ -19,9 +19,9 @@ import {
   useMemo,
   useRef,
   useState,
-} from "react";
-import { useI18n } from "../i18n";
-import { GRAPH_GRID_SIZE } from "../lib/graphLayout";
+} from 'react';
+import { useI18n } from '../i18n';
+import { GRAPH_GRID_SIZE } from '../lib/graphLayout';
 import type {
   CanvasPosition,
   CanvasViewport,
@@ -31,24 +31,24 @@ import type {
   GraphNode,
   NodeSize,
   WorkspaceNodeFilter,
-} from "../types";
+} from '../types';
 
-import { CitationEdge } from "./GraphCanvas/CitationEdge";
-import { GraphContextMenu } from "./GraphCanvas/GraphContextMenu";
-import { GraphScaleIndicator } from "./GraphCanvas/GraphScaleIndicator";
-import { GraphCanvasFileStatusPanel } from "./GraphCanvas/GraphCanvasStatusPanels";
-import { ImageGraphNode } from "./GraphCanvas/ImageGraphNode";
-import { ResizableGraphNode } from "./GraphCanvas/ResizableGraphNode";
-import { GroupNode } from "./GraphCanvas/GroupNode";
-import { normalizeGroupCollisionChanges } from "./GraphCanvas/canvasInteractionUtils";
-import { GlobalPreviewController } from "./GraphCanvas/GlobalPreviewController";
-import { createGraphNodes } from "./GraphCanvas/graphUtils";
-import { useGraphCanvasAlignmentGuides } from "./GraphCanvas/useGraphCanvasAlignmentGuides";
-import { useGraphCanvasCitationSelection } from "./GraphCanvas/useGraphCanvasCitationSelection";
-import { useGraphCanvasDragAutoPan } from "./GraphCanvas/useGraphCanvasDragAutoPan";
-import { useGraphCanvasEdges } from "./GraphCanvas/useGraphCanvasEdges";
-import { useGraphCanvasMarqueeSelection } from "./GraphCanvas/useGraphCanvasMarqueeSelection";
-import { useGraphCanvasNodeDragLifecycle } from "./GraphCanvas/useGraphCanvasNodeDragLifecycle";
+import { CitationEdge } from './GraphCanvas/CitationEdge';
+import { GraphContextMenu } from './GraphCanvas/GraphContextMenu';
+import { GraphScaleIndicator } from './GraphCanvas/GraphScaleIndicator';
+import { GraphCanvasFileStatusPanel } from './GraphCanvas/GraphCanvasStatusPanels';
+import { ImageGraphNode } from './GraphCanvas/ImageGraphNode';
+import { ResizableGraphNode } from './GraphCanvas/ResizableGraphNode';
+import { GroupNode } from './GraphCanvas/GroupNode';
+import { normalizeGroupCollisionChanges } from './GraphCanvas/canvasInteractionUtils';
+import { GlobalPreviewController } from './GraphCanvas/GlobalPreviewController';
+import { createGraphNodes } from './GraphCanvas/graphUtils';
+import { useGraphCanvasAlignmentGuides } from './GraphCanvas/useGraphCanvasAlignmentGuides';
+import { useGraphCanvasCitationSelection } from './GraphCanvas/useGraphCanvasCitationSelection';
+import { useGraphCanvasDragAutoPan } from './GraphCanvas/useGraphCanvasDragAutoPan';
+import { useGraphCanvasEdges } from './GraphCanvas/useGraphCanvasEdges';
+import { useGraphCanvasMarqueeSelection } from './GraphCanvas/useGraphCanvasMarqueeSelection';
+import { useGraphCanvasNodeDragLifecycle } from './GraphCanvas/useGraphCanvasNodeDragLifecycle';
 
 interface GraphCanvasProps {
   graph: GraphData;
@@ -72,7 +72,7 @@ interface GraphCanvasProps {
   onCloseContextMenu: () => void;
   onContextMenuRequest: (contextMenu: GraphContextMenuState) => void;
   onCreateCitation: (sourceId: string, targetId: string, direction: EdgeDirection) => void;
-  onCreateNode: (type: GraphNode["type"], position: CanvasPosition, parentId?: string) => void;
+  onCreateNode: (type: GraphNode['type'], position: CanvasPosition, parentId?: string) => void;
   onDeleteNode: (nodeId: string) => void;
   onEditNode: (nodeId: string) => void;
   onQuickEditSubmit: (
@@ -120,7 +120,7 @@ export function GraphCanvas({
   nodePositions,
   nodeSizes = EMPTY_NODE_SIZES,
   searchQuery,
-  nodeFilter = "all",
+  nodeFilter = 'all',
   currentFileName = null,
   dirty = false,
   fileStatus = null,
@@ -221,7 +221,7 @@ export function GraphCanvas({
   const handleQuickAddChild = useCallback(
     (parentId: string) => {
       const parentPosition = nodePositionsRef.current?.[parentId] ?? { x: 0, y: 0 };
-      onCreateNode("card", { x: parentPosition.x + 50, y: parentPosition.y + 80 }, parentId);
+      onCreateNode('card', { x: parentPosition.x + 50, y: parentPosition.y + 80 }, parentId);
     },
     [onCreateNode]
   );
@@ -236,10 +236,10 @@ export function GraphCanvas({
       new Map(),
       nodePositions,
       nodeSizes,
-      "",
+      '',
       new Set(),
       images,
-      "all",
+      'all',
       false,
       false,
       dispatchNodeMouseDown,
@@ -466,13 +466,7 @@ export function GraphCanvas({
 
       onSelectNodeIds([node.id]);
     },
-    [
-      handleCitationNodeClick,
-      onCloseContextMenu,
-      onEdgeSelect,
-      onSelectNodeIds,
-      selectedNodeIds,
-    ]
+    [handleCitationNodeClick, onCloseContextMenu, onEdgeSelect, onSelectNodeIds, selectedNodeIds]
   );
 
   const handleEdgeClick = useCallback<EdgeMouseHandler>(
@@ -484,24 +478,27 @@ export function GraphCanvas({
     [onCloseContextMenu, onEdgeSelect, onSelectNodeIds]
   );
 
-  const handleNodesChange = useCallback((changes: NodeChange[]) => {
-    const stableChanges = selectionDragRef.current
-      ? changes.filter((change) => change.type !== "select")
-      : changes;
-    if (stableChanges.length === 0) {
-      return;
-    }
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      const stableChanges = selectionDragRef.current
+        ? changes.filter((change) => change.type !== 'select')
+        : changes;
+      if (stableChanges.length === 0) {
+        return;
+      }
 
-    const normalizedChanges = normalizeGroupCollisionChanges(
-      stableChanges,
-      graph.nodes,
-      nodesRef.current,
-      nodeSizes
-    );
-    const nextNodes = applyNodeChanges(normalizedChanges, nodesRef.current);
-    nodesRef.current = nextNodes;
-    setNodes(nextNodes);
-  }, [graph.nodes, nodeSizes]);
+      const normalizedChanges = normalizeGroupCollisionChanges(
+        stableChanges,
+        graph.nodes,
+        nodesRef.current,
+        nodeSizes
+      );
+      const nextNodes = applyNodeChanges(normalizedChanges, nodesRef.current);
+      nodesRef.current = nextNodes;
+      setNodes(nextNodes);
+    },
+    [graph.nodes, nodeSizes]
+  );
 
   const handleCanvasAuxClick = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
     const target = event.target;
@@ -509,7 +506,7 @@ export function GraphCanvas({
     if (
       event.button !== MIDDLE_BUTTON ||
       !(target instanceof Element) ||
-      !target.closest(".react-flow__pane")
+      !target.closest('.react-flow__pane')
     ) {
       return;
     }
@@ -585,7 +582,7 @@ export function GraphCanvas({
   const handleDrop = useCallback(
     (event: ReactDragEvent<HTMLDivElement>) => {
       event.preventDefault();
-      const files = Array.from(event.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+      const files = Array.from(event.dataTransfer.files).filter((f) => f.type.startsWith('image/'));
       if (files.length === 0) return;
 
       const instance = reactFlowInstanceRef.current;
@@ -593,8 +590,12 @@ export function GraphCanvas({
       if (!instance || !container) return;
 
       const bounds = container.getBoundingClientRect();
-      const clientX = Number.isFinite(event.clientX) ? event.clientX : bounds.left + bounds.width / 2;
-      const clientY = Number.isFinite(event.clientY) ? event.clientY : bounds.top + bounds.height / 2;
+      const clientX = Number.isFinite(event.clientX)
+        ? event.clientX
+        : bounds.left + bounds.width / 2;
+      const clientY = Number.isFinite(event.clientY)
+        ? event.clientY
+        : bounds.top + bounds.height / 2;
 
       const position = instance.screenToFlowPosition({
         x: clientX,
@@ -621,7 +622,7 @@ export function GraphCanvas({
         edgeTypes={EDGE_TYPES}
         fitView={!viewport}
         minZoom={0.05}
-        multiSelectionKeyCode={["Meta", "Control"]}
+        multiSelectionKeyCode={['Meta', 'Control']}
         nodeTypes={NODE_TYPES}
         nodesDraggable
         nodesFocusable={false}
@@ -695,7 +696,7 @@ export function GraphCanvas({
               key={guide.id}
               className={`alignment-guide alignment-guide--${guide.orientation}`}
               style={
-                guide.orientation === "vertical"
+                guide.orientation === 'vertical'
                   ? {
                       height: guide.end - guide.start,
                       left: guide.offset,

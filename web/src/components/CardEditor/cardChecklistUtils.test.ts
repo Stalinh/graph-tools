@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 import {
   appendChecklistTask,
   clearCompletedChecklistTasks,
@@ -9,7 +9,7 @@ import {
   setAllChecklistTasksChecked,
   setChecklistTaskChecked,
   sortChecklistTasks,
-} from "./cardChecklistUtils";
+} from './cardChecklistUtils';
 
 const checklistHtml = `
   <p>Intro</p>
@@ -71,86 +71,90 @@ const completedParentHtml = `
   </ul>
 `;
 
-describe("cardChecklistUtils", () => {
-  it("extracts checklist tasks from card HTML", () => {
+describe('cardChecklistUtils', () => {
+  it('extracts checklist tasks from card HTML', () => {
     expect(extractChecklistTasks(checklistHtml)).toEqual([
-      { checked: true, depth: 0, index: 0, path: "0.0", text: "Done task" },
-      { checked: false, depth: 0, index: 1, path: "0.1", text: "Open task" },
+      { checked: true, depth: 0, index: 0, path: '0.0', text: 'Done task' },
+      { checked: false, depth: 0, index: 1, path: '0.1', text: 'Open task' },
     ]);
   });
 
-  it("extracts nested tasks with own text and stable paths", () => {
+  it('extracts nested tasks with own text and stable paths', () => {
     expect(extractChecklistTasks(nestedChecklistHtml)).toEqual([
-      { checked: false, depth: 0, index: 0, path: "0.0", text: "Parent task" },
-      { checked: true, depth: 1, index: 1, path: "0.0.0", text: "Nested done" },
-      { checked: false, depth: 1, index: 2, path: "0.0.1", text: "Nested open" },
-      { checked: false, depth: 0, index: 3, path: "0.1", text: "Sibling task" },
+      { checked: false, depth: 0, index: 0, path: '0.0', text: 'Parent task' },
+      { checked: true, depth: 1, index: 1, path: '0.0.0', text: 'Nested done' },
+      { checked: false, depth: 1, index: 2, path: '0.0.1', text: 'Nested open' },
+      { checked: false, depth: 0, index: 3, path: '0.1', text: 'Sibling task' },
     ]);
   });
 
-  it("adds and toggles checklist tasks", () => {
-    const withTask = appendChecklistTask("<p>Body</p>", "New task");
+  it('adds and toggles checklist tasks', () => {
+    const withTask = appendChecklistTask('<p>Body</p>', 'New task');
     expect(withTask).toContain('data-type="taskList"');
-    expect(withTask).toContain("New task");
+    expect(withTask).toContain('New task');
 
-    const checked = setChecklistTaskChecked(withTask ?? "", 0, true);
+    const checked = setChecklistTaskChecked(withTask ?? '', 0, true);
     expect(checked).toContain('data-checked="true"');
     expect(checked).toContain('checked="checked"');
   });
 
-  it("toggles nested tasks by path without changing their parent", () => {
-    const checked = setChecklistTaskChecked(nestedChecklistHtml, "0.0.1", true);
-    const tasks = extractChecklistTasks(checked ?? "");
+  it('toggles nested tasks by path without changing their parent', () => {
+    const checked = setChecklistTaskChecked(nestedChecklistHtml, '0.0.1', true);
+    const tasks = extractChecklistTasks(checked ?? '');
 
     expect(tasks.map((task) => [task.text, task.checked])).toEqual([
-      ["Parent task", false],
-      ["Nested done", true],
-      ["Nested open", true],
-      ["Sibling task", false],
+      ['Parent task', false],
+      ['Nested done', true],
+      ['Nested open', true],
+      ['Sibling task', false],
     ]);
   });
 
-  it("updates all task states and clears completed tasks", () => {
+  it('updates all task states and clears completed tasks', () => {
     const unchecked = setAllChecklistTasksChecked(checklistHtml, false);
     expect(unchecked).not.toContain('checked="checked"');
-    expect(extractChecklistTasks(unchecked ?? "").every((task) => !task.checked)).toBe(true);
+    expect(extractChecklistTasks(unchecked ?? '').every((task) => !task.checked)).toBe(true);
 
     const cleared = clearCompletedChecklistTasks(checklistHtml);
-    expect(cleared).not.toContain("Done task");
-    expect(cleared).toContain("Open task");
+    expect(cleared).not.toContain('Done task');
+    expect(cleared).toContain('Open task');
   });
 
-  it("clears completed nested tasks without dropping incomplete descendants", () => {
+  it('clears completed nested tasks without dropping incomplete descendants', () => {
     const clearedNested = clearCompletedChecklistTasks(nestedChecklistHtml);
-    expect(extractChecklistTasks(clearedNested ?? "").map((task) => [task.text, task.depth])).toEqual([
-      ["Parent task", 0],
-      ["Nested open", 1],
-      ["Sibling task", 0],
+    expect(
+      extractChecklistTasks(clearedNested ?? '').map((task) => [task.text, task.depth])
+    ).toEqual([
+      ['Parent task', 0],
+      ['Nested open', 1],
+      ['Sibling task', 0],
     ]);
 
     const clearedParent = clearCompletedChecklistTasks(completedParentHtml);
-    expect(extractChecklistTasks(clearedParent ?? "").map((task) => [task.text, task.depth])).toEqual([
-      ["Surviving child", 0],
-      ["Open sibling", 0],
+    expect(
+      extractChecklistTasks(clearedParent ?? '').map((task) => [task.text, task.depth])
+    ).toEqual([
+      ['Surviving child', 0],
+      ['Open sibling', 0],
     ]);
   });
 
-  it("sorts incomplete tasks before completed tasks", () => {
+  it('sorts incomplete tasks before completed tasks', () => {
     const sorted = sortChecklistTasks(checklistHtml);
-    const tasks = extractChecklistTasks(sorted ?? "");
+    const tasks = extractChecklistTasks(sorted ?? '');
 
-    expect(tasks.map((task) => task.text)).toEqual(["Open task", "Done task"]);
+    expect(tasks.map((task) => task.text)).toEqual(['Open task', 'Done task']);
   });
 
-  it("sorts nested task lists without moving tasks across levels", () => {
+  it('sorts nested task lists without moving tasks across levels', () => {
     const sorted = sortChecklistTasks(nestedChecklistHtml);
-    const tasks = extractChecklistTasks(sorted ?? "");
+    const tasks = extractChecklistTasks(sorted ?? '');
 
     expect(tasks.map((task) => [task.text, task.depth])).toEqual([
-      ["Parent task", 0],
-      ["Nested open", 1],
-      ["Nested done", 1],
-      ["Sibling task", 0],
+      ['Parent task', 0],
+      ['Nested open', 1],
+      ['Nested done', 1],
+      ['Sibling task', 0],
     ]);
   });
 });

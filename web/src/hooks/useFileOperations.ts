@@ -1,78 +1,78 @@
-import { useCallback, useEffect, useState } from "react";
-import type { WorkspaceState } from "../types";
+import { useCallback, useEffect, useState } from 'react';
+import type { WorkspaceState } from '../types';
 import {
   fileManager as defaultFileManager,
   type WorkspacePackage,
   type WorkspaceFileManager,
-} from "../lib/fileSystem";
-import type { Locale } from "../i18n";
-import { migrateWorkspaceIds } from "../lib/workspaceState";
+} from '../lib/fileSystem';
+import type { Locale } from '../i18n';
+import { migrateWorkspaceIds } from '../lib/workspaceState';
 
-const UNSUPPORTED_WORKSPACE_FILE_ERROR = "Unsupported workspace file type.";
+const UNSUPPORTED_WORKSPACE_FILE_ERROR = 'Unsupported workspace file type.';
 
 function messageOf(error: unknown) {
-  return error instanceof Error ? error.message : "";
+  return error instanceof Error ? error.message : '';
 }
 
 function getOpenWorkspaceErrorMessage(error: unknown, locale: Locale) {
-  const isZh = locale === "zh-CN";
+  const isZh = locale === 'zh-CN';
   const message = messageOf(error);
 
   if (message === UNSUPPORTED_WORKSPACE_FILE_ERROR) {
     return isZh
-      ? "仅支持 .graph 工作区文件，请重新选择文件。"
-      : "Only .graph workspace files are supported. Please choose another file.";
+      ? '仅支持 .graph 工作区文件，请重新选择文件。'
+      : 'Only .graph workspace files are supported. Please choose another file.';
   }
 
   if (
-    message === "Workspace archive is too large." ||
-    message === "Workspace archive expands to too much data." ||
-    message.startsWith("Workspace archive entry is too large:")
+    message === 'Workspace archive is too large.' ||
+    message === 'Workspace archive expands to too much data.' ||
+    message.startsWith('Workspace archive entry is too large:')
   ) {
     return isZh
-      ? "工作区文件过大，无法安全打开。"
-      : "The workspace file is too large to open safely.";
+      ? '工作区文件过大，无法安全打开。'
+      : 'The workspace file is too large to open safely.';
   }
 
-  if (message.startsWith("Invalid workspace archive entry:")) {
+  if (message.startsWith('Invalid workspace archive entry:')) {
     return isZh
-      ? "工作区文件包含不安全的归档路径，请重新选择文件。"
-      : "The workspace file contains an unsafe archive path. Please choose another file.";
+      ? '工作区文件包含不安全的归档路径，请重新选择文件。'
+      : 'The workspace file contains an unsafe archive path. Please choose another file.';
   }
 
   if (
-    message === "Invalid .graph workspace: missing or invalid workspace.json" ||
-    message === "File is not a valid workspace state." ||
-    message.toLowerCase().includes("invalid")
+    message === 'Invalid .graph workspace: missing or invalid workspace.json' ||
+    message === 'File is not a valid workspace state.' ||
+    message.toLowerCase().includes('invalid')
   ) {
     return isZh
-      ? "工作区文件已损坏或不是有效的 .graph 文件。"
-      : "The workspace file is damaged or is not a valid .graph file.";
+      ? '工作区文件已损坏或不是有效的 .graph 文件。'
+      : 'The workspace file is damaged or is not a valid .graph file.';
   }
 
-  return isZh ? "打开文件失败，请重新选择文件。" : "Failed to open the file. Please try again.";
+  return isZh ? '打开文件失败，请重新选择文件。' : 'Failed to open the file. Please try again.';
 }
 
 function getSaveWorkspaceErrorMessage(error: unknown, locale: Locale) {
-  const isZh = locale === "zh-CN";
+  const isZh = locale === 'zh-CN';
   const message = messageOf(error);
 
-  if (message.startsWith("Missing image asset:")) {
+  if (message.startsWith('Missing image asset:')) {
     return isZh
-      ? "保存失败：工作区中有图片资源缺失。"
-      : "Save failed: an image asset is missing from the workspace.";
+      ? '保存失败：工作区中有图片资源缺失。'
+      : 'Save failed: an image asset is missing from the workspace.';
   }
 
-  return isZh ? "保存失败，请重试。" : "Save failed. Please try again.";
+  return isZh ? '保存失败，请重试。' : 'Save failed. Please try again.';
 }
 
 function findMissingImagePath(state: WorkspaceState, images: Map<string, Blob>) {
   return state.graph.nodes.find(
-    (node) => node.type === "image" && node.imagePath && !images.has(node.imagePath)
+    (node) => node.type === 'image' && node.imagePath && !images.has(node.imagePath)
   )?.imagePath;
 }
 
-type PendingAction = "new" | "open" | "open-dropped" | null;
+type PendingAction = 'new' | 'open' | 'open-dropped' | null;
 
 interface UseFileOperationsOptions {
   locale?: Locale;
@@ -80,7 +80,7 @@ interface UseFileOperationsOptions {
   applyWorkspaceState: (state: WorkspaceState) => void;
   resetToEmpty: () => void;
   clearHistory: () => void;
-  setStatus: (status: "loading" | "ready" | "error") => void;
+  setStatus: (status: 'loading' | 'ready' | 'error') => void;
   setErrorMessage: (msg: string | null) => void;
   getImages: () => Map<string, Blob>;
   setImages: (images: Map<string, Blob>) => void;
@@ -90,7 +90,7 @@ interface UseFileOperationsOptions {
 }
 
 export function useFileOperations({
-  locale = "zh-CN",
+  locale = 'zh-CN',
   createWorkspaceState,
   applyWorkspaceState,
   resetToEmpty,
@@ -122,7 +122,7 @@ export function useFileOperations({
     setImages(new Map());
     setCurrentFileName(null);
     setFileStatus(null);
-    setStatus("ready");
+    setStatus('ready');
     setErrorMessage(null);
     setDirty(false);
   }, [clearHistory, resetToEmpty, setStatus, setErrorMessage, setImages, setDirty, fileManager]);
@@ -134,63 +134,49 @@ export function useFileOperations({
       setImages(pkg.images);
       clearHistory();
       setCurrentFileName(fileName);
-      setStatus("ready");
+      setStatus('ready');
       setFileStatus(
         openedFromDrop
-          ? locale === "zh-CN"
-            ? "拖入的文件已打开，保存时将另存为。"
-            : "Dropped file opened. Saving will use Save As."
-          : locale === "zh-CN"
-            ? "文件已打开。"
-            : "File opened."
+          ? locale === 'zh-CN'
+            ? '拖入的文件已打开，保存时将另存为。'
+            : 'Dropped file opened. Saving will use Save As.'
+          : locale === 'zh-CN'
+            ? '文件已打开。'
+            : 'File opened.'
       );
       setErrorMessage(null);
       setDirty(false);
       setGlobalPreviewRequestId((requestId) => requestId + 1);
     },
-    [
-      applyWorkspaceState,
-      clearHistory,
-      locale,
-      setDirty,
-      setErrorMessage,
-      setImages,
-      setStatus,
-    ]
+    [applyWorkspaceState, clearHistory, locale, setDirty, setErrorMessage, setImages, setStatus]
   );
 
   const executeOpen = useCallback(async () => {
     try {
-      setStatus("loading");
+      setStatus('loading');
       setFileStatus(null);
       setErrorMessage(null);
 
       const pkg = await fileManager.openWorkspaceFile();
 
       if (!pkg) {
-        setStatus("ready");
+        setStatus('ready');
         return;
       }
 
       applyWorkspacePackage(pkg, fileManager.getCurrentFileName());
     } catch (error) {
       const message = getOpenWorkspaceErrorMessage(error, locale);
-      setStatus("ready");
+      setStatus('ready');
       setErrorMessage(message);
       setFileStatus(message);
     }
-  }, [
-    applyWorkspacePackage,
-    locale,
-    setStatus,
-    setErrorMessage,
-    fileManager,
-  ]);
+  }, [applyWorkspacePackage, locale, setStatus, setErrorMessage, fileManager]);
 
   const executeOpenDroppedFile = useCallback(
     async (file: File) => {
       try {
-        setStatus("loading");
+        setStatus('loading');
         setFileStatus(null);
         setErrorMessage(null);
 
@@ -198,7 +184,7 @@ export function useFileOperations({
         applyWorkspacePackage(pkg, file.name, true);
       } catch (error) {
         const message = getOpenWorkspaceErrorMessage(error, locale);
-        setStatus("ready");
+        setStatus('ready');
         setErrorMessage(message);
         setFileStatus(message);
       }
@@ -208,7 +194,7 @@ export function useFileOperations({
 
   const handleSaveAs = useCallback(async () => {
     try {
-      setFileStatus(locale === "zh-CN" ? "正在保存..." : "Saving...");
+      setFileStatus(locale === 'zh-CN' ? '正在保存...' : 'Saving...');
       setErrorMessage(null);
 
       const pkg: WorkspacePackage = {
@@ -234,7 +220,7 @@ export function useFileOperations({
       }
 
       setCurrentFileName(fileName);
-      setFileStatus(locale === "zh-CN" ? "已保存。" : "Saved.");
+      setFileStatus(locale === 'zh-CN' ? '已保存。' : 'Saved.');
       setErrorMessage(null);
       setDirty(false);
       return true;
@@ -249,7 +235,7 @@ export function useFileOperations({
   const handleSave = useCallback(async () => {
     if (currentFileName) {
       try {
-        setFileStatus(locale === "zh-CN" ? "正在保存..." : "Saving...");
+        setFileStatus(locale === 'zh-CN' ? '正在保存...' : 'Saving...');
         setErrorMessage(null);
 
         const pkg: WorkspacePackage = {
@@ -270,7 +256,7 @@ export function useFileOperations({
         const ok = await fileManager.saveWorkspaceFile(pkg);
 
         if (ok) {
-          setFileStatus(locale === "zh-CN" ? "已保存。" : "Saved.");
+          setFileStatus(locale === 'zh-CN' ? '已保存。' : 'Saved.');
           setErrorMessage(null);
           setDirty(false);
           return true;
@@ -299,7 +285,7 @@ export function useFileOperations({
 
   const handleNew = useCallback(() => {
     if (dirty) {
-      setPendingAction("new");
+      setPendingAction('new');
       return;
     }
     executeNew();
@@ -307,7 +293,7 @@ export function useFileOperations({
 
   const handleOpen = useCallback(async () => {
     if (dirty) {
-      setPendingAction("open");
+      setPendingAction('open');
       return;
     }
     await executeOpen();
@@ -317,7 +303,7 @@ export function useFileOperations({
     async (file: File) => {
       if (dirty) {
         setPendingDroppedFile(file);
-        setPendingAction("open-dropped");
+        setPendingAction('open-dropped');
         return;
       }
       await executeOpenDroppedFile(file);
@@ -326,19 +312,19 @@ export function useFileOperations({
   );
 
   const continuePendingAction = useCallback(async () => {
-    if (pendingAction === "new") {
+    if (pendingAction === 'new') {
       executeNew();
       setPendingAction(null);
       return;
     }
 
-    if (pendingAction === "open") {
+    if (pendingAction === 'open') {
       setPendingAction(null);
       await executeOpen();
       return;
     }
 
-    if (pendingAction === "open-dropped") {
+    if (pendingAction === 'open-dropped') {
       const file = pendingDroppedFile;
       setPendingAction(null);
       setPendingDroppedFile(null);

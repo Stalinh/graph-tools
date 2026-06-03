@@ -1,7 +1,7 @@
-export type EntityType = "card" | "image" | "group";
-export type EdgeType = "citation";
-export type EdgeDirection = "unidirectional" | "bidirectional";
-export type EdgeStyle = "solid" | "sketch" | "note-dash";
+export type EntityType = 'card' | 'image' | 'group';
+export type EdgeType = 'citation';
+export type EdgeDirection = 'unidirectional' | 'bidirectional';
+export type EdgeStyle = 'solid' | 'sketch' | 'note-dash';
 
 export interface ReferenceItem {
   id: string;
@@ -78,7 +78,7 @@ export interface WorkspaceState {
 
 export interface CardRecord {
   id: string;
-  type: "card";
+  type: 'card';
   title: string;
   tags: string[];
   color?: string;

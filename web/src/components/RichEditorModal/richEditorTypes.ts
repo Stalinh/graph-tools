@@ -1,5 +1,5 @@
-import type { ChainedCommands } from "@tiptap/core";
-import type { LucideIcon } from "lucide-react";
+import type { ChainedCommands } from '@tiptap/core';
+import type { LucideIcon } from 'lucide-react';
 
 export interface RichEditorModalProps {
   node: RichEditorNode;
@@ -9,7 +9,7 @@ export interface RichEditorModalProps {
 
 export interface RichEditorNode {
   id: string;
-  type: "card" | "image" | "group";
+  type: 'card' | 'image' | 'group';
   title: string;
   tags: string[];
   createdAt?: string;
@@ -43,7 +43,7 @@ export interface SlashMenuState {
 
 export interface ShortcutItem {
   id: string;
-  category: "general" | "formatting" | "checklist" | "slash";
+  category: 'general' | 'formatting' | 'checklist' | 'slash';
   description: string;
   keys: string[];
   keywords: string[];

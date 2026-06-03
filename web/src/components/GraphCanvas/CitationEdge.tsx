@@ -1,7 +1,7 @@
-import { useStore, useStoreApi, type Edge, type EdgeProps } from "@xyflow/react";
-import { isEdgeStyle, normalizeEdgeStyle } from "../../lib/edgeStyles";
-import { getNodeColorCssVar } from "../../lib/nodeColors";
-import type { EdgeDirection, EdgeStyle } from "../../types";
+import { useStore, useStoreApi, type Edge, type EdgeProps } from '@xyflow/react';
+import { isEdgeStyle, normalizeEdgeStyle } from '../../lib/edgeStyles';
+import { getNodeColorCssVar } from '../../lib/nodeColors';
+import type { EdgeDirection, EdgeStyle } from '../../types';
 
 type CitationEdgeData = Record<string, unknown> & {
   direction?: EdgeDirection;
@@ -10,7 +10,7 @@ type CitationEdgeData = Record<string, unknown> & {
   color?: string;
 };
 
-type CitationFlowEdge = Edge<CitationEdgeData, "citation">;
+type CitationFlowEdge = Edge<CitationEdgeData, 'citation'>;
 
 interface Point {
   x: number;
@@ -98,7 +98,7 @@ export function CitationEdge({
   const store = useStoreApi();
 
   const edgeData = toCitationEdgeData(data);
-  const direction: EdgeDirection = edgeData.direction ?? "unidirectional";
+  const direction: EdgeDirection = edgeData.direction ?? 'unidirectional';
   const edgeStyle = normalizeEdgeStyle(edgeData.style);
   const isSelected = Boolean(edgeData.selected);
   const sourceBox = getCitationNodeBox(sourceNode, source, store);
@@ -117,12 +117,12 @@ export function CitationEdge({
     geometry;
 
   const strokeWidth =
-    !isSelected && typeof style?.strokeWidth === "number"
+    !isSelected && typeof style?.strokeWidth === 'number'
       ? style.strokeWidth
       : DEFAULT_STROKE_WIDTH;
   const interactionStrokeWidth =
-    typeof interactionWidth === "number" && interactionWidth > 0 ? interactionWidth : 40;
-  const opacity = typeof style?.opacity === "number" ? style.opacity : 1;
+    typeof interactionWidth === 'number' && interactionWidth > 0 ? interactionWidth : 40;
+  const opacity = typeof style?.opacity === 'number' ? style.opacity : 1;
 
   const edgeColor = getNodeColorCssVar(edgeData.color, true);
 
@@ -137,14 +137,14 @@ export function CitationEdge({
     `M${visibleSource.x},${visibleSource.y} C${control1.x},${control1.y} ` +
     `${control2.x},${control2.y} ${targetLineEnd.x},${targetLineEnd.y}`;
   const sketchPaths = getSketchPaths(id, visiblePath);
-  const strokeDasharray = edgeStyle === "note-dash" ? "15 7 3 6" : undefined;
+  const strokeDasharray = edgeStyle === 'note-dash' ? '15 7 3 6' : undefined;
 
   return (
     <>
       <g
         className={
           `react-flow__edge graph-edge graph-edge--citation graph-edge--style-${edgeStyle}` +
-          `${direction === "bidirectional" ? " graph-edge--bidirectional" : ""}`
+          `${direction === 'bidirectional' ? ' graph-edge--bidirectional' : ''}`
         }
         opacity={opacity}
       >
@@ -156,7 +156,7 @@ export function CitationEdge({
           strokeLinecap="round"
           strokeLinejoin="round"
           className="edge-selected-halo"
-          style={{ pointerEvents: "none" }}
+          style={{ pointerEvents: 'none' }}
         />
         <path
           d={visiblePath}
@@ -167,9 +167,9 @@ export function CitationEdge({
           strokeLinejoin="round"
           className="edge-visible-path"
           strokeDasharray={strokeDasharray}
-          style={{ pointerEvents: "none" }}
+          style={{ pointerEvents: 'none' }}
         />
-        {edgeStyle === "sketch" ? (
+        {edgeStyle === 'sketch' ? (
           <>
             {sketchPaths.map((path, index) => (
               <path
@@ -182,7 +182,7 @@ export function CitationEdge({
                 strokeLinejoin="round"
                 opacity={index === 0 ? 0.46 : 0.28}
                 className="edge-visible-path edge-visible-path--secondary"
-                style={{ pointerEvents: "none" }}
+                style={{ pointerEvents: 'none' }}
               />
             ))}
           </>
@@ -196,7 +196,7 @@ export function CitationEdge({
             strokeLinecap="round"
             strokeLinejoin="round"
             className="edge-arrowhead"
-            style={{ pointerEvents: "none" }}
+            style={{ pointerEvents: 'none' }}
           />
         ) : null}
         {startArrowPath ? (
@@ -208,7 +208,7 @@ export function CitationEdge({
             strokeLinecap="round"
             strokeLinejoin="round"
             className="edge-arrowhead"
-            style={{ pointerEvents: "none" }}
+            style={{ pointerEvents: 'none' }}
           />
         ) : null}
         <path
@@ -217,7 +217,7 @@ export function CitationEdge({
           stroke="transparent"
           strokeWidth={interactionStrokeWidth}
           className="react-flow__edge-interaction"
-          style={{ pointerEvents: "all" }}
+          style={{ pointerEvents: 'all' }}
         />
       </g>
     </>
@@ -231,8 +231,8 @@ function getCitationNodeBox(
 ): CitationNodeBox | null {
   if (!node) return null;
 
-  const width = getNodeDimension(node, "width");
-  const height = getNodeDimension(node, "height");
+  const width = getNodeDimension(node, 'width');
+  const height = getNodeDimension(node, 'height');
   if (width !== null && height !== null) {
     return {
       x: node.internals.positionAbsolute.x,
@@ -255,23 +255,23 @@ function getCitationNodeBox(
 }
 
 function toCitationEdgeData(value: unknown): CitationEdgeData {
-  if (!value || typeof value !== "object") return {};
+  if (!value || typeof value !== 'object') return {};
 
   const candidate = value as Partial<CitationEdgeData>;
 
   return {
-    color: typeof candidate.color === "string" ? candidate.color : undefined,
+    color: typeof candidate.color === 'string' ? candidate.color : undefined,
     direction:
-      candidate.direction === "bidirectional" || candidate.direction === "unidirectional"
+      candidate.direction === 'bidirectional' || candidate.direction === 'unidirectional'
         ? candidate.direction
         : undefined,
-    selected: typeof candidate.selected === "boolean" ? candidate.selected : undefined,
+    selected: typeof candidate.selected === 'boolean' ? candidate.selected : undefined,
     style: isEdgeStyle(candidate.style) ? candidate.style : undefined,
   };
 }
 
-function getNodeDimension(node: CitationNodeLike, axis: "width" | "height") {
-  const initialAxis = axis === "width" ? "initialWidth" : "initialHeight";
+function getNodeDimension(node: CitationNodeLike, axis: 'width' | 'height') {
+  const initialAxis = axis === 'width' ? 'initialWidth' : 'initialHeight';
   const userNode = node.internals.userNode;
 
   return (
@@ -286,7 +286,7 @@ function getNodeDimension(node: CitationNodeLike, axis: "width" | "height") {
 }
 
 function getDomNodeSize(nodeId: string, zoom: number) {
-  if (typeof document === "undefined") return null;
+  if (typeof document === 'undefined') return null;
 
   const element = document.querySelector<HTMLElement>(
     `.react-flow__node[data-id="${escapeCssAttributeValue(nodeId)}"]`
@@ -303,15 +303,15 @@ function getDomNodeSize(nodeId: string, zoom: number) {
 }
 
 function escapeCssAttributeValue(value: string) {
-  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
 function toPositiveNumber(value: unknown) {
-  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
     return value;
   }
 
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     const parsed = Number.parseFloat(value);
     if (Number.isFinite(parsed) && parsed > 0) {
       return parsed;
@@ -382,8 +382,8 @@ export function getCitationEdgeGeometry(
   const edgeAngle = Math.atan2(ndy, ndx);
 
   const sourceLineStart = offsetPoint(sourceBorder.x, sourceBorder.y, edgeAngle, ARROW_NODE_GAP);
-  const isUnidirectional = direction === "unidirectional";
-  const isBidirectional = direction === "bidirectional";
+  const isUnidirectional = direction === 'unidirectional';
+  const isBidirectional = direction === 'bidirectional';
 
   const endArrowTip =
     isUnidirectional || isBidirectional

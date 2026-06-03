@@ -1,6 +1,6 @@
-import type { Node } from "@xyflow/react";
-import { useCallback, useRef, type RefObject } from "react";
-import type { CanvasPosition } from "../../types";
+import type { Node } from '@xyflow/react';
+import { useCallback, useRef, type RefObject } from 'react';
+import type { CanvasPosition } from '../../types';
 
 const DRAG_DISTANCE_THRESHOLD = 16;
 const DRAG_TIME_THRESHOLD = 300;
@@ -39,7 +39,9 @@ export function useGraphCanvasNodeDragLifecycle({
       const currentNodes = nodesRef.current ?? [];
       if (selectedNodeIds.length > 1 && selectedNodeIds.includes(node.id)) {
         selectedNodeIds.forEach((selectedNodeId) => {
-          const selectedNode = currentNodes.find((currentNode) => currentNode.id === selectedNodeId);
+          const selectedNode = currentNodes.find(
+            (currentNode) => currentNode.id === selectedNodeId
+          );
           if (selectedNode) {
             nodeDragStartPositions.current[selectedNodeId] = { ...selectedNode.position };
           }

@@ -1,13 +1,13 @@
-import ColorExtension from "@tiptap/extension-color";
-import HighlightExtension from "@tiptap/extension-highlight";
-import PlaceholderExtension from "@tiptap/extension-placeholder";
-import { TextStyle } from "@tiptap/extension-text-style";
-import type { Editor } from "@tiptap/core";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import TaskList from "@tiptap/extension-task-list";
-import TaskItem from "@tiptap/extension-task-item";
-import { FileText, X } from "lucide-react";
+import ColorExtension from '@tiptap/extension-color';
+import HighlightExtension from '@tiptap/extension-highlight';
+import PlaceholderExtension from '@tiptap/extension-placeholder';
+import { TextStyle } from '@tiptap/extension-text-style';
+import type { Editor } from '@tiptap/core';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import { FileText, X } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -16,29 +16,29 @@ import {
   useState,
   type KeyboardEvent,
   type MouseEvent,
-} from "react";
-import { useI18n } from "../i18n";
-import { RichEditorStatusBar } from "./RichEditorModal/RichEditorStatusBar";
-import { RichEditorToolbar } from "./RichEditorModal/RichEditorToolbar";
-import { ShortcutHelpOverlay } from "./RichEditorModal/ShortcutHelpOverlay";
-import { SlashCommandMenu } from "./RichEditorModal/SlashCommandMenu";
+} from 'react';
+import { useI18n } from '../i18n';
+import { RichEditorStatusBar } from './RichEditorModal/RichEditorStatusBar';
+import { RichEditorToolbar } from './RichEditorModal/RichEditorToolbar';
+import { ShortcutHelpOverlay } from './RichEditorModal/ShortcutHelpOverlay';
+import { SlashCommandMenu } from './RichEditorModal/SlashCommandMenu';
 import {
   DEFAULT_CARD_TITLES,
   getHighlightColors,
   getTextColors,
-} from "./RichEditorModal/richEditorConfig";
-import type { RichEditorModalProps } from "./RichEditorModal/richEditorTypes";
-import { useRichEditorShortcutHelp } from "./RichEditorModal/useRichEditorShortcutHelp";
-import { useRichEditorSlashMenu } from "./RichEditorModal/useRichEditorSlashMenu";
-import { useRichEditorStats } from "./RichEditorModal/useRichEditorStats";
-import { useRichEditorTaskActions } from "./RichEditorModal/useRichEditorTaskActions";
+} from './RichEditorModal/richEditorConfig';
+import type { RichEditorModalProps } from './RichEditorModal/richEditorTypes';
+import { useRichEditorShortcutHelp } from './RichEditorModal/useRichEditorShortcutHelp';
+import { useRichEditorSlashMenu } from './RichEditorModal/useRichEditorSlashMenu';
+import { useRichEditorStats } from './RichEditorModal/useRichEditorStats';
+import { useRichEditorTaskActions } from './RichEditorModal/useRichEditorTaskActions';
 
 export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps) {
   const { isZh } = useI18n();
   const textColors = useMemo(() => getTextColors(isZh), [isZh]);
   const highlightColors = useMemo(() => getHighlightColors(isZh), [isZh]);
   const [title, setTitle] = useState(node.title);
-  const [initialFocusTarget, setInitialFocusTarget] = useState<"title" | "body" | null>(null);
+  const [initialFocusTarget, setInitialFocusTarget] = useState<'title' | 'body' | null>(null);
   const [editorUpdateTrigger, setEditorUpdateTrigger] = useState(0);
   const titleInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -78,14 +78,14 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
         multicolor: true,
       }),
       PlaceholderExtension.configure({
-        placeholder: isZh ? "开始输入内容..." : "Start writing...",
+        placeholder: isZh ? '开始输入内容...' : 'Start writing...',
       }),
       TaskList.configure(),
       TaskItem.configure({
         nested: true,
       }),
     ],
-    content: node.contentHtml ?? "<p></p>",
+    content: node.contentHtml ?? '<p></p>',
     immediatelyRender: false,
     onUpdate: ({ editor: ed }) => {
       setEditorUpdateTrigger((prev) => prev + 1);
@@ -96,14 +96,14 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
     },
     editorProps: {
       handleKeyDown: (_view, event) => {
-        if (event.key === "Escape" && isHelpOpenRef.current) {
+        if (event.key === 'Escape' && isHelpOpenRef.current) {
           event.preventDefault();
           event.stopPropagation();
           closeHelp();
           return true;
         }
 
-        const isHelpShortcut = event.key === "/" && (event.metaKey || event.ctrlKey);
+        const isHelpShortcut = event.key === '/' && (event.metaKey || event.ctrlKey);
         if (isHelpShortcut) {
           event.preventDefault();
           event.stopPropagation();
@@ -111,7 +111,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
           return true;
         }
 
-        if (event.key === "Tab") {
+        if (event.key === 'Tab') {
           event.preventDefault();
           titleInputRef.current?.focus();
           return true;
@@ -119,8 +119,8 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
 
         // Save shortcuts: Ctrl+S / Cmd+S or Ctrl+Enter / Cmd+Enter
         const isSaveShortcut =
-          (event.key === "s" && (event.metaKey || event.ctrlKey)) ||
-          (event.key === "Enter" && (event.metaKey || event.ctrlKey));
+          (event.key === 's' && (event.metaKey || event.ctrlKey)) ||
+          (event.key === 'Enter' && (event.metaKey || event.ctrlKey));
 
         if (isSaveShortcut) {
           event.preventDefault();
@@ -131,8 +131,8 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
 
         // Toggle task checklist shortcut: Alt+Enter or Ctrl+D / Cmd+D when selection is inside a taskItem
         const isToggleTaskShortcut =
-          (event.key === "Enter" && event.altKey) ||
-          (event.key === "d" && (event.metaKey || event.ctrlKey));
+          (event.key === 'Enter' && event.altKey) ||
+          (event.key === 'd' && (event.metaKey || event.ctrlKey));
 
         if (isToggleTaskShortcut && _view.state.schema.nodes.taskItem) {
           const { state } = _view;
@@ -140,7 +140,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
           let depth = $from.depth;
           let isInTaskItem = false;
           while (depth > 0) {
-            if ($from.node(depth).type.name === "taskItem") {
+            if ($from.node(depth).type.name === 'taskItem') {
               isInTaskItem = true;
               break;
             }
@@ -151,8 +151,8 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
             event.preventDefault();
             const ed = editorRef.current;
             if (ed) {
-              const isChecked = ed.isActive("taskItem", { checked: true });
-              ed.chain().focus().updateAttributes("taskItem", { checked: !isChecked }).run();
+              const isChecked = ed.isActive('taskItem', { checked: true });
+              ed.chain().focus().updateAttributes('taskItem', { checked: !isChecked }).run();
             }
             return true;
           }
@@ -162,8 +162,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
       },
     },
   });
-  const { clearCompletedTasks, setAllTasksChecked, sortTasks } =
-    useRichEditorTaskActions(editor);
+  const { clearCompletedTasks, setAllTasksChecked, sortTasks } = useRichEditorTaskActions(editor);
   const { characters, checkedTasks, totalTasks, words } = useRichEditorStats(
     editor,
     editorUpdateTrigger
@@ -178,7 +177,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
       return;
     }
 
-    editor.commands.focus(editor.isEmpty ? "start" : "end");
+    editor.commands.focus(editor.isEmpty ? 'start' : 'end');
   }, [editor]);
 
   const shouldFocusTitle = useMemo(() => {
@@ -188,7 +187,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
 
   useEffect(() => {
     setTitle(node.title);
-    editor?.commands.setContent(node.contentHtml ?? "<p></p>");
+    editor?.commands.setContent(node.contentHtml ?? '<p></p>');
   }, [node.id, node.title, node.contentHtml, editor]);
 
   const titleRef = useCallback(
@@ -197,7 +196,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
       if (el && shouldFocusTitle) {
         el.focus();
         el.select();
-        setInitialFocusTarget("title");
+        setInitialFocusTarget('title');
       }
     },
     [shouldFocusTitle]
@@ -205,8 +204,8 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
 
   useEffect(() => {
     if (editor && !shouldFocusTitle) {
-      editor.commands.focus(editor.isEmpty ? "start" : "end");
-      setInitialFocusTarget("body");
+      editor.commands.focus(editor.isEmpty ? 'start' : 'end');
+      setInitialFocusTarget('body');
     }
   }, [editor, shouldFocusTitle]);
 
@@ -222,7 +221,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
   const hasUnsavedChanges = useCallback(() => {
     if (!editor) return false;
     const currentHtml = editor.getHTML();
-    const originalHtml = node.contentHtml ?? "";
+    const originalHtml = node.contentHtml ?? '';
     return title !== node.title || normalizeHtml(currentHtml) !== normalizeHtml(originalHtml);
   }, [editor, node.title, node.contentHtml, title, editorUpdateTrigger]);
 
@@ -230,8 +229,8 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
     if (hasUnsavedChanges()) {
       const confirmClose = window.confirm(
         isZh
-          ? "你有未保存的更改，确定要关闭吗？"
-          : "You have unsaved changes. Are you sure you want to close?"
+          ? '你有未保存的更改，确定要关闭吗？'
+          : 'You have unsaved changes. Are you sure you want to close?'
       );
       if (!confirmClose) return;
     }
@@ -252,7 +251,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         if (isHelpOpen) {
           event.preventDefault();
           event.stopPropagation();
@@ -263,7 +262,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
         return;
       }
 
-      const isHelpShortcut = event.key === "/" && (event.metaKey || event.ctrlKey);
+      const isHelpShortcut = event.key === '/' && (event.metaKey || event.ctrlKey);
       if (isHelpShortcut) {
         event.preventDefault();
         event.stopPropagation();
@@ -273,8 +272,8 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
 
       // Save shortcuts: Ctrl+S / Cmd+S or Ctrl+Enter / Cmd+Enter
       const isSaveShortcut =
-        (event.key === "s" && (event.metaKey || event.ctrlKey)) ||
-        (event.key === "Enter" && (event.metaKey || event.ctrlKey));
+        (event.key === 's' && (event.metaKey || event.ctrlKey)) ||
+        (event.key === 'Enter' && (event.metaKey || event.ctrlKey));
 
       if (isSaveShortcut) {
         event.preventDefault();
@@ -286,13 +285,13 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
 
   const handleTitleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         event.preventDefault();
         handleCloseAttempt();
         return;
       }
 
-      if (event.key === "Tab") {
+      if (event.key === 'Tab') {
         event.preventDefault();
         focusBodyEditor();
         return;
@@ -300,8 +299,8 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
 
       // Save shortcuts
       const isSaveShortcut =
-        (event.key === "s" && (event.metaKey || event.ctrlKey)) ||
-        (event.key === "Enter" && (event.metaKey || event.ctrlKey));
+        (event.key === 's' && (event.metaKey || event.ctrlKey)) ||
+        (event.key === 'Enter' && (event.metaKey || event.ctrlKey));
 
       if (isSaveShortcut) {
         event.preventDefault();
@@ -314,7 +313,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
   const handleBodyMouseDown = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
       const target = event.target;
-      if (target instanceof HTMLElement && target.closest(".ProseMirror")) {
+      if (target instanceof HTMLElement && target.closest('.ProseMirror')) {
         return;
       }
 
@@ -370,13 +369,13 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
         className="modal-panel modal-panel--rich-editor"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
-        aria-label={isZh ? "编辑卡片内容" : "Edit card content"}
+        aria-label={isZh ? '编辑卡片内容' : 'Edit card content'}
       >
         <div className="modal-header">
           <FileText
             size={18}
             className="modal-header-icon"
-            style={{ color: "var(--color-control-icon)" }}
+            style={{ color: 'var(--color-control-icon)' }}
           />
           <input
             id={`modal-title-${node.id}`}
@@ -385,8 +384,8 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             onKeyDown={handleTitleKeyDown}
-            placeholder={isZh ? "卡片标题" : "Card title"}
-            data-initial-focus={initialFocusTarget === "title" ? "true" : undefined}
+            placeholder={isZh ? '卡片标题' : 'Card title'}
+            data-initial-focus={initialFocusTarget === 'title' ? 'true' : undefined}
           />
           <div className="modal-meta">
             <span>{isZh ? `卡片 ID: ${node.id}` : `Card ID: ${node.id}`}</span>
@@ -395,8 +394,8 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
             type="button"
             className="toolbar-button modal-close"
             onClick={handleCloseAttempt}
-            aria-label={isZh ? "关闭" : "Close"}
-            style={{ border: "none", background: "transparent" }}
+            aria-label={isZh ? '关闭' : 'Close'}
+            style={{ border: 'none', background: 'transparent' }}
           >
             <X size={18} />
           </button>
@@ -423,7 +422,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
 
         <div
           className="rich-editor"
-          data-initial-focus={initialFocusTarget === "body" ? "true" : undefined}
+          data-initial-focus={initialFocusTarget === 'body' ? 'true' : undefined}
           onMouseDown={handleBodyMouseDown}
           onKeyDownCapture={handleKeyDownCapture}
         >
@@ -444,7 +443,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
 
         <div className="modal-footer">
           <button type="button" className="toolbar-button" onClick={handleCloseAttempt}>
-            {isZh ? "取消" : "Cancel"}
+            {isZh ? '取消' : 'Cancel'}
           </button>
           <button
             type="button"
@@ -452,7 +451,7 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
             onClick={handleSave}
             disabled={!editor}
           >
-            {isZh ? "保存" : "Save"}
+            {isZh ? '保存' : 'Save'}
           </button>
         </div>
 
@@ -479,13 +478,13 @@ export function RichEditorModal({ node, onSave, onClose }: RichEditorModalProps)
 }
 
 function normalizeHtml(html: string): string {
-  if (!html) return "";
+  if (!html) return '';
   let clean = html.trim();
-  if (clean === "<p></p>" || clean === "<p><br></p>" || clean === "<p>&nbsp;</p>") {
-    return "";
+  if (clean === '<p></p>' || clean === '<p><br></p>' || clean === '<p>&nbsp;</p>') {
+    return '';
   }
-  clean = clean.replace(/<br\s*\/?>/gi, "<br>");
-  clean = clean.replace(/&nbsp;/g, " ");
-  clean = clean.replace(/\s+/g, " ");
+  clean = clean.replace(/<br\s*\/?>/gi, '<br>');
+  clean = clean.replace(/&nbsp;/g, ' ');
+  clean = clean.replace(/\s+/g, ' ');
   return clean;
 }

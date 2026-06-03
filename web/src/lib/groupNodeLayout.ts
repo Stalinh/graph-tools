@@ -1,5 +1,5 @@
-import type { CanvasPosition, CanvasViewport, GraphData, GraphNode, NodeSize } from "../types";
-import { DEFAULT_GROUP_SIZE, GRAPH_GRID_SIZE, snapPositionToGrid } from "./graphLayout";
+import type { CanvasPosition, CanvasViewport, GraphData, GraphNode, NodeSize } from '../types';
+import { DEFAULT_GROUP_SIZE, GRAPH_GRID_SIZE, snapPositionToGrid } from './graphLayout';
 
 const GROUP_COLLISION_TOLERANCE = 0.5;
 
@@ -76,7 +76,7 @@ export function resolveGroupMoveTargets(
   sizes: Record<string, NodeSize>
 ) {
   const groupMoves = moves.filter((move) =>
-    currentNodes.some((node) => node.id === move.nodeId && node.type === "group")
+    currentNodes.some((node) => node.id === move.nodeId && node.type === 'group')
   );
   const movingGroupIds = new Set(groupMoves.map((move) => move.nodeId));
   const nextPositions: Record<string, CanvasPosition> = { ...positions };
@@ -128,7 +128,7 @@ export function resolveGroupMoveTarget(
   ignoredGroupIds = new Set<string>()
 ) {
   const staticGroups = currentNodes.filter(
-    (node) => node.type === "group" && node.id !== groupId && !ignoredGroupIds.has(node.id)
+    (node) => node.type === 'group' && node.id !== groupId && !ignoredGroupIds.has(node.id)
   );
   const fromRect = toRect(from, size);
   const targetRect = toRect(to, size);
@@ -186,7 +186,11 @@ export function resolveGroupMoveTarget(
         return;
       }
 
-      if (movingDown && xResolvedRect.bottom <= otherRect.top && nextY + size.height > otherRect.top) {
+      if (
+        movingDown &&
+        xResolvedRect.bottom <= otherRect.top &&
+        nextY + size.height > otherRect.top
+      ) {
         nextY = Math.min(nextY, otherRect.top - size.height);
       } else if (!movingDown && xResolvedRect.top >= otherRect.bottom && nextY < otherRect.bottom) {
         nextY = Math.max(nextY, otherRect.bottom);
@@ -270,7 +274,7 @@ export function isGroupPlacementBlocked(
   const nextRect = toRect(position, size);
 
   return currentNodes.some((node) => {
-    if (node.id === groupId || node.type !== "group") {
+    if (node.id === groupId || node.type !== 'group') {
       return false;
     }
 

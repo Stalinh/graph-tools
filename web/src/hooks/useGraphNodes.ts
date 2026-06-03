@@ -1,25 +1,24 @@
-import { useCallback } from "react";
-import { getDefaultCardTitle, getDefaultGroupTitle, type Locale } from "../i18n";
-import { deleteContentCacheEntry } from "../lib/cardContentCache";
-import { updateNodeFields } from "../lib/graphMutator";
-import { areViewportsEqual } from "../lib/groupNodeLayout";
-import { createNodeDraft, deleteNodeDraft, deleteNodesDraft } from "../lib/graphNodeCommands";
-import { generateNextId } from "../lib/workspaceState";
-import type { CanvasPosition, CanvasViewport, GraphData, GraphNode } from "../types";
-import type { UpdateGraphNodeOptions } from "./graphNodes/graphNodeActionTypes";
-import { useGraphNodeAppearanceActions } from "./graphNodes/useGraphNodeAppearanceActions";
-import { useGraphNodeLayoutActions } from "./graphNodes/useGraphNodeLayoutActions";
+import { useCallback } from 'react';
+import { getDefaultCardTitle, getDefaultGroupTitle, type Locale } from '../i18n';
+import { deleteContentCacheEntry } from '../lib/cardContentCache';
+import { updateNodeFields } from '../lib/graphMutator';
+import { areViewportsEqual } from '../lib/groupNodeLayout';
+import { createNodeDraft, deleteNodeDraft, deleteNodesDraft } from '../lib/graphNodeCommands';
+import { generateNextId } from '../lib/workspaceState';
+import type { CanvasPosition, CanvasViewport, GraphData, GraphNode } from '../types';
+import type { UpdateGraphNodeOptions } from './graphNodes/graphNodeActionTypes';
+import { useGraphNodeAppearanceActions } from './graphNodes/useGraphNodeAppearanceActions';
+import { useGraphNodeLayoutActions } from './graphNodes/useGraphNodeLayoutActions';
 import {
   createWorkspacePatchCommandFromTransaction,
   type WorkspaceStoreController,
   type WorkspaceTransaction,
-} from "./useWorkspaceStore";
+} from './useWorkspaceStore';
 
-interface UseGraphNodesOptions
-  extends Pick<
-    WorkspaceStoreController,
-    "workspace" | "workspaceRef" | "dispatchWorkspaceTransaction"
-  > {
+interface UseGraphNodesOptions extends Pick<
+  WorkspaceStoreController,
+  'workspace' | 'workspaceRef' | 'dispatchWorkspaceTransaction'
+> {
   locale?: Locale;
 }
 
@@ -28,20 +27,20 @@ interface ViewportChangeOptions {
 }
 
 function withHistory(
-  beforeState: WorkspaceStoreController["workspace"],
+  beforeState: WorkspaceStoreController['workspace'],
   transaction: WorkspaceTransaction
 ): WorkspaceTransaction {
   return {
     ...transaction,
     history: {
-      type: "push",
+      type: 'push',
       command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
     },
   };
 }
 
 export function useGraphNodes({
-  locale = "zh-CN",
+  locale = 'zh-CN',
   workspace,
   workspaceRef,
   dispatchWorkspaceTransaction,
@@ -68,12 +67,7 @@ export function useGraphNodes({
   );
 
   const createNode = useCallback(
-    (
-      type: GraphNode["type"],
-      position: CanvasPosition,
-      imagePath?: string,
-      parentId?: string
-    ) => {
+    (type: GraphNode['type'], position: CanvasPosition, imagePath?: string, parentId?: string) => {
       const beforeState = workspaceRef.current;
       const beforeGraph = beforeState.graph;
       const beforePositions = beforeState.nodePositions;
@@ -101,7 +95,7 @@ export function useGraphNodes({
         nodeSizes: draft.sizes,
         selection: {
           selectedNodeIds: [id],
-          quickEditingNodeId: type === "card" || type === "group" ? id : null,
+          quickEditingNodeId: type === 'card' || type === 'group' ? id : null,
           pendingInspectorContentFocusNodeId: null,
         },
         status: { dirty: true },
@@ -117,12 +111,7 @@ export function useGraphNodes({
       const beforeGraph = beforeState.graph;
       const beforePositions = beforeState.nodePositions;
       const beforeSizes = beforeState.nodeSizes;
-      const draft = deleteNodeDraft(
-        nodeId,
-        beforeGraph,
-        beforePositions,
-        beforeSizes
-      );
+      const draft = deleteNodeDraft(nodeId, beforeGraph, beforePositions, beforeSizes);
       if (!draft) return;
       deleteContentCacheEntry(nodeId);
 
@@ -163,12 +152,7 @@ export function useGraphNodes({
       const beforeGraph = beforeState.graph;
       const beforePositions = beforeState.nodePositions;
       const beforeSizes = beforeState.nodeSizes;
-      const draft = deleteNodesDraft(
-        uniqueNodeIds,
-        beforeGraph,
-        beforePositions,
-        beforeSizes
-      );
+      const draft = deleteNodesDraft(uniqueNodeIds, beforeGraph, beforePositions, beforeSizes);
       if (!draft) return;
       draft.removedNodeIds.forEach((nodeId) => deleteContentCacheEntry(nodeId));
 

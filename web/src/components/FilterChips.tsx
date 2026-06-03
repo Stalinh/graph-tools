@@ -1,10 +1,10 @@
-import { Check, ChevronDown, FileText, Image, Lock, Tag, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { getColorLabel, useI18n } from "../i18n";
-import { SUPPORTED_NODE_COLORS } from "../lib/nodeColors";
-import type { WorkspaceNodeFilter } from "../types";
+import { Check, ChevronDown, FileText, Image, Lock, Tag, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { getColorLabel, useI18n } from '../i18n';
+import { SUPPORTED_NODE_COLORS } from '../lib/nodeColors';
+import type { WorkspaceNodeFilter } from '../types';
 
-const FILTER_COLOR_KEYS = ["", ...SUPPORTED_NODE_COLORS];
+const FILTER_COLOR_KEYS = ['', ...SUPPORTED_NODE_COLORS];
 
 interface FilterChipsProps {
   availableTags: string[];
@@ -32,40 +32,40 @@ export function FilterChips({
   const { isZh, locale } = useI18n();
   const selectedTagSet = new Set(selectedTags);
   const selectedColorSet = new Set(selectedColors);
-  const [activeDropdown, setActiveDropdown] = useState<"type" | "tag" | "color" | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<'type' | 'tag' | 'color' | null>(null);
   const colorDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
   const tagDropdownRef = useRef<HTMLDivElement>(null);
 
-  const typeDropdownOpen = activeDropdown === "type";
-  const tagDropdownOpen = activeDropdown === "tag";
-  const colorDropdownOpen = activeDropdown === "color";
+  const typeDropdownOpen = activeDropdown === 'type';
+  const tagDropdownOpen = activeDropdown === 'tag';
+  const colorDropdownOpen = activeDropdown === 'color';
 
   const typeOptions: { key: WorkspaceNodeFilter; label: string; icon: typeof FileText }[] = [
-    { key: "all", label: isZh ? "全部" : "All", icon: FileText },
-    { key: "card", label: isZh ? "卡片" : "Cards", icon: FileText },
-    { key: "image", label: isZh ? "图片" : "Images", icon: Image },
-    { key: "locked", label: isZh ? "已锁定" : "Locked", icon: Lock },
+    { key: 'all', label: isZh ? '全部' : 'All', icon: FileText },
+    { key: 'card', label: isZh ? '卡片' : 'Cards', icon: FileText },
+    { key: 'image', label: isZh ? '图片' : 'Images', icon: Image },
+    { key: 'locked', label: isZh ? '已锁定' : 'Locked', icon: Lock },
   ];
 
   const selectedTypeLabel =
-    typeOptions.find((t) => t.key === nodeFilter)?.label ?? (isZh ? "全部" : "All");
+    typeOptions.find((t) => t.key === nodeFilter)?.label ?? (isZh ? '全部' : 'All');
 
   const colorButtonLabel =
     selectedColors.length > 0
-      ? `${isZh ? "颜色" : "Colors"} (${selectedColors.length})`
+      ? `${isZh ? '颜色' : 'Colors'} (${selectedColors.length})`
       : isZh
-        ? "颜色"
-        : "Colors";
+        ? '颜色'
+        : 'Colors';
 
   const tagButtonLabel =
     selectedTags.length > 0
-      ? `${isZh ? "标签" : "Tags"} (${selectedTags.length})`
+      ? `${isZh ? '标签' : 'Tags'} (${selectedTags.length})`
       : isZh
-        ? "标签"
-        : "Tags";
+        ? '标签'
+        : 'Tags';
 
-  const selectedColorKey = selectedColors[0] ?? "";
+  const selectedColorKey = selectedColors[0] ?? '';
 
   const handleClickOutside = useCallback((event: MouseEvent) => {
     const target = event.target as Node;
@@ -79,9 +79,9 @@ export function FilterChips({
   }, []);
 
   useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [handleClickOutside]);
 
@@ -95,10 +95,10 @@ export function FilterChips({
       <div className="filter-chip--dropdown" ref={typeDropdownRef}>
         <button
           type="button"
-          className={`filter-chip filter-chip--type${nodeFilter !== "all" ? " is-active" : ""}`}
-          title={`${isZh ? "类型" : "Type"}: ${selectedTypeLabel}`}
+          className={`filter-chip filter-chip--type${nodeFilter !== 'all' ? ' is-active' : ''}`}
+          title={`${isZh ? '类型' : 'Type'}: ${selectedTypeLabel}`}
           onClick={() => {
-            setActiveDropdown((prev) => (prev === "type" ? null : "type"));
+            setActiveDropdown((prev) => (prev === 'type' ? null : 'type'));
           }}
         >
           {selectedTypeLabel}
@@ -111,7 +111,7 @@ export function FilterChips({
               <button
                 key={key}
                 type="button"
-                className={`filter-dropdown__item${nodeFilter === key ? " is-active" : ""}`}
+                className={`filter-dropdown__item${nodeFilter === key ? ' is-active' : ''}`}
                 onClick={() => handleTypeSelect(key)}
               >
                 <Icon size={14} className="filter-dropdown__icon" />
@@ -125,16 +125,16 @@ export function FilterChips({
       <div className="filter-chip--dropdown" ref={tagDropdownRef}>
         <button
           type="button"
-          className={`filter-chip filter-chip--tag${selectedTags.length > 0 ? " is-active" : ""}`}
+          className={`filter-chip filter-chip--tag${selectedTags.length > 0 ? ' is-active' : ''}`}
           title={
             selectedTags.length > 0
-              ? `${isZh ? "已选标签" : "Selected tags"}: ${selectedTags.join(", ")}`
+              ? `${isZh ? '已选标签' : 'Selected tags'}: ${selectedTags.join(', ')}`
               : isZh
-                ? "按标签筛选"
-                : "Filter by tag"
+                ? '按标签筛选'
+                : 'Filter by tag'
           }
           onClick={() => {
-            setActiveDropdown((prev) => (prev === "tag" ? null : "tag"));
+            setActiveDropdown((prev) => (prev === 'tag' ? null : 'tag'));
           }}
         >
           <Tag size={12} />
@@ -145,7 +145,7 @@ export function FilterChips({
         {tagDropdownOpen ? (
           <div className="filter-dropdown">
             {availableTags.length === 0 ? (
-              <div className="filter-dropdown__empty">{isZh ? "暂无标签" : "No tags yet"}</div>
+              <div className="filter-dropdown__empty">{isZh ? '暂无标签' : 'No tags yet'}</div>
             ) : (
               availableTags.map((tag) => {
                 const isSelected = selectedTagSet.has(tag);
@@ -153,10 +153,10 @@ export function FilterChips({
                   <button
                     key={tag}
                     type="button"
-                    className={`filter-dropdown__item filter-dropdown__item--check${isSelected ? " is-active" : ""}`}
+                    className={`filter-dropdown__item filter-dropdown__item--check${isSelected ? ' is-active' : ''}`}
                     onClick={() => onToggleTag(tag)}
                   >
-                    <span className={`filter-dropdown__check${isSelected ? " is-checked" : ""}`}>
+                    <span className={`filter-dropdown__check${isSelected ? ' is-checked' : ''}`}>
                       {isSelected ? <Check size={12} /> : null}
                     </span>
                     <span className="filter-dropdown__label">{tag}</span>
@@ -171,21 +171,21 @@ export function FilterChips({
       <div className="filter-chip--dropdown" ref={colorDropdownRef}>
         <button
           type="button"
-          className={`filter-chip filter-chip--color${selectedColors.length > 0 ? " is-active" : ""}`}
+          className={`filter-chip filter-chip--color${selectedColors.length > 0 ? ' is-active' : ''}`}
           title={
             selectedColors.length > 0
-              ? `${isZh ? "已选颜色" : "Selected colors"}: ${selectedColors
+              ? `${isZh ? '已选颜色' : 'Selected colors'}: ${selectedColors
                   .map((value) => getColorLabel(value, locale))
-                  .join(", ")}`
+                  .join(', ')}`
               : isZh
-                ? "按颜色筛选"
-                : "Filter by color"
+                ? '按颜色筛选'
+                : 'Filter by color'
           }
           onClick={() => {
-            setActiveDropdown((prev) => (prev === "color" ? null : "color"));
+            setActiveDropdown((prev) => (prev === 'color' ? null : 'color'));
           }}
         >
-          <span className={`filter-chip__dot color-swatch--${selectedColorKey || "default"}`} />
+          <span className={`filter-chip__dot color-swatch--${selectedColorKey || 'default'}`} />
           {colorButtonLabel}
           <ChevronDown size={10} className="filter-chip__chevron" />
         </button>
@@ -199,13 +199,13 @@ export function FilterChips({
                 <button
                   key={key}
                   type="button"
-                  className={`filter-dropdown__item filter-dropdown__item--check${isSelected ? " is-active" : ""}`}
+                  className={`filter-dropdown__item filter-dropdown__item--check${isSelected ? ' is-active' : ''}`}
                   onClick={() => onToggleColor(key)}
                 >
-                  <span className={`filter-dropdown__check${isSelected ? " is-checked" : ""}`}>
+                  <span className={`filter-dropdown__check${isSelected ? ' is-checked' : ''}`}>
                     {isSelected ? <Check size={12} /> : null}
                   </span>
-                  <span className={`filter-dropdown__dot color-swatch--${key || "default"}`} />
+                  <span className={`filter-dropdown__dot color-swatch--${key || 'default'}`} />
                   <span className="filter-dropdown__label">{label}</span>
                 </button>
               );
@@ -214,15 +214,15 @@ export function FilterChips({
         ) : null}
       </div>
 
-      {hasAnyFilter || nodeFilter !== "all" ? (
+      {hasAnyFilter || nodeFilter !== 'all' ? (
         <button
           type="button"
           className="filter-chip filter-chip--clear"
-          aria-label={isZh ? "清除筛选" : "Clear filters"}
-          title={isZh ? "清除所有筛选" : "Clear all filters"}
+          aria-label={isZh ? '清除筛选' : 'Clear filters'}
+          title={isZh ? '清除所有筛选' : 'Clear all filters'}
           onClick={() => {
             onClearFilters();
-            onNodeFilterChange("all");
+            onNodeFilterChange('all');
           }}
         >
           <X size={12} />

@@ -1,9 +1,9 @@
-import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
-import { Lock, Plus } from "lucide-react";
-import { useEffect, useRef, useState, type MouseEvent } from "react";
-import { getDefaultGroupTitle, useI18n } from "../../i18n";
-import { GRAPH_GRID_SIZE, constrainGroupNodeSize } from "../../lib/graphLayout";
-import type { GraphNode } from "../../types";
+import { NodeResizer, type Node, type NodeProps } from '@xyflow/react';
+import { Lock, Plus } from 'lucide-react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { getDefaultGroupTitle, useI18n } from '../../i18n';
+import { GRAPH_GRID_SIZE, constrainGroupNodeSize } from '../../lib/graphLayout';
+import type { GraphNode } from '../../types';
 
 interface GroupNodeData {
   [key: string]: unknown;
@@ -61,10 +61,10 @@ export function GroupNode({ data, selected }: NodeProps<Node<GroupNodeData>>) {
 
   return (
     <div
-      className={`group-node-container ${node.color ? `group-node--${node.color}` : ""}`}
+      className={`group-node-container ${node.color ? `group-node--${node.color}` : ''}`}
       style={{
-        width: "100%",
-        height: "100%",
+        width: '100%',
+        height: '100%',
       }}
     >
       {!node.locked && selected && (
@@ -100,11 +100,11 @@ export function GroupNode({ data, selected }: NodeProps<Node<GroupNodeData>>) {
               onBlur={() => commitQuickEdit()}
               onChange={(e) => setDraftTitle(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === "Tab") {
+                if (e.key === 'Enter' || e.key === 'Tab') {
                   e.preventDefault();
                   commitQuickEdit({ focusInspectorContent: true });
                 }
-                if (e.key === "Escape") {
+                if (e.key === 'Escape') {
                   e.preventDefault();
                   commitQuickEdit();
                 }
@@ -114,7 +114,7 @@ export function GroupNode({ data, selected }: NodeProps<Node<GroupNodeData>>) {
             <span className="group-node__title">{node.title || getDefaultGroupTitle(locale)}</span>
           )}
           <span className="group-node__badge">
-            {isZh ? `${childCount} 张卡片` : `${childCount} card${childCount === 1 ? "" : "s"}`}
+            {isZh ? `${childCount} 张卡片` : `${childCount} card${childCount === 1 ? '' : 's'}`}
           </span>
         </div>
 
@@ -123,7 +123,7 @@ export function GroupNode({ data, selected }: NodeProps<Node<GroupNodeData>>) {
             <button
               type="button"
               className="group-node__add-btn"
-              title={isZh ? "添加卡片到此分组" : "Add card to this group"}
+              title={isZh ? '添加卡片到此分组' : 'Add card to this group'}
               onClick={(e) => {
                 e.stopPropagation();
                 onQuickAddChild(node.id);

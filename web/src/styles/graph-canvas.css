@@ -195,12 +195,11 @@
 
 .graph-node.is-search-match {
   border-color: color-mix(in srgb, var(--color-accent) 66%, var(--color-border-active) 34%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-accent) 14%, var(--color-surface) 86%) 0%,
-      color-mix(in srgb, var(--color-accent) 8%, var(--color-surface-muted) 92%) 100%
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-accent) 14%, var(--color-surface) 86%) 0%,
+    color-mix(in srgb, var(--color-accent) 8%, var(--color-surface-muted) 92%) 100%
+  );
   box-shadow:
     var(--shadow-node),
     0 0 0 2px color-mix(in srgb, var(--color-accent) 44%, transparent);
@@ -220,12 +219,11 @@
     var(--shadow-node),
     0 0 0 1px color-mix(in srgb, var(--color-accent) 26%, transparent),
     inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 16%, transparent);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-accent) 4%, var(--color-surface) 96%) 0%,
-      color-mix(in srgb, var(--color-accent) 2%, var(--color-surface-muted) 98%) 100%
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-accent) 4%, var(--color-surface) 96%) 0%,
+    color-mix(in srgb, var(--color-accent) 2%, var(--color-surface-muted) 98%) 100%
+  );
 }
 
 .graph-node.is-locked:not(.is-selected):not(.is-search-match):not(.is-edge-connected) {
@@ -241,7 +239,7 @@
 }
 
 .graph-node.is-locked::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
@@ -265,8 +263,6 @@
   color: color-mix(in srgb, var(--color-heading) 78%, var(--color-accent) 22%);
 }
 
-
-
 .graph-node__handle {
   width: 1px;
   height: 1px;
@@ -289,7 +285,7 @@
 }
 
 .graph-node__label::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0 auto 0 0;
   width: var(--graph-node-color-bar-width);
@@ -298,14 +294,28 @@
   pointer-events: none;
 }
 
-.graph-node__label[data-card-color="amber"]  { --graph-node-color-bar: var(--color-card-amber); }
-.graph-node__label[data-card-color="rose"]   { --graph-node-color-bar: var(--color-card-rose); }
-.graph-node__label[data-card-color="green"]  { --graph-node-color-bar: var(--color-card-green); }
-.graph-node__label[data-card-color="blue"]   { --graph-node-color-bar: var(--color-card-blue); }
-.graph-node__label[data-card-color="purple"] { --graph-node-color-bar: var(--color-card-purple); }
-.graph-node__label[data-card-color="teal"]   { --graph-node-color-bar: var(--color-card-teal); }
+.graph-node__label[data-card-color='amber'] {
+  --graph-node-color-bar: var(--color-card-amber);
+}
+.graph-node__label[data-card-color='rose'] {
+  --graph-node-color-bar: var(--color-card-rose);
+}
+.graph-node__label[data-card-color='green'] {
+  --graph-node-color-bar: var(--color-card-green);
+}
+.graph-node__label[data-card-color='blue'] {
+  --graph-node-color-bar: var(--color-card-blue);
+}
+.graph-node__label[data-card-color='purple'] {
+  --graph-node-color-bar: var(--color-card-purple);
+}
+.graph-node__label[data-card-color='teal'] {
+  --graph-node-color-bar: var(--color-card-teal);
+}
 .graph-node__label:not([data-card-color]),
-.graph-node__label[data-card-color=""]       { --graph-node-color-bar: var(--color-card-0); }
+.graph-node__label[data-card-color=''] {
+  --graph-node-color-bar: var(--color-card-0);
+}
 
 .graph-node__lock-badge {
   position: absolute;
@@ -328,7 +338,7 @@
 }
 
 .graph-node.is-locked .graph-node__label::after {
-  content: "Locked";
+  content: 'Locked';
   position: absolute;
   top: 8px;
   left: 12px;
@@ -661,4 +671,3 @@
   margin: 4px;
   background: var(--color-border);
 }
-

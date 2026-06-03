@@ -1,16 +1,16 @@
-import type { Edge } from "@xyflow/react";
-import { useMemo } from "react";
-import { normalizeEdgeStyle } from "../../lib/edgeStyles";
-import type { GraphData, GraphNode, WorkspaceNodeFilter } from "../../types";
-import { getEdgeVisualStyle, shouldDimEdgeByFilter } from "./graphUtils";
+import type { Edge } from '@xyflow/react';
+import { useMemo } from 'react';
+import { normalizeEdgeStyle } from '../../lib/edgeStyles';
+import type { GraphData, GraphNode, WorkspaceNodeFilter } from '../../types';
+import { getEdgeVisualStyle, shouldDimEdgeByFilter } from './graphUtils';
 
-const EDGE_STYLE: Record<string, Edge["style"]> = {
+const EDGE_STYLE: Record<string, Edge['style']> = {
   citation: { strokeWidth: 1.8 },
 };
 
 interface UseGraphCanvasEdgesOptions {
   connectedNodeIds: Set<string>;
-  graphEdges: GraphData["edges"];
+  graphEdges: GraphData['edges'];
   graphNodes: GraphNode[];
   matchingNodeIds: Set<string> | null;
   nodeFilter: WorkspaceNodeFilter;
@@ -27,8 +27,8 @@ export function useGraphCanvasEdges({
 }: UseGraphCanvasEdgesOptions) {
   return useMemo<Edge[]>(() => {
     const filterMatchesNode = (node: GraphNode) => {
-      if (nodeFilter === "all") return true;
-      if (nodeFilter === "locked") return Boolean(node.locked);
+      if (nodeFilter === 'all') return true;
+      if (nodeFilter === 'locked') return Boolean(node.locked);
       return node.type === nodeFilter;
     };
     const visibleNodeIds = new Set(graphNodes.filter(filterMatchesNode).map((node) => node.id));
@@ -51,11 +51,11 @@ export function useGraphCanvasEdges({
         id: edge.id,
         source: edge.sourceId,
         target: edge.targetId,
-        type: "citation",
+        type: 'citation',
         interactionWidth: 40,
-        className: visualStyle.isSelected ? "graph-edge--selected" : "",
+        className: visualStyle.isSelected ? 'graph-edge--selected' : '',
         data: {
-          direction: edge.direction ?? "unidirectional",
+          direction: edge.direction ?? 'unidirectional',
           selected: visualStyle.isSelected,
           color: edge.color,
           style: normalizeEdgeStyle(edge.style),

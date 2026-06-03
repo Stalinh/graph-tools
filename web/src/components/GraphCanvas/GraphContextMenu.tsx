@@ -1,14 +1,14 @@
-import { Image as ImageIcon, Link2, Lock, LockOpen, Pencil, Plus, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { useI18n } from "../../i18n";
-import { isReferenceableNode } from "../../lib/graphConstraints";
+import { Image as ImageIcon, Link2, Lock, LockOpen, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useI18n } from '../../i18n';
+import { isReferenceableNode } from '../../lib/graphConstraints';
 import type {
   CanvasPosition,
   EdgeDirection,
   EntityType,
   GraphContextMenuState,
   GraphData,
-} from "../../types";
+} from '../../types';
 
 interface GraphContextMenuProps {
   contextMenu: GraphContextMenuState;
@@ -39,7 +39,7 @@ export function GraphContextMenu({
     ? graph.nodes.find((node) => node.id === targetNodeId)
     : undefined;
   const canStartCitation = graph.nodes.filter(isReferenceableNode).length >= 2;
-  const isEditDisabled = !targetNode || targetNode.type === "group";
+  const isEditDisabled = !targetNode || targetNode.type === 'group';
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [adjustedPosition, setAdjustedPosition] = useState({ x: contextMenu.x, y: contextMenu.y });
@@ -67,7 +67,7 @@ export function GraphContextMenu({
 
   useEffect(() => {
     if (containerRef.current) {
-      const buttons = containerRef.current.querySelectorAll("button:not([disabled])");
+      const buttons = containerRef.current.querySelectorAll('button:not([disabled])');
       if (buttons.length > 0) {
         (buttons[0] as HTMLButtonElement).focus();
       }
@@ -80,24 +80,24 @@ export function GraphContextMenu({
         onClose();
       }
     }
-    document.addEventListener("mousedown", handleMouseDownOutside);
+    document.addEventListener('mousedown', handleMouseDownOutside);
     return () => {
-      document.removeEventListener("mousedown", handleMouseDownOutside);
+      document.removeEventListener('mousedown', handleMouseDownOutside);
     };
   }, [onClose]);
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "Escape") {
+    if (event.key === 'Escape') {
       event.preventDefault();
       onClose();
       return;
     }
 
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
       if (!containerRef.current) return;
       const buttons = Array.from(
-        containerRef.current.querySelectorAll<HTMLButtonElement>("button:not([disabled])")
+        containerRef.current.querySelectorAll<HTMLButtonElement>('button:not([disabled])')
       );
       if (buttons.length === 0) return;
 
@@ -105,9 +105,9 @@ export function GraphContextMenu({
       const currentIndex = buttons.indexOf(activeElement);
 
       let nextIndex = 0;
-      if (event.key === "ArrowDown") {
+      if (event.key === 'ArrowDown') {
         nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % buttons.length;
-      } else if (event.key === "ArrowUp") {
+      } else if (event.key === 'ArrowUp') {
         nextIndex =
           currentIndex === -1
             ? buttons.length - 1
@@ -150,40 +150,40 @@ export function GraphContextMenu({
       ref={containerRef}
       className="graph-context-menu"
       role="menu"
-      aria-label={isZh ? "画布操作" : "Canvas actions"}
+      aria-label={isZh ? '画布操作' : 'Canvas actions'}
       style={{ left: adjustedPosition.x, top: adjustedPosition.y }}
       onKeyDown={handleKeyDown}
     >
-      <button type="button" role="menuitem" onClick={() => createNode("card")}>
+      <button type="button" role="menuitem" onClick={() => createNode('card')}>
         <Plus aria-hidden="true" size={15} />
-        <span>{isZh ? "新增卡片" : "Add card"}</span>
+        <span>{isZh ? '新增卡片' : 'Add card'}</span>
       </button>
-      <button type="button" role="menuitem" onClick={() => createNode("image")}>
+      <button type="button" role="menuitem" onClick={() => createNode('image')}>
         <ImageIcon aria-hidden="true" size={15} />
-        <span>{isZh ? "插入图片" : "Insert image"}</span>
+        <span>{isZh ? '插入图片' : 'Insert image'}</span>
       </button>
-      <button type="button" role="menuitem" onClick={() => createNode("group")}>
+      <button type="button" role="menuitem" onClick={() => createNode('group')}>
         <Plus aria-hidden="true" size={15} />
-        <span>{isZh ? "新增分组区域" : "Add group area"}</span>
+        <span>{isZh ? '新增分组区域' : 'Add group area'}</span>
       </button>
       <div className="graph-context-menu__separator" role="separator" />
       <button
         type="button"
         role="menuitem"
         disabled={!canStartCitation}
-        onClick={() => createCitation("unidirectional")}
+        onClick={() => createCitation('unidirectional')}
       >
         <Link2 aria-hidden="true" size={15} />
-        <span>{isZh ? "单向引用 →" : "One-way link →"}</span>
+        <span>{isZh ? '单向引用 →' : 'One-way link →'}</span>
       </button>
       <button
         type="button"
         role="menuitem"
         disabled={!canStartCitation}
-        onClick={() => createCitation("bidirectional")}
+        onClick={() => createCitation('bidirectional')}
       >
         <Link2 aria-hidden="true" size={15} />
-        <span>{isZh ? "双向引用 —" : "Two-way link —"}</span>
+        <span>{isZh ? '双向引用 —' : 'Two-way link —'}</span>
       </button>
       <button
         type="button"
@@ -199,7 +199,7 @@ export function GraphContextMenu({
         }}
       >
         <Pencil aria-hidden="true" size={15} />
-        <span>{isZh ? "编辑" : "Edit"}</span>
+        <span>{isZh ? '编辑' : 'Edit'}</span>
       </button>
       <button type="button" role="menuitem" disabled={!targetNode} onClick={toggleNodeLock}>
         {targetNode?.locked ? (
@@ -210,16 +210,22 @@ export function GraphContextMenu({
         <span>
           {targetNode?.locked
             ? isZh
-              ? "解锁节点"
-              : "Unlock node"
+              ? '解锁节点'
+              : 'Unlock node'
             : isZh
-              ? "锁定节点"
-              : "Lock node"}
+              ? '锁定节点'
+              : 'Lock node'}
         </span>
       </button>
-      <button type="button" role="menuitem" className="graph-context-menu__danger" disabled={!targetNodeId} onClick={deleteNode}>
+      <button
+        type="button"
+        role="menuitem"
+        className="graph-context-menu__danger"
+        disabled={!targetNodeId}
+        onClick={deleteNode}
+      >
         <Trash2 aria-hidden="true" size={15} />
-        <span>{isZh ? "删除选中节点" : "Delete selected node"}</span>
+        <span>{isZh ? '删除选中节点' : 'Delete selected node'}</span>
       </button>
     </div>
   );

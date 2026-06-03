@@ -11,26 +11,26 @@ const TASK_ITEM_SELECTOR = 'li[data-type="taskItem"]';
 
 function createContentDocument(html: string) {
   const parser = new DOMParser();
-  return parser.parseFromString(html || "<p></p>", "text/html");
+  return parser.parseFromString(html || '<p></p>', 'text/html');
 }
 
 function syncTaskCheckbox(item: Element, checked: boolean) {
-  item.setAttribute("data-checked", checked ? "true" : "false");
+  item.setAttribute('data-checked', checked ? 'true' : 'false');
   const checkbox = getOwnTaskCheckbox(item);
   if (!checkbox) {
     return;
   }
 
   if (checked) {
-    checkbox.setAttribute("checked", "checked");
+    checkbox.setAttribute('checked', 'checked');
   } else {
-    checkbox.removeAttribute("checked");
+    checkbox.removeAttribute('checked');
   }
 }
 
 function getOwnTaskCheckbox(item: Element) {
   for (const child of Array.from(item.children)) {
-    if (child instanceof HTMLInputElement && child.type === "checkbox") {
+    if (child instanceof HTMLInputElement && child.type === 'checkbox') {
       return child;
     }
 
@@ -54,8 +54,7 @@ function getDirectTaskItems(list: Element) {
 
 function getRootTaskLists(doc: Document) {
   return Array.from(doc.querySelectorAll(TASK_LIST_SELECTOR)).filter(
-    (list): list is HTMLElement =>
-      list instanceof HTMLElement && !list.closest(TASK_ITEM_SELECTOR)
+    (list): list is HTMLElement => list instanceof HTMLElement && !list.closest(TASK_ITEM_SELECTOR)
   );
 }
 
@@ -68,24 +67,24 @@ function getDirectNestedTaskLists(item: Element) {
 
 function getTaskItemText(item: Element) {
   const body = Array.from(item.children).find(
-    (child) => child instanceof HTMLElement && child.tagName.toLowerCase() === "div"
+    (child) => child instanceof HTMLElement && child.tagName.toLowerCase() === 'div'
   );
   const textSource = (body || item).cloneNode(true);
   if (!(textSource instanceof HTMLElement)) {
-    return "";
+    return '';
   }
 
   textSource.querySelectorAll(TASK_LIST_SELECTOR).forEach((list) => list.remove());
-  textSource.querySelectorAll("label, input").forEach((control) => control.remove());
-  return textSource.textContent?.replace(/\s+/g, " ").trim() || "";
+  textSource.querySelectorAll('label, input').forEach((control) => control.remove());
+  return textSource.textContent?.replace(/\s+/g, ' ').trim() || '';
 }
 
 function createTaskPath(pathSegments: number[]) {
-  return pathSegments.join(".");
+  return pathSegments.join('.');
 }
 
 function parseTaskPath(path: string) {
-  const segments = path.split(".").map((segment) => Number(segment));
+  const segments = path.split('.').map((segment) => Number(segment));
   if (
     segments.length < 2 ||
     segments.some((segment) => !Number.isInteger(segment) || segment < 0)
@@ -154,7 +153,7 @@ function findTaskItemByPath(doc: Document, path: string) {
 }
 
 function findTaskItem(doc: Document, taskLocator: number | string) {
-  if (typeof taskLocator === "string") {
+  if (typeof taskLocator === 'string') {
     return findTaskItemByPath(doc, taskLocator);
   }
 
@@ -189,7 +188,7 @@ export function extractChecklistTasks(html: string): SidebarTaskItem[] {
   if (!html) return [];
   const doc = createContentDocument(html);
   return getChecklistTaskItems(doc).map(({ depth, item, path }, index) => {
-    const checked = item.getAttribute("data-checked") === "true";
+    const checked = item.getAttribute('data-checked') === 'true';
     const text = getTaskItemText(item);
     return { checked, depth, index, path, text };
   });
@@ -219,23 +218,23 @@ export function appendChecklistTask(html: string, text: string) {
   const doc = createContentDocument(html);
   let taskList = getRootTaskLists(doc)[0];
   if (!taskList) {
-    taskList = doc.createElement("ul");
-    taskList.setAttribute("data-type", "taskList");
+    taskList = doc.createElement('ul');
+    taskList.setAttribute('data-type', 'taskList');
     doc.body.appendChild(taskList);
   }
 
-  const item = doc.createElement("li");
-  item.setAttribute("data-type", "taskItem");
-  item.setAttribute("data-checked", "false");
+  const item = doc.createElement('li');
+  item.setAttribute('data-type', 'taskItem');
+  item.setAttribute('data-checked', 'false');
 
-  const label = doc.createElement("label");
-  const input = doc.createElement("input");
-  input.setAttribute("type", "checkbox");
+  const label = doc.createElement('label');
+  const input = doc.createElement('input');
+  input.setAttribute('type', 'checkbox');
   label.appendChild(input);
   item.appendChild(label);
 
-  const body = doc.createElement("div");
-  const paragraph = doc.createElement("p");
+  const body = doc.createElement('div');
+  const paragraph = doc.createElement('p');
   paragraph.textContent = trimmedText;
   body.appendChild(paragraph);
   item.appendChild(body);
@@ -263,7 +262,7 @@ export function clearCompletedChecklistTasks(html: string) {
   let hasChanges = false;
 
   items.reverse().forEach((item) => {
-    const checked = item.getAttribute("data-checked") === "true";
+    const checked = item.getAttribute('data-checked') === 'true';
     if (!checked) {
       return;
     }
@@ -291,7 +290,7 @@ export function sortChecklistTasks(html: string) {
       return;
     }
 
-    const checkedStates = items.map((item) => item.getAttribute("data-checked") === "true");
+    const checkedStates = items.map((item) => item.getAttribute('data-checked') === 'true');
     const isSorted = checkedStates.every(
       (checked, index) => index === checkedStates.length - 1 || !checked || checkedStates[index + 1]
     );
@@ -300,13 +299,13 @@ export function sortChecklistTasks(html: string) {
     }
 
     const sorted = [...items].sort((a, b) => {
-      const aChecked = a.getAttribute("data-checked") === "true";
-      const bChecked = b.getAttribute("data-checked") === "true";
+      const aChecked = a.getAttribute('data-checked') === 'true';
+      const bChecked = b.getAttribute('data-checked') === 'true';
       if (aChecked === bChecked) return 0;
       return aChecked ? 1 : -1;
     });
 
-    list.innerHTML = "";
+    list.innerHTML = '';
     sorted.forEach((item) => list.appendChild(item));
     hasChanges = true;
   });

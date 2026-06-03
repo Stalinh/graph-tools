@@ -5,7 +5,7 @@
   color: inherit;
 }
 
-.app-shell[data-theme="dark"] .search-highlight {
+.app-shell[data-theme='dark'] .search-highlight {
   background: rgba(255, 213, 0, 0.35);
 }
 
@@ -37,7 +37,10 @@
   color: var(--color-text-secondary);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
 }
 
 .filter-chip:hover {
@@ -73,7 +76,9 @@
   border-radius: 50%;
   border: 2px solid var(--color-border);
   background: var(--swatch-color, transparent);
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 
 .filter-chip.is-active .filter-chip__dot {
@@ -106,7 +111,7 @@
   overflow-y: auto;
 }
 
-.app-shell[data-theme="dark"] .filter-dropdown {
+.app-shell[data-theme='dark'] .filter-dropdown {
   background: var(--color-surface-muted);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
@@ -131,8 +136,8 @@
   background: var(--color-interactive-hover);
 }
 
-.app-shell[data-theme="dark"] .filter-dropdown__item:hover,
-.app-shell[data-theme="dark"] .filter-dropdown__item.is-active {
+.app-shell[data-theme='dark'] .filter-dropdown__item:hover,
+.app-shell[data-theme='dark'] .filter-dropdown__item.is-active {
   background: var(--color-interactive-hover);
 }
 
@@ -210,7 +215,7 @@
   overflow: hidden;
 }
 
-.app-shell[data-theme="dark"] .search-results-dropdown {
+.app-shell[data-theme='dark'] .search-results-dropdown {
   background: var(--color-surface-muted);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
@@ -254,8 +259,8 @@
   background: rgba(0, 0, 0, 0.04);
 }
 
-.app-shell[data-theme="dark"] .search-result:hover,
-.app-shell[data-theme="dark"] .search-result.is-highlighted {
+.app-shell[data-theme='dark'] .search-result:hover,
+.app-shell[data-theme='dark'] .search-result.is-highlighted {
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -300,8 +305,8 @@
   color: inherit;
 }
 
-.app-shell[data-theme="dark"] .search-result__title mark,
-.app-shell[data-theme="dark"] .search-result__preview mark {
+.app-shell[data-theme='dark'] .search-result__title mark,
+.app-shell[data-theme='dark'] .search-result__preview mark {
   background: rgba(255, 213, 0, 0.35);
 }
 
@@ -404,7 +409,6 @@
   line-height: 1.5;
   white-space: nowrap;
 }
-
 
 /* Responsive Toolbar Optimization */
 @media (max-width: 1080px) {

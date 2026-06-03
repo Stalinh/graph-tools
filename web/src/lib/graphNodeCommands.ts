@@ -1,11 +1,11 @@
-import type { CanvasPosition, GraphData, GraphNode, NodeSize } from "../types";
-import { DEFAULT_GROUP_SIZE, snapPositionToGrid } from "./graphLayout";
+import type { CanvasPosition, GraphData, GraphNode, NodeSize } from '../types';
+import { DEFAULT_GROUP_SIZE, snapPositionToGrid } from './graphLayout';
 import {
   adjustGroupSizeAndPosition,
   detachChildrenFromGroup,
   findAvailableGroupPosition,
-} from "./groupNodeLayout";
-import { addNode, removeNode } from "./graphMutator";
+} from './groupNodeLayout';
+import { addNode, removeNode } from './graphMutator';
 
 interface CreateNodeDraftOptions {
   createdAt: string;
@@ -17,7 +17,7 @@ interface CreateNodeDraftOptions {
   parentId?: string;
   position: CanvasPosition;
   sizes: Record<string, NodeSize>;
-  type: GraphNode["type"];
+  type: GraphNode['type'];
   positions: Record<string, CanvasPosition>;
 }
 
@@ -37,13 +37,19 @@ export function createNodeDraft({
   let resolvedParentId = parentId;
   let resolvedPosition = { ...position };
 
-  if (!resolvedParentId && type !== "group") {
+  if (!resolvedParentId && type !== 'group') {
     resolvedParentId = findContainingGroupId(position, graph.nodes, positions, sizes);
   }
 
-  if (type === "group") {
+  if (type === 'group') {
     resolvedPosition = snapPositionToGrid(resolvedPosition);
-    resolvedPosition = findAvailableGroupPosition(id, resolvedPosition, graph.nodes, positions, sizes);
+    resolvedPosition = findAvailableGroupPosition(
+      id,
+      resolvedPosition,
+      graph.nodes,
+      positions,
+      sizes
+    );
   } else if (resolvedParentId) {
     const parentPosition = positions[resolvedParentId] ?? { x: 0, y: 0 };
     resolvedPosition = {
@@ -73,7 +79,7 @@ export function createNodeDraft({
   };
   let nextSizes = { ...sizes };
 
-  if (type === "group") {
+  if (type === 'group') {
     nextSizes[id] = DEFAULT_GROUP_SIZE;
   } else if (resolvedParentId) {
     const adjusted = adjustGroupSizeAndPosition(
@@ -107,7 +113,7 @@ export function deleteNodeDraft(
   let removalPositions = positions;
   let removalSizes = sizes;
 
-  if (nodeToDelete?.type === "group") {
+  if (nodeToDelete?.type === 'group') {
     const detached = detachChildrenFromGroup(
       nodeId,
       nodeToDelete.title,
@@ -132,7 +138,12 @@ export function deleteNodeDraft(
 
   const parentId = removedNode.parentId;
   if (parentId) {
-    const adjusted = adjustGroupSizeAndPosition(parentId, nextGraph.nodes, nextPositions, nextSizes);
+    const adjusted = adjustGroupSizeAndPosition(
+      parentId,
+      nextGraph.nodes,
+      nextPositions,
+      nextSizes
+    );
     nextPositions = adjusted.positions;
     nextSizes = adjusted.sizes;
   }
@@ -166,7 +177,7 @@ export function deleteNodesDraft(
     let removalPositions = currentPositions;
     let removalSizes = currentSizes;
 
-    if (nodeToDelete?.type === "group") {
+    if (nodeToDelete?.type === 'group') {
       const detached = detachChildrenFromGroup(
         nodeId,
         nodeToDelete.title,
@@ -239,7 +250,7 @@ function findContainingGroupId(
   sizes: Record<string, NodeSize>
 ) {
   for (const node of nodes) {
-    if (node.type !== "group") {
+    if (node.type !== 'group') {
       continue;
     }
 
@@ -275,33 +286,33 @@ function createNodeData({
   imagePath?: string;
   initialTags: string[];
   parentId?: string;
-  type: GraphNode["type"];
+  type: GraphNode['type'];
 }): GraphNode {
-  if (type === "image") {
+  if (type === 'image') {
     return {
       id,
-      type: "image",
-      title: "",
+      type: 'image',
+      title: '',
       parentId,
       locked: false,
       opacity: 1,
       tags: initialTags,
-      color: "",
+      color: '',
       createdAt,
       updatedAt: createdAt,
       imagePath,
     };
   }
 
-  if (type === "group") {
+  if (type === 'group') {
     return {
       id,
-      type: "group",
+      type: 'group',
       title: defaultGroupTitle,
       locked: false,
       opacity: 1,
       tags: [],
-      color: "",
+      color: '',
       createdAt,
       updatedAt: createdAt,
     };
@@ -309,16 +320,16 @@ function createNodeData({
 
   return {
     id,
-    type: "card",
+    type: 'card',
     title: defaultCardTitle,
     parentId,
     locked: false,
     opacity: 1,
     tags: initialTags,
-    color: "",
+    color: '',
     createdAt,
     updatedAt: createdAt,
-    contentHtml: "<p></p>",
+    contentHtml: '<p></p>',
     customFields: [],
   };
 }

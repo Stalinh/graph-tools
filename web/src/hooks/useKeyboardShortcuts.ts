@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from "react";
+import { useEffect, type RefObject } from 'react';
 
 interface UseKeyboardShortcutsOptions {
   undo: () => void;
@@ -20,26 +20,26 @@ export function useKeyboardShortcuts({
       const activeElement = document.activeElement;
       const isTypingTarget =
         activeElement instanceof HTMLElement &&
-        (activeElement.tagName === "INPUT" ||
-          activeElement.tagName === "TEXTAREA" ||
-          activeElement.tagName === "SELECT" ||
+        (activeElement.tagName === 'INPUT' ||
+          activeElement.tagName === 'TEXTAREA' ||
+          activeElement.tagName === 'SELECT' ||
           activeElement.isContentEditable);
 
       const hasDialog = document.querySelector('[role="dialog"]') !== null;
 
-      if (!isTypingTarget && !hasDialog && (e.metaKey || e.ctrlKey) && e.key === "k") {
+      if (!isTypingTarget && !hasDialog && (e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
-      if (e.key === "Escape" && document.activeElement === searchInputRef.current) {
-        setSearchQuery("");
+      if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
+        setSearchQuery('');
         searchInputRef.current?.blur();
       }
       if (
         !isTypingTarget &&
         !hasDialog &&
         (e.metaKey || e.ctrlKey) &&
-        e.key === "z" &&
+        e.key === 'z' &&
         !e.shiftKey
       ) {
         e.preventDefault();
@@ -50,17 +50,17 @@ export function useKeyboardShortcuts({
         !hasDialog &&
         (e.metaKey || e.ctrlKey) &&
         e.shiftKey &&
-        e.key === "z"
+        e.key === 'z'
       ) {
         e.preventDefault();
         redo();
       }
-      if (!isTypingTarget && !hasDialog && (e.key === "Delete" || e.key === "Backspace")) {
+      if (!isTypingTarget && !hasDialog && (e.key === 'Delete' || e.key === 'Backspace')) {
         e.preventDefault();
         onDeleteSelection();
       }
     };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
   }, [undo, redo, searchInputRef, setSearchQuery, onDeleteSelection]);
 }

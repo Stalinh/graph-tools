@@ -1,18 +1,18 @@
-import type { GraphData, GraphEdge, GraphNode, WorkspaceState } from "../types";
+import type { GraphData, GraphEdge, GraphNode, WorkspaceState } from '../types';
 
 export const WORKSPACE_STATE_VERSION = 1;
-export const WORKSPACE_GRAPH_EXTENSION = ".graph";
-export const WORKSPACE_GRAPH_FILE_NAME = "workspace.graph";
-export const WORKSPACE_JSON_ENTRY = "workspace.json";
-export const WORKSPACE_IMAGE_DIRECTORY = "images/";
-export const WORKSPACE_FILE_DESCRIPTION = "Local Knowledge Graph";
+export const WORKSPACE_GRAPH_EXTENSION = '.graph';
+export const WORKSPACE_GRAPH_FILE_NAME = 'workspace.graph';
+export const WORKSPACE_JSON_ENTRY = 'workspace.json';
+export const WORKSPACE_IMAGE_DIRECTORY = 'images/';
+export const WORKSPACE_FILE_DESCRIPTION = 'Local Knowledge Graph';
 
 export const WORKSPACE_OPEN_ACCEPT: Record<string, string[]> = {
-  "application/octet-stream": [WORKSPACE_GRAPH_EXTENSION],
+  'application/octet-stream': [WORKSPACE_GRAPH_EXTENSION],
 };
 
 export const WORKSPACE_SAVE_ACCEPT: Record<string, string[]> = {
-  "application/octet-stream": [WORKSPACE_GRAPH_EXTENSION],
+  'application/octet-stream': [WORKSPACE_GRAPH_EXTENSION],
 };
 
 export function isWorkspaceArchiveFileName(fileName: string) {
@@ -20,13 +20,13 @@ export function isWorkspaceArchiveFileName(fileName: string) {
 }
 
 export function isCanonicalWorkspaceFileName(fileName: string) {
-  return getFileExtension(fileName) === "graph";
+  return getFileExtension(fileName) === 'graph';
 }
 
 export function getWorkspaceImagePaths(state: WorkspaceState) {
   const paths = new Set<string>();
   for (const node of state.graph.nodes) {
-    if (node.type === "image" && node.imagePath) {
+    if (node.type === 'image' && node.imagePath) {
       paths.add(node.imagePath);
     }
   }
@@ -59,12 +59,12 @@ export function isWorkspaceState(value: unknown): value is WorkspaceState {
 
   if (
     value.version !== WORKSPACE_STATE_VERSION ||
-    typeof value.savedAt !== "string" ||
+    typeof value.savedAt !== 'string' ||
     !isGraphData(graph) ||
     !isPointRecord(nodePositions) ||
     !(nodeSizes === undefined || isSizeRecord(nodeSizes)) ||
     !(viewport === null || isViewport(viewport)) ||
-    !(selectedNodeId === null || typeof selectedNodeId === "string")
+    !(selectedNodeId === null || typeof selectedNodeId === 'string')
   ) {
     return false;
   }
@@ -85,8 +85,8 @@ export function isWorkspaceState(value: unknown): value is WorkspaceState {
 
 function getFileExtension(fileName: string) {
   const baseName = fileName.split(/[\\/]/).pop() ?? fileName;
-  const dotIndex = baseName.lastIndexOf(".");
-  return dotIndex >= 0 ? baseName.slice(dotIndex + 1).toLowerCase() : "";
+  const dotIndex = baseName.lastIndexOf('.');
+  return dotIndex >= 0 ? baseName.slice(dotIndex + 1).toLowerCase() : '';
 }
 
 function isGraphData(value: unknown): value is GraphData {
@@ -108,21 +108,21 @@ function isGraphNode(value: unknown): value is GraphNode {
   }
 
   return (
-    typeof value.id === "string" &&
-    (value.type === "card" || value.type === "image" || value.type === "group") &&
-    (value.parentId === undefined || typeof value.parentId === "string") &&
-    typeof value.title === "string" &&
-    (value.locked === undefined || typeof value.locked === "boolean") &&
+    typeof value.id === 'string' &&
+    (value.type === 'card' || value.type === 'image' || value.type === 'group') &&
+    (value.parentId === undefined || typeof value.parentId === 'string') &&
+    typeof value.title === 'string' &&
+    (value.locked === undefined || typeof value.locked === 'boolean') &&
     (value.opacity === undefined ||
       (isFiniteNumber(value.opacity) && value.opacity >= 0 && value.opacity <= 1)) &&
     Array.isArray(value.tags) &&
-    value.tags.every((tag) => typeof tag === "string") &&
-    (value.color === undefined || typeof value.color === "string") &&
-    (value.createdAt === undefined || typeof value.createdAt === "string") &&
-    (value.updatedAt === undefined || typeof value.updatedAt === "string") &&
-    (value.contentHtml === undefined || typeof value.contentHtml === "string") &&
+    value.tags.every((tag) => typeof tag === 'string') &&
+    (value.color === undefined || typeof value.color === 'string') &&
+    (value.createdAt === undefined || typeof value.createdAt === 'string') &&
+    (value.updatedAt === undefined || typeof value.updatedAt === 'string') &&
+    (value.contentHtml === undefined || typeof value.contentHtml === 'string') &&
     (value.imagePath === undefined ||
-      (value.type === "image" && isWorkspaceImagePath(value.imagePath))) &&
+      (value.type === 'image' && isWorkspaceImagePath(value.imagePath))) &&
     (value.references === undefined ||
       (Array.isArray(value.references) && value.references.every(isReferenceItem))) &&
     (value.customFields === undefined ||
@@ -132,24 +132,24 @@ function isGraphNode(value: unknown): value is GraphNode {
 
 export function isWorkspaceImagePath(value: unknown): value is string {
   return (
-    typeof value === "string" &&
+    typeof value === 'string' &&
     value.startsWith(WORKSPACE_IMAGE_DIRECTORY) &&
-    !value.includes("\\") &&
-    !value.includes("..") &&
+    !value.includes('\\') &&
+    !value.includes('..') &&
     /^images\/[^/]+$/.test(value)
   );
 }
 
 function isReferenceItem(value: unknown) {
-  return isRecord(value) && typeof value.id === "string" && typeof value.title === "string";
+  return isRecord(value) && typeof value.id === 'string' && typeof value.title === 'string';
 }
 
 function isCustomField(value: unknown) {
   return (
     isRecord(value) &&
-    typeof value.id === "string" &&
-    typeof value.field === "string" &&
-    typeof value.value === "string"
+    typeof value.id === 'string' &&
+    typeof value.field === 'string' &&
+    typeof value.value === 'string'
   );
 }
 
@@ -159,20 +159,20 @@ function isGraphEdge(value: unknown): value is GraphEdge {
   }
 
   return (
-    typeof value.id === "string" &&
-    typeof value.sourceId === "string" &&
-    typeof value.targetId === "string" &&
-    value.type === "citation" &&
-    (value.label === undefined || typeof value.label === "string") &&
+    typeof value.id === 'string' &&
+    typeof value.sourceId === 'string' &&
+    typeof value.targetId === 'string' &&
+    value.type === 'citation' &&
+    (value.label === undefined || typeof value.label === 'string') &&
     isFiniteNumber(value.weight) &&
-    (value.color === undefined || typeof value.color === "string") &&
+    (value.color === undefined || typeof value.color === 'string') &&
     (value.style === undefined ||
-      value.style === "solid" ||
-      value.style === "sketch" ||
-      value.style === "note-dash") &&
+      value.style === 'solid' ||
+      value.style === 'sketch' ||
+      value.style === 'note-dash') &&
     (value.direction === undefined ||
-      value.direction === "unidirectional" ||
-      value.direction === "bidirectional")
+      value.direction === 'unidirectional' ||
+      value.direction === 'bidirectional')
   );
 }
 
@@ -203,9 +203,9 @@ function isPoint(value: unknown): value is { x: number; y: number } {
 }
 
 function isFiniteNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value);
+  return typeof value === 'number' && Number.isFinite(value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+  return typeof value === 'object' && value !== null;
 }

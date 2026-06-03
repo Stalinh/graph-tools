@@ -1,6 +1,6 @@
-import { Panel, useViewport } from "@xyflow/react";
-import { ZoomIn, ZoomOut } from "lucide-react";
-import { useI18n } from "../../i18n";
+import { Panel, useViewport } from '@xyflow/react';
+import { ZoomIn, ZoomOut } from 'lucide-react';
+import { useI18n } from '../../i18n';
 
 interface GraphScaleIndicatorProps {
   onZoomIn?: () => void;
@@ -19,7 +19,7 @@ export function GraphScaleIndicator({
 
   return (
     <Panel
-      aria-label={isZh ? "画布缩放" : "Graph scale"}
+      aria-label={isZh ? '画布缩放' : 'Graph scale'}
       className="graph-scale-indicator"
       data-testid="graph-scale-indicator"
       position="top-right"
@@ -27,8 +27,8 @@ export function GraphScaleIndicator({
       <button
         type="button"
         className="graph-scale-indicator__button"
-        aria-label={isZh ? "缩小" : "Zoom out"}
-        title={isZh ? "缩小" : "Zoom out"}
+        aria-label={isZh ? '缩小' : 'Zoom out'}
+        title={isZh ? '缩小' : 'Zoom out'}
         onClick={onZoomOut}
       >
         <ZoomOut size={14} />
@@ -36,8 +36,8 @@ export function GraphScaleIndicator({
       <button
         type="button"
         className="graph-scale-indicator__readout"
-        aria-label={isZh ? "重置视图缩放" : "Reset zoom"}
-        title={isZh ? "重置视图缩放" : "Reset zoom"}
+        aria-label={isZh ? '重置视图缩放' : 'Reset zoom'}
+        title={isZh ? '重置视图缩放' : 'Reset zoom'}
         onClick={onZoomReset}
       >
         {scale}%
@@ -45,8 +45,8 @@ export function GraphScaleIndicator({
       <button
         type="button"
         className="graph-scale-indicator__button"
-        aria-label={isZh ? "放大" : "Zoom in"}
-        title={isZh ? "放大" : "Zoom in"}
+        aria-label={isZh ? '放大' : 'Zoom in'}
+        title={isZh ? '放大' : 'Zoom in'}
         onClick={onZoomIn}
       >
         <ZoomIn size={14} />

@@ -1,14 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  SHORTCUT_ITEMS,
-  getShortcutCategories,
-  getShortcutDescription,
-} from "./richEditorConfig";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { SHORTCUT_ITEMS, getShortcutCategories, getShortcutDescription } from './richEditorConfig';
 
 export function useRichEditorShortcutHelp(isZh: boolean) {
   const shortcutCategories = useMemo(() => getShortcutCategories(isZh), [isZh]);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [helpSearch, setHelpSearch] = useState("");
+  const [helpSearch, setHelpSearch] = useState('');
   const isHelpOpenRef = useRef(false);
 
   useEffect(() => {
@@ -31,17 +27,17 @@ export function useRichEditorShortcutHelp(isZh: boolean) {
 
   const closeHelp = useCallback(() => {
     setIsHelpOpen(false);
-    setHelpSearch("");
+    setHelpSearch('');
   }, []);
 
   const openHelp = useCallback(() => {
     setIsHelpOpen(true);
-    setHelpSearch("");
+    setHelpSearch('');
   }, []);
 
   const toggleHelp = useCallback(() => {
     setIsHelpOpen((current) => !current);
-    setHelpSearch("");
+    setHelpSearch('');
   }, []);
 
   return {

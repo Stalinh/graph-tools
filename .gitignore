@@ -32,3 +32,9 @@ CLAUDE.md
 ## Local code indexes
 .codegraph/
 *.md
+
+## Tool caches and temp files
+.eslintcache
+.prettiercache
+*.tmp
+*.temp

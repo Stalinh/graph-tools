@@ -1,6 +1,6 @@
-import type { Editor } from "@tiptap/core";
-import type { Dispatch, MutableRefObject, SetStateAction } from "react";
-import type { SlashCommandItem, SlashMenuState } from "./richEditorTypes";
+import type { Editor } from '@tiptap/core';
+import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
+import type { SlashCommandItem, SlashMenuState } from './richEditorTypes';
 
 interface SlashCommandMenuProps {
   editorRef: MutableRefObject<Editor | null>;
@@ -23,10 +23,10 @@ export function SlashCommandMenu({
     <div
       className="editor-slash-menu"
       style={{
-        position: "fixed",
+        position: 'fixed',
         top: `${slashMenu.coords.top}px`,
         left: `${slashMenu.coords.left}px`,
-        zIndex: "var(--z-modal-popover)",
+        zIndex: 'var(--z-modal-popover)',
       }}
     >
       {filteredCommands.map((cmd, index) => {
@@ -36,7 +36,7 @@ export function SlashCommandMenu({
           <button
             key={cmd.id}
             type="button"
-            className={`editor-slash-menu__item ${isActive ? "is-active" : ""}`}
+            className={`editor-slash-menu__item ${isActive ? 'is-active' : ''}`}
             onClick={() => {
               const start = slashMenu.pos - slashMenu.query.length - 1;
               const ed = editorRef.current;

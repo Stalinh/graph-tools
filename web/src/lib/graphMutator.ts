@@ -1,7 +1,7 @@
-import type { EdgeDirection, EdgeStyle, GraphData, GraphEdge, GraphNode } from "../types";
+import type { EdgeDirection, EdgeStyle, GraphData, GraphEdge, GraphNode } from '../types';
 
-import { isReferenceableNode, sanitizeReferences } from "./graphConstraints";
-import { normalizeEdgeColor, normalizeNodeColor } from "./nodeColors";
+import { isReferenceableNode, sanitizeReferences } from './graphConstraints';
+import { normalizeEdgeColor, normalizeNodeColor } from './nodeColors';
 
 function makeEdgeId(sourceId: string, targetId: string) {
   return `edge-${sourceId}-${targetId}`;
@@ -100,7 +100,7 @@ export function addCitation(
   graph: GraphData,
   sourceId: string,
   targetId: string,
-  direction: EdgeDirection = "unidirectional"
+  direction: EdgeDirection = 'unidirectional'
 ): GraphData {
   const sourceNode = graph.nodes.find((node) => node.id === sourceId);
   const targetNode = graph.nodes.find((node) => node.id === targetId);
@@ -131,7 +131,7 @@ export function addCitation(
       if (refs.some((r) => r.id === targetId)) return node;
       return { ...node, references: [...refs, reference] };
     }
-    if (direction === "bidirectional" && node.id === targetId) {
+    if (direction === 'bidirectional' && node.id === targetId) {
       const refs = node.references ?? [];
       if (refs.some((r) => r.id === sourceId)) return node;
       return { ...node, references: [...refs, reverseReference] };
@@ -146,10 +146,10 @@ export function addCitation(
       id: edgeId,
       sourceId,
       targetId,
-      type: "citation" as const,
+      type: 'citation' as const,
       weight: 1,
       direction,
-      style: "note-dash" as const,
+      style: 'note-dash' as const,
     },
   ];
 
@@ -161,7 +161,7 @@ export function addCitation(
 
 export function removeCitation(graph: GraphData, sourceId: string, targetId: string): GraphData {
   const edge = graph.edges.find((e) => e.sourceId === sourceId && e.targetId === targetId);
-  const isBidirectional = edge?.direction === "bidirectional";
+  const isBidirectional = edge?.direction === 'bidirectional';
 
   const nextEdges = graph.edges.filter(
     (e) => !(e.sourceId === sourceId && e.targetId === targetId)
@@ -216,7 +216,7 @@ export function updateNodeFields(graph: GraphData, updatedNode: GraphNode): Grap
   const now = new Date().toISOString();
   const oldNode = graph.nodes.find((n) => n.id === updatedNode.id);
 
-  if (oldNode && oldNode.type === "group" && oldNode.title !== updatedNode.title) {
+  if (oldNode && oldNode.type === 'group' && oldNode.title !== updatedNode.title) {
     const oldTitle = oldNode.title;
     const newTitle = updatedNode.title;
 
@@ -269,7 +269,7 @@ export function updateEdgeDirection(
   const nextEdges = graph.edges.map((e) => (e.id === edgeId ? { ...e, direction } : e));
 
   const nextNodes = graph.nodes.map((node) => {
-    if (direction === "bidirectional") {
+    if (direction === 'bidirectional') {
       if (node.id === edge.sourceId && sourceNode && targetNode) {
         const refs = node.references ?? [];
         if (!refs.some((r) => r.id === targetNode.id)) {
@@ -340,7 +340,7 @@ export function reorderReferences(
   const refsById = new Map((sourceNode.references ?? []).map((r) => [r.id, r]));
   const reordered = newOrder
     .map((id) => refsById.get(id))
-    .filter((ref): ref is NonNullable<GraphNode["references"]>[number] => ref !== undefined);
+    .filter((ref): ref is NonNullable<GraphNode['references']>[number] => ref !== undefined);
   const referenceableNodeIds = new Set(
     graph.nodes.filter(isReferenceableNode).map((node) => node.id)
   );

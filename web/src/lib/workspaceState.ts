@@ -1,8 +1,8 @@
-import type { GraphData, GraphNode, WorkspaceState } from "../types";
+import type { GraphData, GraphNode, WorkspaceState } from '../types';
 
-import { sanitizeReferenceGraph, sanitizeReferences } from "./graphConstraints";
-import { constrainGroupNodeSize, snapPositionToGrid } from "./graphLayout";
-import { normalizeEdgeColor, normalizeNodeColor } from "./nodeColors";
+import { sanitizeReferenceGraph, sanitizeReferences } from './graphConstraints';
+import { constrainGroupNodeSize, snapPositionToGrid } from './graphLayout';
+import { normalizeEdgeColor, normalizeNodeColor } from './nodeColors';
 
 export const EMPTY_GRAPH: GraphData = { nodes: [], edges: [] };
 
@@ -26,7 +26,7 @@ export function normalizeWorkspaceState(workspace: WorkspaceState): WorkspaceSta
   const sanitizedGraph = sanitizeReferenceGraph(workspace.graph);
   const nodeIds = new Set(sanitizedGraph.nodes.map((node) => node.id));
   const groupIds = new Set(
-    sanitizedGraph.nodes.filter((node) => node.type === "group").map((node) => node.id)
+    sanitizedGraph.nodes.filter((node) => node.type === 'group').map((node) => node.id)
   );
 
   const nodePositions: Record<string, { x: number; y: number }> = {};
@@ -47,7 +47,7 @@ export function normalizeWorkspaceState(workspace: WorkspaceState): WorkspaceSta
   }
 
   const referenceableNodeIds = new Set(
-    sanitizedGraph.nodes.filter((node) => node.type !== "group").map((node) => node.id)
+    sanitizedGraph.nodes.filter((node) => node.type !== 'group').map((node) => node.id)
   );
 
   const normalizedNodes = sanitizedGraph.nodes.map((node) => {
@@ -59,7 +59,7 @@ export function normalizeWorkspaceState(workspace: WorkspaceState): WorkspaceSta
     if (!currentNode.parentId) {
       return sanitizedNode;
     }
-    if (currentNode.type === "group" || !groupIds.has(currentNode.parentId)) {
+    if (currentNode.type === 'group' || !groupIds.has(currentNode.parentId)) {
       const nodeWithoutParent = { ...sanitizedNode };
       delete nodeWithoutParent.parentId;
       return nodeWithoutParent;
@@ -85,12 +85,12 @@ export function normalizeWorkspaceState(workspace: WorkspaceState): WorkspaceSta
 }
 
 function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 export function migrateWorkspaceIds(workspace: WorkspaceState): WorkspaceState {
   const normalizedWorkspace = normalizeWorkspaceState(workspace);
-  const hasOldIds = normalizedWorkspace.graph.nodes.some((node) => !node.id.startsWith("#"));
+  const hasOldIds = normalizedWorkspace.graph.nodes.some((node) => !node.id.startsWith('#'));
   if (!hasOldIds) {
     return normalizedWorkspace;
   }
@@ -115,8 +115,8 @@ export function migrateWorkspaceIds(workspace: WorkspaceState): WorkspaceState {
     `\\[(${[...idMapping.keys()]
       .sort((a, b) => b.length - a.length)
       .map(escapeRegExp)
-      .join("|")})\\]`,
-    "g"
+      .join('|')})\\]`,
+    'g'
   );
 
   const migratedNodes = nodesWithDates.map((node) => {

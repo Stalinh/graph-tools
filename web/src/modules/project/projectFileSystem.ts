@@ -6,8 +6,8 @@ import {
   isProjectFileName,
   parseProjectFileJson,
   serializeProjectFile,
-} from "./projectFileFormat";
-import type { ProjectRecord } from "./projectTypes";
+} from './projectFileFormat';
+import type { ProjectRecord } from './projectTypes';
 
 const MAX_PROJECT_FILE_BYTES = 10 * 1024 * 1024;
 
@@ -35,7 +35,7 @@ async function writeBytesToFile(handle: FileSystemFileHandle, data: Uint8Array<A
 
 async function readFileAsUtf8(file: File) {
   const buffer = await file.arrayBuffer();
-  return new TextDecoder("utf-8", { fatal: true }).decode(buffer);
+  return new TextDecoder('utf-8', { fatal: true }).decode(buffer);
 }
 
 export class ProjectFileManager {
@@ -66,7 +66,7 @@ export class ProjectFileManager {
       this.currentFileHandle = fileHandle;
       return records;
     } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
+      if (error instanceof DOMException && error.name === 'AbortError') {
         return null;
       }
       throw error;
@@ -85,7 +85,7 @@ export class ProjectFileManager {
     }
 
     if (!isProjectFileName(this.currentFileHandle.name)) {
-      throw new Error("Unsupported project file type.");
+      throw new Error('Unsupported project file type.');
     }
 
     await this.writeProject(this.currentFileHandle, records);
@@ -108,7 +108,7 @@ export class ProjectFileManager {
       this.currentFileHandle = fileHandle;
       return fileHandle.name;
     } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
+      if (error instanceof DOMException && error.name === 'AbortError') {
         return null;
       }
       throw error;
@@ -121,11 +121,11 @@ export class ProjectFileManager {
 
   private async readProjectFile(file: File): Promise<ProjectRecord[]> {
     if (!isProjectFileName(file.name)) {
-      throw new Error("Unsupported project file type.");
+      throw new Error('Unsupported project file type.');
     }
 
     if (file.size > MAX_PROJECT_FILE_BYTES) {
-      throw new Error("Project file is too large.");
+      throw new Error('Project file is too large.');
     }
 
     return parseProjectFileJson(await readFileAsUtf8(file));

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { projectFileManager } from "./projectFileSystem";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { projectFileManager } from './projectFileSystem';
 import {
   createDefaultProjectSubLines,
   createProjectRecord,
@@ -11,19 +11,19 @@ import {
   normalizeProjectSubLineStatus,
   sanitizeProjectRecords,
   sortProjectRecords,
-} from "./projectModel";
+} from './projectModel';
 import {
   clearProjectDraftRecords,
   loadProjectDraftState,
   saveProjectDraftRecords,
-} from "./projectStorage";
+} from './projectStorage';
 import type {
   ProjectLine,
   ProjectRecord,
   ProjectRecordField,
   ProjectSubLine,
   ProjectSubLineField,
-} from "./projectTypes";
+} from './projectTypes';
 
 export interface DroppedProjectFile {
   file: File;
@@ -81,11 +81,11 @@ export function useProjectSheetState({
   const [fileStatus, setFileStatus] = useState<string | null>(() => {
     if (initialDraftState.hasInvalidDraftData) {
       return isZh
-        ? "本地草稿包含无法恢复的数据，已保留可恢复部分。"
-        : "The local draft contains data that could not be restored. Recoverable records were kept.";
+        ? '本地草稿包含无法恢复的数据，已保留可恢复部分。'
+        : 'The local draft contains data that could not be restored. Recoverable records were kept.';
     }
     if (initialDraftState.restoredDraft) {
-      return isZh ? "已恢复本地草稿。" : "Local draft restored.";
+      return isZh ? '已恢复本地草稿。' : 'Local draft restored.';
     }
     return null;
   });
@@ -108,31 +108,32 @@ export function useProjectSheetState({
   }, [dirty, records]);
 
   const getOpenErrorMessage = (error: unknown) => {
-    const message = error instanceof Error ? error.message : "";
+    const message = error instanceof Error ? error.message : '';
 
-    if (message === "Unsupported project file type.") {
-      return isZh ? "仅支持 .project 项目文件。" : "Only .project files are supported.";
+    if (message === 'Unsupported project file type.') {
+      return isZh ? '仅支持 .project 项目文件。' : 'Only .project files are supported.';
     }
 
-    if (message === "Project file is too large.") {
-      return isZh ? "项目文件过大，无法打开。" : "The project file is too large to open.";
+    if (message === 'Project file is too large.') {
+      return isZh ? '项目文件过大，无法打开。' : 'The project file is too large to open.';
     }
 
-    if (message.toLowerCase().includes("invalid")) {
-      return isZh ? "项目文件已损坏或格式不正确。" : "The project file is invalid or damaged.";
+    if (message.toLowerCase().includes('invalid')) {
+      return isZh ? '项目文件已损坏或格式不正确。' : 'The project file is invalid or damaged.';
     }
 
-    return isZh ? "打开项目文件失败。" : "Failed to open the project file.";
+    return isZh ? '打开项目文件失败。' : 'Failed to open the project file.';
   };
 
-  const getSaveErrorMessage = () => (isZh ? "保存项目文件失败。" : "Failed to save the project file.");
+  const getSaveErrorMessage = () =>
+    isZh ? '保存项目文件失败。' : 'Failed to save the project file.';
 
   const confirmDiscardUnsavedChanges = () =>
     !dirty ||
     window.confirm(
       isZh
-        ? "当前项目文件有未保存修改，继续会丢失这些修改。是否继续？"
-        : "The current project file has unsaved changes. Continue and discard them?"
+        ? '当前项目文件有未保存修改，继续会丢失这些修改。是否继续？'
+        : 'The current project file has unsaved changes. Continue and discard them?'
     );
 
   const replaceRecords = (nextRecords: ProjectRecord[], shouldMarkDirty: boolean) => {
@@ -150,10 +151,7 @@ export function useProjectSheetState({
       openedRecordsWithDefaultSubLines.addedSubLineCount > 0 ||
       openedRecordsWithDefaultSubLines.reorderedSubLineRecordCount > 0;
     setExpandedProjectIds(new Set());
-    replaceRecords(
-      openedRecordsWithDefaultSubLines.records,
-      hasAutomaticSubLineUpdates
-    );
+    replaceRecords(openedRecordsWithDefaultSubLines.records, hasAutomaticSubLineUpdates);
     setCurrentFileName(fileName);
     clearProjectDraftRecords();
     setFileStatus(
@@ -163,15 +161,15 @@ export function useProjectSheetState({
           : `Project file opened and ${openedRecordsWithDefaultSubLines.addedSubLineCount} sublines were added.`
         : openedFromDrop
           ? isZh
-            ? "拖入的项目文件已打开，保存时将另存为。"
-            : "Dropped project file opened. Saving will use Save As."
+            ? '拖入的项目文件已打开，保存时将另存为。'
+            : 'Dropped project file opened. Saving will use Save As.'
           : openedRecordsWithDefaultSubLines.reorderedSubLineRecordCount > 0
             ? isZh
               ? `项目文件已打开，并自动固定 ${openedRecordsWithDefaultSubLines.reorderedSubLineRecordCount} 个项目的子行顺序。`
               : `Project file opened and subline order was fixed for ${openedRecordsWithDefaultSubLines.reorderedSubLineRecordCount} projects.`
-          : isZh
-            ? "项目文件已打开。"
-            : "Project file opened."
+            : isZh
+              ? '项目文件已打开。'
+              : 'Project file opened.'
     );
   };
 
@@ -182,7 +180,7 @@ export function useProjectSheetState({
 
     projectFileManager.reset();
     setCurrentFileName(null);
-    setFileStatus(isZh ? "已新建项目文件。" : "New project file created.");
+    setFileStatus(isZh ? '已新建项目文件。' : 'New project file created.');
     setExpandedProjectIds(new Set());
     replaceRecords([], false);
     clearProjectDraftRecords();
@@ -194,7 +192,7 @@ export function useProjectSheetState({
     }
 
     try {
-      setFileStatus(isZh ? "正在打开..." : "Opening...");
+      setFileStatus(isZh ? '正在打开...' : 'Opening...');
       const openedRecords = await projectFileManager.openProjectFile();
       if (!openedRecords) {
         setFileStatus(null);
@@ -215,7 +213,7 @@ export function useProjectSheetState({
     }
 
     try {
-      setFileStatus(isZh ? "正在打开..." : "Opening...");
+      setFileStatus(isZh ? '正在打开...' : 'Opening...');
       const openedRecords = await projectFileManager.openDroppedProjectFile(file);
       applyOpenedProjectRecords(openedRecords, file.name, true);
     } catch (error) {
@@ -241,7 +239,7 @@ export function useProjectSheetState({
     recordId: string,
     sourceRecords: ProjectRecord[] = records
   ) => {
-    const fallbackProjectName = isZh ? "未命名项目" : "Untitled Project";
+    const fallbackProjectName = isZh ? '未命名项目' : 'Untitled Project';
     const baseName = normalizeProjectName(projectName) || fallbackProjectName;
     const knownProjectNames = new Set(
       sourceRecords
@@ -262,7 +260,7 @@ export function useProjectSheetState({
 
   const normalizeRecordsForPersistence = (sourceRecords: ProjectRecord[]) => {
     const usedProjectNames = new Set<string>();
-    const fallbackProjectName = isZh ? "未命名项目" : "Untitled Project";
+    const fallbackProjectName = isZh ? '未命名项目' : 'Untitled Project';
 
     return sanitizeProjectRecords(
       sourceRecords.map((record) => {
@@ -292,7 +290,7 @@ export function useProjectSheetState({
     setRecords(recordsToSave);
 
     try {
-      setFileStatus(isZh ? "正在保存..." : "Saving...");
+      setFileStatus(isZh ? '正在保存...' : 'Saving...');
       const fileName = await projectFileManager.saveProjectFileAs(recordsToSave);
       if (!fileName) {
         setFileStatus(null);
@@ -302,7 +300,7 @@ export function useProjectSheetState({
       setCurrentFileName(fileName);
       setDirty(false);
       clearProjectDraftRecords();
-      setFileStatus(isZh ? "项目文件已保存。" : "Project file saved.");
+      setFileStatus(isZh ? '项目文件已保存。' : 'Project file saved.');
       return true;
     } catch {
       setFileStatus(getSaveErrorMessage());
@@ -319,7 +317,7 @@ export function useProjectSheetState({
     }
 
     try {
-      setFileStatus(isZh ? "正在保存..." : "Saving...");
+      setFileStatus(isZh ? '正在保存...' : 'Saving...');
       const saved = await projectFileManager.saveProjectFile(recordsToSave);
       if (!saved) {
         return await handleSaveProjectFileAs();
@@ -327,7 +325,7 @@ export function useProjectSheetState({
 
       setDirty(false);
       clearProjectDraftRecords();
-      setFileStatus(isZh ? "项目文件已保存。" : "Project file saved.");
+      setFileStatus(isZh ? '项目文件已保存。' : 'Project file saved.');
       return true;
     } catch {
       setFileStatus(getSaveErrorMessage());
@@ -358,7 +356,7 @@ export function useProjectSheetState({
   };
 
   const addProjectRecord = () => {
-    const projectName = getUniqueProjectName(isZh ? "新项目" : "New Project", "");
+    const projectName = getUniqueProjectName(isZh ? '新项目' : 'New Project', '');
     const nextRecord = createProjectRecord({
       projectName,
       subLines: createDefaultProjectSubLines(),
@@ -371,7 +369,7 @@ export function useProjectSheetState({
 
   const removeRecord = (recordId: string) => {
     const record = records.find((r) => r.id === recordId);
-    const projectName = record?.projectName || (isZh ? "未命名项目" : "Untitled Project");
+    const projectName = record?.projectName || (isZh ? '未命名项目' : 'Untitled Project');
     const confirmMessage = isZh
       ? `确定要删除项目 "${projectName}" 吗？`
       : `Are you sure you want to delete the project "${projectName}"?`;
@@ -410,25 +408,25 @@ export function useProjectSheetState({
           return record;
         }
 
-        if (field === "projectName") {
+        if (field === 'projectName') {
           return {
             ...record,
             projectName: getUniqueProjectName(record.projectName, recordId, currentRecords),
           };
         }
 
-        if (field === "lineNo") {
+        if (field === 'lineNo') {
           return { ...record, lineNo: normalizeProjectLineNo(record.lineNo) };
         }
 
-        if (field === "progress") {
+        if (field === 'progress') {
           return { ...record, progress: normalizeProjectProgress(record.progress) };
         }
 
         return record;
       });
 
-      if (field === "lineNo") {
+      if (field === 'lineNo') {
         return sortProjectRecords(nextRecords);
       }
       return nextRecords;

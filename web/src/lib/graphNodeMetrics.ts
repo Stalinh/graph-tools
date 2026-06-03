@@ -1,18 +1,18 @@
-import type { GraphNode, NodeSize } from "../types";
-import { getPlainTextContent } from "./cardContent";
-import { DEFAULT_GROUP_SIZE } from "./graphLayout";
+import type { GraphNode, NodeSize } from '../types';
+import { getPlainTextContent } from './cardContent';
+import { DEFAULT_GROUP_SIZE } from './graphLayout';
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
 export function estimateNodeSize(node: GraphNode): NodeSize {
-  if (node.type === "group") {
+  if (node.type === 'group') {
     return DEFAULT_GROUP_SIZE;
   }
   const title = node.title.trim();
   const content = getPlainTextContent(node.contentHtml);
-  const tags = node.tags.slice(0, 3).join(", ");
+  const tags = node.tags.slice(0, 3).join(', ');
   const snippets = [title, content, tags].filter(Boolean);
   const longestSnippetLength = Math.max(...snippets.map((snippet) => snippet.length), 12);
   const width = clamp(Math.round(longestSnippetLength * 6.6) + 36, 140, 400);

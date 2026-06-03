@@ -1,21 +1,26 @@
-import { PROJECT_COLUMNS, PROJECT_DEFAULT_SUB_LINE_TASK_NAMES } from "./projectConfig";
-import type { ProjectLine, ProjectRecord, ProjectSubLine, ProjectSubLineStatus } from "./projectTypes";
+import { PROJECT_COLUMNS, PROJECT_DEFAULT_SUB_LINE_TASK_NAMES } from './projectConfig';
+import type {
+  ProjectLine,
+  ProjectRecord,
+  ProjectSubLine,
+  ProjectSubLineStatus,
+} from './projectTypes';
 
-const DEFAULT_PROJECT_SUB_LINE_STATUS: ProjectSubLineStatus = "未处理";
+const DEFAULT_PROJECT_SUB_LINE_STATUS: ProjectSubLineStatus = '未处理';
 const PROJECT_SUB_LINE_STATUSES: ProjectSubLineStatus[] = [
-  "未处理",
-  "待处理",
-  "等待中",
-  "已提资/已完成",
+  '未处理',
+  '待处理',
+  '等待中',
+  '已提资/已完成',
 ];
 const LEGACY_PROJECT_SUB_LINE_STATUS_MAP: Record<string, ProjectSubLineStatus> = {
-  设计中: "待处理",
-  待评审: "等待中",
-  已处理: "已提资/已完成",
-  已提资: "已提资/已完成",
-  已下单: "已提资/已完成",
+  设计中: '待处理',
+  待评审: '等待中',
+  已处理: '已提资/已完成',
+  已提资: '已提资/已完成',
+  已下单: '已提资/已完成',
 };
-const OPTIONAL_PROJECT_LINE_FIELDS = new Set(["detailDesign", "lineNo", "progress"]);
+const OPTIONAL_PROJECT_LINE_FIELDS = new Set(['detailDesign', 'lineNo', 'progress']);
 const PROJECT_SUB_LINE_ORDER_BY_TASK_NAME = new Map(
   PROJECT_DEFAULT_SUB_LINE_TASK_NAMES.map((taskName, index) => [taskName, index])
 );
@@ -34,31 +39,29 @@ export interface ProjectDefaultSubLinesResult {
 }
 
 function createProjectId() {
-  return (
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `project-${Date.now()}-${Math.random().toString(36).slice(2)}`
-  );
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `project-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-export function createProjectLine(values: Partial<Omit<ProjectLine, "id">> = {}): ProjectLine {
+export function createProjectLine(values: Partial<Omit<ProjectLine, 'id'>> = {}): ProjectLine {
   return {
     id: createProjectId(),
-    lineNo: values.lineNo ?? "",
-    contractNo: values.contractNo ?? "",
-    detailDesign: values.detailDesign ?? "",
-    projectNo: values.projectNo ?? "",
-    projectName: values.projectName ?? "",
-    contractAmount: values.contractAmount ?? "",
-    projectLevel: values.projectLevel ?? "",
-    progress: normalizeProjectProgress(values.progress ?? "0"),
-    schemeDesign: values.schemeDesign ?? "",
-    projectManager: values.projectManager ?? "",
+    lineNo: values.lineNo ?? '',
+    contractNo: values.contractNo ?? '',
+    detailDesign: values.detailDesign ?? '',
+    projectNo: values.projectNo ?? '',
+    projectName: values.projectName ?? '',
+    contractAmount: values.contractAmount ?? '',
+    projectLevel: values.projectLevel ?? '',
+    progress: normalizeProjectProgress(values.progress ?? '0'),
+    schemeDesign: values.schemeDesign ?? '',
+    projectManager: values.projectManager ?? '',
   };
 }
 
 export function createProjectRecord(
-  values: Partial<Omit<ProjectLine, "id">> & { subLines?: ProjectSubLine[] } = {}
+  values: Partial<Omit<ProjectLine, 'id'>> & { subLines?: ProjectSubLine[] } = {}
 ): ProjectRecord {
   return {
     ...createProjectLine(values),
@@ -66,13 +69,15 @@ export function createProjectRecord(
   };
 }
 
-export function createProjectSubLine(values: Partial<Omit<ProjectSubLine, "id">> = {}): ProjectSubLine {
+export function createProjectSubLine(
+  values: Partial<Omit<ProjectSubLine, 'id'>> = {}
+): ProjectSubLine {
   return {
     id: createProjectId(),
-    lineNo: values.lineNo ?? "",
-    taskName: values.taskName ?? "",
+    lineNo: values.lineNo ?? '',
+    taskName: values.taskName ?? '',
     status: normalizeProjectSubLineStatus(values.status),
-    detailDesign: values.detailDesign ?? "",
+    detailDesign: values.detailDesign ?? '',
   };
 }
 
@@ -123,27 +128,29 @@ export function createInitialProjectRecords() {
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function getStringProperty(record: Record<string, unknown>, key: string) {
   const value = record[key];
-  return typeof value === "string" ? value : "";
+  return typeof value === 'string' ? value : '';
 }
 
 export function isProjectLine(value: unknown): value is ProjectLine {
-  if (!value || typeof value !== "object") {
+  if (!value || typeof value !== 'object') {
     return false;
   }
 
   const record = value as Partial<ProjectLine>;
-  const requiredColumns = PROJECT_COLUMNS.filter(({ field }) => !OPTIONAL_PROJECT_LINE_FIELDS.has(field));
+  const requiredColumns = PROJECT_COLUMNS.filter(
+    ({ field }) => !OPTIONAL_PROJECT_LINE_FIELDS.has(field)
+  );
   return (
-    typeof record.id === "string" &&
-    requiredColumns.every(({ field }) => typeof record[field] === "string") &&
-    (record.lineNo === undefined || typeof record.lineNo === "string") &&
-    (record.detailDesign === undefined || typeof record.detailDesign === "string") &&
-    (record.progress === undefined || typeof record.progress === "string")
+    typeof record.id === 'string' &&
+    requiredColumns.every(({ field }) => typeof record[field] === 'string') &&
+    (record.lineNo === undefined || typeof record.lineNo === 'string') &&
+    (record.detailDesign === undefined || typeof record.detailDesign === 'string') &&
+    (record.progress === undefined || typeof record.progress === 'string')
   );
 }
 
@@ -157,11 +164,11 @@ export function isProjectRecord(value: unknown): value is ProjectRecord {
 }
 
 export function normalizeProjectName(projectName: unknown) {
-  return typeof projectName === "string" ? projectName.trim() : "";
+  return typeof projectName === 'string' ? projectName.trim() : '';
 }
 
 export function normalizeProjectLineNo(lineNo: unknown) {
-  return typeof lineNo === "string" ? lineNo.trim() : "";
+  return typeof lineNo === 'string' ? lineNo.trim() : '';
 }
 
 export function compareProjectLineNos(a: string, b: string): number {
@@ -225,11 +232,11 @@ export function sortProjectRecords(records: ProjectRecord[]): ProjectRecord[] {
 
 export function normalizeProjectProgress(progress: unknown) {
   const numericProgress =
-    typeof progress === "string" || typeof progress === "number"
+    typeof progress === 'string' || typeof progress === 'number'
       ? Number.parseFloat(String(progress))
       : Number.NaN;
   if (!Number.isFinite(numericProgress)) {
-    return "0";
+    return '0';
   }
 
   const clampedProgress = Math.min(100, Math.max(0, Math.round(numericProgress)));
@@ -237,7 +244,7 @@ export function normalizeProjectProgress(progress: unknown) {
 }
 
 export function normalizeProjectSubLineTaskName(taskName: unknown) {
-  return typeof taskName === "string" ? taskName.trim() : "";
+  return typeof taskName === 'string' ? taskName.trim() : '';
 }
 
 export function normalizeProjectSubLineStatus(status: unknown): ProjectSubLineStatus {
@@ -245,7 +252,7 @@ export function normalizeProjectSubLineStatus(status: unknown): ProjectSubLineSt
     return status as ProjectSubLineStatus;
   }
 
-  if (typeof status === "string" && status in LEGACY_PROJECT_SUB_LINE_STATUS_MAP) {
+  if (typeof status === 'string' && status in LEGACY_PROJECT_SUB_LINE_STATUS_MAP) {
     return LEGACY_PROJECT_SUB_LINE_STATUS_MAP[status];
   }
 
@@ -253,7 +260,7 @@ export function normalizeProjectSubLineStatus(status: unknown): ProjectSubLineSt
 }
 
 export function sanitizeProjectLine(record: unknown): ProjectLine | null {
-  if (!isObject(record) || typeof record.id !== "string") {
+  if (!isObject(record) || typeof record.id !== 'string') {
     return null;
   }
 
@@ -265,15 +272,15 @@ export function sanitizeProjectLine(record: unknown): ProjectLine | null {
   return {
     id: record.id,
     lineNo: normalizeProjectLineNo(record.lineNo),
-    contractNo: getStringProperty(record, "contractNo"),
-    detailDesign: getStringProperty(record, "detailDesign"),
-    projectNo: getStringProperty(record, "projectNo"),
+    contractNo: getStringProperty(record, 'contractNo'),
+    detailDesign: getStringProperty(record, 'detailDesign'),
+    projectNo: getStringProperty(record, 'projectNo'),
     projectName,
-    contractAmount: getStringProperty(record, "contractAmount"),
-    projectLevel: getStringProperty(record, "projectLevel"),
+    contractAmount: getStringProperty(record, 'contractAmount'),
+    projectLevel: getStringProperty(record, 'projectLevel'),
     progress: normalizeProjectProgress(record.progress),
-    schemeDesign: getStringProperty(record, "schemeDesign"),
-    projectManager: getStringProperty(record, "projectManager"),
+    schemeDesign: getStringProperty(record, 'schemeDesign'),
+    projectManager: getStringProperty(record, 'projectManager'),
   };
 }
 
@@ -306,11 +313,11 @@ export function sanitizeProjectSubLine(value: unknown): ProjectSubLine | null {
   }
 
   const record = value as Partial<ProjectSubLine> & Partial<ProjectLine>;
-  if (typeof record.id !== "string") {
+  if (typeof record.id !== 'string') {
     return null;
   }
 
-  const hasTaskNameField = "taskName" in record;
+  const hasTaskNameField = 'taskName' in record;
   const taskName = normalizeProjectSubLineTaskName(record.taskName ?? record.projectName);
   if (hasTaskNameField && !taskName) {
     return null;
@@ -319,14 +326,14 @@ export function sanitizeProjectSubLine(value: unknown): ProjectSubLine | null {
   return {
     id: record.id,
     lineNo: normalizeProjectLineNo(record.lineNo),
-    taskName: taskName || "未命名任务",
+    taskName: taskName || '未命名任务',
     status: normalizeProjectSubLineStatus(record.status),
-    detailDesign: getStringProperty(value, "detailDesign"),
+    detailDesign: getStringProperty(value, 'detailDesign'),
   };
 }
 
 function getInvalidSubLineCount(record: unknown, sanitizedRecord: ProjectRecord) {
-  if (!isObject(record) || !("subLines" in record)) {
+  if (!isObject(record) || !('subLines' in record)) {
     return 0;
   }
 
@@ -337,7 +344,9 @@ function getInvalidSubLineCount(record: unknown, sanitizedRecord: ProjectRecord)
   return Math.max(0, record.subLines.length - sanitizedRecord.subLines.length);
 }
 
-export function sanitizeProjectRecordsWithReport(records: readonly unknown[]): ProjectRecordsSanitizeReport {
+export function sanitizeProjectRecordsWithReport(
+  records: readonly unknown[]
+): ProjectRecordsSanitizeReport {
   const knownProjectNames = new Set<string>();
   const sanitizedRecords: ProjectRecord[] = [];
   let invalidRecordCount = 0;
@@ -394,7 +403,9 @@ export function ensureProjectDefaultSubLines(record: ProjectRecord): ProjectDefa
     ],
     addedSubLineCount: missingSubLines.length,
     reorderedSubLineRecordCount:
-      missingSubLines.length === 0 && hasProjectSubLineOrderChanged(record.subLines, nextSubLines) ? 1 : 0,
+      missingSubLines.length === 0 && hasProjectSubLineOrderChanged(record.subLines, nextSubLines)
+        ? 1
+        : 0,
   };
 }
 

@@ -1,5 +1,5 @@
-import type { Editor } from "@tiptap/core";
-import { useMemo } from "react";
+import type { Editor } from '@tiptap/core';
+import { useMemo } from 'react';
 
 export interface RichEditorStats {
   characters: number;
@@ -8,7 +8,7 @@ export interface RichEditorStats {
   words: number;
 }
 
-type RichEditorStatsSource = Pick<Editor, "getText" | "state">;
+type RichEditorStatsSource = Pick<Editor, 'getText' | 'state'>;
 
 export function getRichEditorStats(editor: RichEditorStatsSource | null): RichEditorStats {
   if (!editor) {
@@ -25,7 +25,7 @@ export function getRichEditorStats(editor: RichEditorStatsSource | null): RichEd
   let checkedTasks = 0;
 
   editor.state.doc.descendants((node) => {
-    if (node.type.name === "taskItem") {
+    if (node.type.name === 'taskItem') {
       totalTasks++;
       if (node.attrs.checked) {
         checkedTasks++;

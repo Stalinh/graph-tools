@@ -1,11 +1,11 @@
-import { useState, type Dispatch, type SetStateAction } from "react";
-import type { Locale } from "../i18n";
-import { useGraphEdges } from "./useGraphEdges";
-import { useGraphNodes } from "./useGraphNodes";
-import { useGraphPersistence } from "./useGraphPersistence";
-import { useGraphSearch } from "./useGraphSearch";
-import { useGraphSelection } from "./useGraphSelection";
-import { useWorkspaceStore } from "./useWorkspaceStore";
+import { useState, type Dispatch, type SetStateAction } from 'react';
+import type { Locale } from '../i18n';
+import { useGraphEdges } from './useGraphEdges';
+import { useGraphNodes } from './useGraphNodes';
+import { useGraphPersistence } from './useGraphPersistence';
+import { useGraphSearch } from './useGraphSearch';
+import { useGraphSelection } from './useGraphSelection';
+import { useWorkspaceStore } from './useWorkspaceStore';
 
 type SearchState = ReturnType<typeof useGraphSearch>;
 type GraphNodesState = ReturnType<typeof useGraphNodes>;
@@ -19,25 +19,25 @@ export interface GraphState {
   edges: GraphEdgesState;
   selection: {
     selectedNodeId: string | null;
-    setSelectedNodeId: WorkspaceStoreState["setSelectedNodeId"];
+    setSelectedNodeId: WorkspaceStoreState['setSelectedNodeId'];
     selectedNodeIds: string[];
-    setSelectedNodeIds: WorkspaceStoreState["setSelectedNodeIds"];
+    setSelectedNodeIds: WorkspaceStoreState['setSelectedNodeIds'];
     selectedEdgeId: string | null;
-    setSelectedEdgeId: WorkspaceStoreState["setSelectedEdgeId"];
-    contextMenu: WorkspaceStoreState["workspace"]["selection"]["contextMenu"];
-    setContextMenu: WorkspaceStoreState["setContextMenu"];
+    setSelectedEdgeId: WorkspaceStoreState['setSelectedEdgeId'];
+    contextMenu: WorkspaceStoreState['workspace']['selection']['contextMenu'];
+    setContextMenu: WorkspaceStoreState['setContextMenu'];
     editingNodeId: string | null;
-    setEditingNodeId: WorkspaceStoreState["setEditingNodeId"];
+    setEditingNodeId: WorkspaceStoreState['setEditingNodeId'];
     quickEditingNodeId: string | null;
-    setQuickEditingNodeId: WorkspaceStoreState["setQuickEditingNodeId"];
+    setQuickEditingNodeId: WorkspaceStoreState['setQuickEditingNodeId'];
     pendingInspectorContentFocusNodeId: string | null;
-    setPendingInspectorContentFocusNodeId: WorkspaceStoreState["setPendingInspectorContentFocusNodeId"];
+    setPendingInspectorContentFocusNodeId: WorkspaceStoreState['setPendingInspectorContentFocusNodeId'];
   } & GraphSelectionState;
   persistence: GraphPersistenceState;
   history: {
-    undoStack: WorkspaceStoreState["workspace"]["history"]["undoStack"];
-    redoStack: WorkspaceStoreState["workspace"]["history"]["redoStack"];
-    clear: WorkspaceStoreState["clearHistory"];
+    undoStack: WorkspaceStoreState['workspace']['history']['undoStack'];
+    redoStack: WorkspaceStoreState['workspace']['history']['redoStack'];
+    clear: WorkspaceStoreState['clearHistory'];
   };
   search: SearchState;
   images: {
@@ -46,11 +46,11 @@ export interface GraphState {
   };
   status: {
     dirty: boolean;
-    setDirty: WorkspaceStoreState["setDirty"];
-    status: WorkspaceStoreState["workspace"]["status"]["status"];
-    setStatus: WorkspaceStoreState["setStatus"];
+    setDirty: WorkspaceStoreState['setDirty'];
+    status: WorkspaceStoreState['workspace']['status']['status'];
+    setStatus: WorkspaceStoreState['setStatus'];
     errorMessage: string | null;
-    setErrorMessage: WorkspaceStoreState["setErrorMessage"];
+    setErrorMessage: WorkspaceStoreState['setErrorMessage'];
   };
 }
 
@@ -72,7 +72,7 @@ export function useGraphState(options: UseGraphStateOptions = {}): GraphState {
     workspace,
     workspaceRef: workspaceStore.workspaceRef,
     dispatchWorkspaceTransaction: workspaceStore.dispatchWorkspaceTransaction,
-    locale: options.locale ?? "zh-CN",
+    locale: options.locale ?? 'zh-CN',
   });
 
   const selection = useGraphSelection({
@@ -115,10 +115,8 @@ export function useGraphState(options: UseGraphStateOptions = {}): GraphState {
       setEditingNodeId: workspaceStore.setEditingNodeId,
       quickEditingNodeId: selectionState.quickEditingNodeId,
       setQuickEditingNodeId: workspaceStore.setQuickEditingNodeId,
-      pendingInspectorContentFocusNodeId:
-        selectionState.pendingInspectorContentFocusNodeId,
-      setPendingInspectorContentFocusNodeId:
-        workspaceStore.setPendingInspectorContentFocusNodeId,
+      pendingInspectorContentFocusNodeId: selectionState.pendingInspectorContentFocusNodeId,
+      setPendingInspectorContentFocusNodeId: workspaceStore.setPendingInspectorContentFocusNodeId,
       selectedNode: selection.selectedNode,
       selectedNodes: selection.selectedNodes,
       editingNode: selection.editingNode,

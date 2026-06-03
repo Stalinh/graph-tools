@@ -1,17 +1,13 @@
-import { useCallback } from "react";
-import { updateNodeColor, updateNodeLocked, updateNodeOpacity } from "../../lib/graphMutator";
-import { createWorkspacePatchCommand } from "../canvasHistoryPatch";
-import type { ApplyGraphUpdate, GraphNodeActionContext } from "./graphNodeActionTypes";
-import {
-  createWorkspaceSnapshot,
-  type WorkspaceStoreState,
-} from "../useWorkspaceStore";
+import { useCallback } from 'react';
+import { updateNodeColor, updateNodeLocked, updateNodeOpacity } from '../../lib/graphMutator';
+import { createWorkspacePatchCommand } from '../canvasHistoryPatch';
+import type { ApplyGraphUpdate, GraphNodeActionContext } from './graphNodeActionTypes';
+import { createWorkspaceSnapshot, type WorkspaceStoreState } from '../useWorkspaceStore';
 
-interface UseGraphNodeAppearanceActionsOptions
-  extends Pick<
-    GraphNodeActionContext,
-    "workspaceRef" | "dispatchWorkspaceTransaction"
-  > {
+interface UseGraphNodeAppearanceActionsOptions extends Pick<
+  GraphNodeActionContext,
+  'workspaceRef' | 'dispatchWorkspaceTransaction'
+> {
   applyGraphUpdate: ApplyGraphUpdate;
 }
 
@@ -27,7 +23,7 @@ export function useGraphNodeAppearanceActions({
       applyGraphUpdate(
         (currentGraph) => {
           const currentNode = currentGraph.nodes.find((node) => node.id === nodeId);
-          if (!currentNode || (currentNode.color ?? "") === color) {
+          if (!currentNode || (currentNode.color ?? '') === color) {
             return currentGraph;
           }
 
@@ -89,7 +85,7 @@ export function useGraphNodeAppearanceActions({
       const before: WorkspaceStoreState = { ...current, graph: beforeGraph };
       dispatchWorkspaceTransaction({
         history: {
-          type: "push",
+          type: 'push',
           command: createWorkspacePatchCommand(
             createWorkspaceSnapshot(before),
             createWorkspaceSnapshot(current)
@@ -107,7 +103,7 @@ export function useGraphNodeAppearanceActions({
           const uniqueNodeIds = [...new Set(nodeIds)];
           const hasMeaningfulChange = uniqueNodeIds.some((nodeId) => {
             const node = currentGraph.nodes.find((currentNode) => currentNode.id === nodeId);
-            return node && (node.color ?? "") !== color;
+            return node && (node.color ?? '') !== color;
           });
 
           if (!hasMeaningfulChange) {
@@ -185,7 +181,7 @@ export function useGraphNodeAppearanceActions({
       const before: WorkspaceStoreState = { ...current, graph: beforeGraph };
       dispatchWorkspaceTransaction({
         history: {
-          type: "push",
+          type: 'push',
           command: createWorkspacePatchCommand(
             createWorkspaceSnapshot(before),
             createWorkspaceSnapshot(current)

@@ -1,4 +1,4 @@
-import { Layers, Lock, LockOpen, Maximize2, Trash2 } from "lucide-react";
+import { Layers, Lock, LockOpen, Maximize2, Trash2 } from 'lucide-react';
 import {
   getColorLabel,
   getDefaultCardTitle,
@@ -6,9 +6,9 @@ import {
   getDefaultImageTitle,
   getNodeTypeLabel,
   useI18n,
-} from "../i18n";
-import { SUPPORTED_NODE_COLORS } from "../lib/nodeColors";
-import type { GraphNode } from "../types";
+} from '../i18n';
+import { SUPPORTED_NODE_COLORS } from '../lib/nodeColors';
+import type { GraphNode } from '../types';
 
 interface MultiSelectInspectorProps {
   nodes: GraphNode[];
@@ -27,33 +27,33 @@ export function MultiSelectInspector({
 }: MultiSelectInspectorProps) {
   const { isZh, locale } = useI18n();
 
-  const cardsCount = nodes.filter((n) => n.type === "card").length;
-  const imagesCount = nodes.filter((n) => n.type === "image").length;
-  const groupsCount = nodes.filter((n) => n.type === "group").length;
+  const cardsCount = nodes.filter((n) => n.type === 'card').length;
+  const imagesCount = nodes.filter((n) => n.type === 'image').length;
+  const groupsCount = nodes.filter((n) => n.type === 'group').length;
   const summaryParts = [
     groupsCount > 0
       ? isZh
         ? `${groupsCount} 个分组`
-        : `${groupsCount} group${groupsCount > 1 ? "s" : ""}`
-      : "",
+        : `${groupsCount} group${groupsCount > 1 ? 's' : ''}`
+      : '',
     cardsCount > 0
       ? isZh
         ? `${cardsCount} 张卡片`
-        : `${cardsCount} card${cardsCount > 1 ? "s" : ""}`
-      : "",
+        : `${cardsCount} card${cardsCount > 1 ? 's' : ''}`
+      : '',
     imagesCount > 0
       ? isZh
         ? `${imagesCount} 张图片`
-        : `${imagesCount} image${imagesCount > 1 ? "s" : ""}`
-      : "",
+        : `${imagesCount} image${imagesCount > 1 ? 's' : ''}`
+      : '',
   ].filter(Boolean);
 
   const previewNodes = nodes.slice(0, 3);
   const remainingCount = nodes.length - 3;
 
   // Determine if a single color is active across all nodes
-  const firstColor = nodes[0]?.color ?? "";
-  const allHaveSameColor = nodes.every((n) => (n.color ?? "") === firstColor);
+  const firstColor = nodes[0]?.color ?? '';
+  const allHaveSameColor = nodes.every((n) => (n.color ?? '') === firstColor);
   const activeColor = allHaveSameColor ? firstColor : null;
 
   // Determine locking states
@@ -73,11 +73,9 @@ export function MultiSelectInspector({
               <h2 className="selection-summary-card__title">
                 {isZh
                   ? `已选 ${nodes.length} 个节点`
-                  : `${nodes.length} selected node${nodes.length === 1 ? "" : "s"}`}
+                  : `${nodes.length} selected node${nodes.length === 1 ? '' : 's'}`}
               </h2>
-              <span className="selection-summary-card__subtitle">
-                {summaryParts.join(" • ")}
-              </span>
+              <span className="selection-summary-card__subtitle">{summaryParts.join(' • ')}</span>
             </div>
           </div>
 
@@ -87,16 +85,16 @@ export function MultiSelectInspector({
                 <span
                   className="selection-summary-card__item-color"
                   style={{
-                    background: n.color ? `var(--color-card-${n.color})` : "var(--color-card-0)",
-                    border: "1px solid var(--color-border-strong)",
+                    background: n.color ? `var(--color-card-${n.color})` : 'var(--color-card-0)',
+                    border: '1px solid var(--color-border-strong)',
                   }}
                   aria-hidden="true"
                 />
                 <span className="selection-summary-card__item-title">
                   {n.title ||
-                    (n.type === "group"
+                    (n.type === 'group'
                       ? getDefaultGroupTitle(locale)
-                      : n.type === "image"
+                      : n.type === 'image'
                         ? getDefaultImageTitle(locale)
                         : getDefaultCardTitle(locale))}
                 </span>
@@ -109,7 +107,7 @@ export function MultiSelectInspector({
               <li className="selection-summary-card__more">
                 {isZh
                   ? `还有 ${remainingCount} 个节点`
-                  : `+ ${remainingCount} more node${remainingCount > 1 ? "s" : ""}`}
+                  : `+ ${remainingCount} more node${remainingCount > 1 ? 's' : ''}`}
               </li>
             )}
           </ul>
@@ -117,20 +115,20 @@ export function MultiSelectInspector({
 
         {/* Color Palette section */}
         <section className="field-section">
-          <h3 className="field-label">{isZh ? "颜色" : "Color"}</h3>
+          <h3 className="field-label">{isZh ? '颜色' : 'Color'}</h3>
           <div
             className="color-palette"
             role="radiogroup"
-            aria-label={isZh ? "批量颜色" : "Batch color"}
+            aria-label={isZh ? '批量颜色' : 'Batch color'}
           >
             <button
               type="button"
               role="radio"
-              aria-checked={activeColor === ""}
-              className={`color-swatch color-swatch--default${activeColor === "" ? " is-active" : ""}`}
-              title={getColorLabel("", locale)}
-              aria-label={getColorLabel("", locale)}
-              onClick={() => onBatchColorChange?.("")}
+              aria-checked={activeColor === ''}
+              className={`color-swatch color-swatch--default${activeColor === '' ? ' is-active' : ''}`}
+              title={getColorLabel('', locale)}
+              aria-label={getColorLabel('', locale)}
+              onClick={() => onBatchColorChange?.('')}
             />
             {SUPPORTED_NODE_COLORS.map((key) => (
               <button
@@ -138,7 +136,7 @@ export function MultiSelectInspector({
                 type="button"
                 role="radio"
                 aria-checked={activeColor === key}
-                className={`color-swatch color-swatch--${key}${activeColor === key ? " is-active" : ""}`}
+                className={`color-swatch color-swatch--${key}${activeColor === key ? ' is-active' : ''}`}
                 title={getColorLabel(key, locale)}
                 aria-label={getColorLabel(key, locale)}
                 onClick={() => onBatchColorChange?.(key)}
@@ -149,7 +147,7 @@ export function MultiSelectInspector({
 
         {groupsCount >= 2 ? (
           <section className="field-section">
-            <h3 className="field-label">{isZh ? "分组尺寸" : "Group size"}</h3>
+            <h3 className="field-label">{isZh ? '分组尺寸' : 'Group size'}</h3>
             <div className="property-segmented-control property-segmented-control--single">
               <button
                 type="button"
@@ -157,8 +155,8 @@ export function MultiSelectInspector({
                 onClick={onMatchGroupSizes}
                 disabled={!onMatchGroupSizes}
               >
-                <Maximize2 aria-hidden="true" size={15} style={{ marginBottom: "2px" }} />
-                <span>{isZh ? "尺寸匹配" : "Match size"}</span>
+                <Maximize2 aria-hidden="true" size={15} style={{ marginBottom: '2px' }} />
+                <span>{isZh ? '尺寸匹配' : 'Match size'}</span>
               </button>
             </div>
           </section>
@@ -166,29 +164,29 @@ export function MultiSelectInspector({
 
         {/* Lock status control section */}
         <section className="field-section">
-          <h3 className="field-label">{isZh ? "锁定状态" : "Lock status"}</h3>
+          <h3 className="field-label">{isZh ? '锁定状态' : 'Lock status'}</h3>
           <div
             className="property-segmented-control"
             role="group"
-            aria-label={isZh ? "批量锁定状态" : "Batch lock status"}
+            aria-label={isZh ? '批量锁定状态' : 'Batch lock status'}
           >
             <button
               type="button"
-              className={`property-segmented-control__button${allLocked ? " is-active" : ""}`}
+              className={`property-segmented-control__button${allLocked ? ' is-active' : ''}`}
               onClick={() => onBatchLockChange?.(true)}
               aria-pressed={allLocked}
             >
-              <Lock aria-hidden="true" size={15} style={{ marginBottom: "2px" }} />
-              <span>{isZh ? "锁定" : "Lock"}</span>
+              <Lock aria-hidden="true" size={15} style={{ marginBottom: '2px' }} />
+              <span>{isZh ? '锁定' : 'Lock'}</span>
             </button>
             <button
               type="button"
-              className={`property-segmented-control__button${allUnlocked ? " is-active" : ""}`}
+              className={`property-segmented-control__button${allUnlocked ? ' is-active' : ''}`}
               onClick={() => onBatchLockChange?.(false)}
               aria-pressed={allUnlocked}
             >
-              <LockOpen aria-hidden="true" size={15} style={{ marginBottom: "2px" }} />
-              <span>{isZh ? "解锁" : "Unlock"}</span>
+              <LockOpen aria-hidden="true" size={15} style={{ marginBottom: '2px' }} />
+              <span>{isZh ? '解锁' : 'Unlock'}</span>
             </button>
           </div>
         </section>
@@ -197,24 +195,24 @@ export function MultiSelectInspector({
         <section
           className="field-section danger-zone-section"
           style={{
-            borderTop: "1px solid var(--color-border)",
-            paddingTop: "14px",
-            marginTop: "6px",
+            borderTop: '1px solid var(--color-border)',
+            paddingTop: '14px',
+            marginTop: '6px',
           }}
         >
           <button
             type="button"
             className="danger-button"
             onClick={onBatchDelete}
-            aria-label={isZh ? "删除选中节点" : "Delete selected nodes"}
+            aria-label={isZh ? '删除选中节点' : 'Delete selected nodes'}
           >
             <Trash2
               aria-hidden="true"
               size={15}
-              style={{ marginRight: "6px", display: "inline", verticalAlign: "middle" }}
+              style={{ marginRight: '6px', display: 'inline', verticalAlign: 'middle' }}
             />
-            <span style={{ verticalAlign: "middle" }}>
-              {isZh ? "删除选中节点" : "Delete selected nodes"}
+            <span style={{ verticalAlign: 'middle' }}>
+              {isZh ? '删除选中节点' : 'Delete selected nodes'}
             </span>
           </button>
         </section>

@@ -1,7 +1,7 @@
-import type { GraphData, GraphNode, ReferenceItem } from "../types";
+import type { GraphData, GraphNode, ReferenceItem } from '../types';
 
-export function isReferenceableNode(node: Pick<GraphNode, "type">) {
-  return node.type !== "group";
+export function isReferenceableNode(node: Pick<GraphNode, 'type'>) {
+  return node.type !== 'group';
 }
 
 export function sanitizeReferences(
@@ -27,8 +27,7 @@ export function sanitizeReferenceGraph(graph: GraphData): GraphData {
       references: sanitizeReferences(node.references, referenceableNodeIds),
     })),
     edges: graph.edges.filter(
-      (edge) =>
-        referenceableNodeIds.has(edge.sourceId) && referenceableNodeIds.has(edge.targetId)
+      (edge) => referenceableNodeIds.has(edge.sourceId) && referenceableNodeIds.has(edge.targetId)
     ),
   };
 }

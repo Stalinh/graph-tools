@@ -12,7 +12,10 @@
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 4px 20px -10px rgba(0, 0, 0, 0.08);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .react-flow__node.selected .group-node-container {
@@ -23,12 +26,24 @@
 }
 
 /* Color thematic overrides */
-.group-node--amber    { --group-color: var(--color-card-amber); }
-.group-node--rose     { --group-color: var(--color-card-rose); }
-.group-node--green    { --group-color: var(--color-card-green); }
-.group-node--blue     { --group-color: var(--color-card-blue); }
-.group-node--purple   { --group-color: var(--color-card-purple); }
-.group-node--teal     { --group-color: var(--color-card-teal); }
+.group-node--amber {
+  --group-color: var(--color-card-amber);
+}
+.group-node--rose {
+  --group-color: var(--color-card-rose);
+}
+.group-node--green {
+  --group-color: var(--color-card-green);
+}
+.group-node--blue {
+  --group-color: var(--color-card-blue);
+}
+.group-node--purple {
+  --group-color: var(--color-card-purple);
+}
+.group-node--teal {
+  --group-color: var(--color-card-teal);
+}
 
 .group-node__header {
   display: flex;
@@ -110,7 +125,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .group-node__add-btn:hover {
@@ -142,7 +159,7 @@
 }
 
 .group-node__resize-line.react-flow__resize-control.line::after {
-  content: "";
+  content: '';
   position: absolute;
   pointer-events: none;
 }
@@ -178,7 +195,7 @@
 
 /* Expand the interactive hit area of resize handle to prevent jitter from minor mouse movements */
 .group-node__resize-handle::after {
-  content: "";
+  content: '';
   position: absolute;
   top: -18px;
   left: -18px;

@@ -1,11 +1,8 @@
-import { useI18n } from "../../i18n";
-import "./ProjectSheetPage.css";
-import { ProjectSheetHeader } from "./ProjectSheetHeader";
-import { ProjectSheetTable } from "./ProjectSheetTable";
-import {
-  useProjectSheetState,
-  type DroppedProjectFile,
-} from "./useProjectSheetState";
+import { useI18n } from '../../i18n';
+import './ProjectSheetPage.css';
+import { ProjectSheetHeader } from './ProjectSheetHeader';
+import { ProjectSheetTable } from './ProjectSheetTable';
+import { useProjectSheetState, type DroppedProjectFile } from './useProjectSheetState';
 
 interface ProjectSheetPageProps {
   droppedProjectFile?: DroppedProjectFile | null;
@@ -26,7 +23,7 @@ export function ProjectSheetPage({
   return (
     <section
       className="project-sheet-page"
-      aria-label={isZh ? "项目管理表格" : "Project management table"}
+      aria-label={isZh ? '项目管理表格' : 'Project management table'}
     >
       <ProjectSheetHeader
         isEditMode={projectSheet.isEditMode}
@@ -48,8 +45,10 @@ export function ProjectSheetPage({
         }}
       />
       <div className="project-file-status" role="status">
-        <span>{projectSheet.currentFileName ?? (isZh ? "未选择项目文件" : "No project file selected")}</span>
-        {projectSheet.dirty ? <strong>{isZh ? "未保存" : "Unsaved"}</strong> : null}
+        <span>
+          {projectSheet.currentFileName ?? (isZh ? '未选择项目文件' : 'No project file selected')}
+        </span>
+        {projectSheet.dirty ? <strong>{isZh ? '未保存' : 'Unsaved'}</strong> : null}
         {projectSheet.fileStatus ? <em>{projectSheet.fileStatus}</em> : null}
       </div>
       <ProjectSheetTable

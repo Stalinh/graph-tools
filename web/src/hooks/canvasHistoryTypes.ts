@@ -1,9 +1,4 @@
-import type {
-  CanvasPosition,
-  CanvasViewport,
-  GraphData,
-  NodeSize,
-} from "../types";
+import type { CanvasPosition, CanvasViewport, GraphData, NodeSize } from '../types';
 
 export const MAX_HISTORY = 20;
 
@@ -24,7 +19,7 @@ export type CanvasHistoryWorkspaceState = {
 };
 
 export type CanvasCommand = {
-  type: "workspace-patch";
+  type: 'workspace-patch';
   before: CanvasHistoryWorkspaceState;
   after: CanvasHistoryWorkspaceState;
 };

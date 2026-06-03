@@ -1,8 +1,8 @@
-import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
-import { Lock } from "lucide-react";
-import { useEffect, useState, type CSSProperties, type MouseEvent } from "react";
-import { useI18n } from "../../i18n";
-import type { GraphNode } from "../../types";
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
+import { Lock } from 'lucide-react';
+import { useEffect, useState, type CSSProperties, type MouseEvent } from 'react';
+import { useI18n } from '../../i18n';
+import type { GraphNode } from '../../types';
 
 interface ImageFlowNodeData {
   [key: string]: unknown;
@@ -21,13 +21,13 @@ export function ImageGraphNode({ data }: NodeProps<Node<ImageFlowNodeData>>) {
   const imageNodeStyle =
     imageWidth !== null
       ? ({
-          "--image-node-media-width": `${imageWidth}px`,
+          '--image-node-media-width': `${imageWidth}px`,
         } as CSSProperties)
       : undefined;
 
   useEffect(() => {
     setImageWidth(null);
-    if (!imageBlob || typeof URL.createObjectURL !== "function") {
+    if (!imageBlob || typeof URL.createObjectURL !== 'function') {
       setUrl(null);
       return;
     }
@@ -44,7 +44,7 @@ export function ImageGraphNode({ data }: NodeProps<Node<ImageFlowNodeData>>) {
         position={Position.Left}
         type="target"
         isConnectableStart={false}
-        title={isZh ? "拖拽引用连接到这里" : "Drop a citation link here"}
+        title={isZh ? '拖拽引用连接到这里' : 'Drop a citation link here'}
       />
       <Handle
         id="citation-source"
@@ -52,7 +52,7 @@ export function ImageGraphNode({ data }: NodeProps<Node<ImageFlowNodeData>>) {
         position={Position.Right}
         type="source"
         isConnectableEnd={false}
-        title={isZh ? "拖拽创建引用" : "Drag to create a citation link"}
+        title={isZh ? '拖拽创建引用' : 'Drag to create a citation link'}
       />
       <div
         className="graph-node__label graph-node__label--image"
@@ -63,8 +63,8 @@ export function ImageGraphNode({ data }: NodeProps<Node<ImageFlowNodeData>>) {
         {node.locked ? (
           <span
             className="graph-node__lock-badge"
-            aria-label={isZh ? "已锁定节点" : "Locked node"}
-            title={isZh ? "已锁定节点" : "Locked node"}
+            aria-label={isZh ? '已锁定节点' : 'Locked node'}
+            title={isZh ? '已锁定节点' : 'Locked node'}
           >
             <Lock aria-hidden="true" size={12} />
           </span>
@@ -73,7 +73,7 @@ export function ImageGraphNode({ data }: NodeProps<Node<ImageFlowNodeData>>) {
           {url ? (
             <img
               src={url}
-              alt={node.title || (isZh ? "图片" : "Image")}
+              alt={node.title || (isZh ? '图片' : 'Image')}
               className="graph-node__image"
               draggable={false}
               onLoad={(event) => {
@@ -82,7 +82,7 @@ export function ImageGraphNode({ data }: NodeProps<Node<ImageFlowNodeData>>) {
               }}
             />
           ) : (
-            <div className="graph-node__image-placeholder">{isZh ? "暂无图片" : "No image"}</div>
+            <div className="graph-node__image-placeholder">{isZh ? '暂无图片' : 'No image'}</div>
           )}
         </div>
         {hasCaption ? (

@@ -1,7 +1,7 @@
-import Fuse from "fuse.js";
-import { pinyin } from "pinyin-pro";
-import { getPlainTextContent } from "./cardContent";
-import type { GraphNode } from "../types";
+import Fuse from 'fuse.js';
+import { pinyin } from 'pinyin-pro';
+import { getPlainTextContent } from './cardContent';
+import type { GraphNode } from '../types';
 
 export interface SearchFilters {
   selectedTags: string[];
@@ -9,7 +9,7 @@ export interface SearchFilters {
 }
 
 export interface SearchMatch {
-  field: "title" | "tag" | "content";
+  field: 'title' | 'tag' | 'content';
   indices: [number, number][];
   preview: string;
   previewIndices: [number, number][];
@@ -58,12 +58,12 @@ function getPinyinVariants(text: string): string[] {
   if (!text) return [];
 
   try {
-    const full = pinyin(text, { toneType: "none", type: "array" });
-    const initials = pinyin(text, { pattern: "first", toneType: "none", type: "array" });
+    const full = pinyin(text, { toneType: 'none', type: 'array' });
+    const initials = pinyin(text, { pattern: 'first', toneType: 'none', type: 'array' });
     return Array.from(
-      new Set([full.join(""), initials.join("")]
-        .map((variant) => variant.toLowerCase())
-        .filter(Boolean))
+      new Set(
+        [full.join(''), initials.join('')].map((variant) => variant.toLowerCase()).filter(Boolean)
+      )
     );
   } catch {
     return [];
@@ -76,7 +76,7 @@ const fuseOptions = {
   minMatchCharLength: 1,
   findAllMatches: true,
   ignoreLocation: true,
-  keys: ["text"],
+  keys: ['text'],
 };
 
 function createSearchTextIndex(text: string, pinyinSourceText = text): SearchTextIndex {
@@ -89,7 +89,7 @@ function createSearchTextIndex(text: string, pinyinSourceText = text): SearchTex
 }
 
 function getNodeSearchSignature(node: GraphNode) {
-  return JSON.stringify([node.title, node.tags, node.contentHtml ?? ""]);
+  return JSON.stringify([node.title, node.tags, node.contentHtml ?? '']);
 }
 
 function rememberNodeSearchIndex(
@@ -117,7 +117,7 @@ function getNodeSearchIndex(node: GraphNode): NodeSearchIndex {
     return rememberNodeSearchIndex(node.id, signature, cached.index);
   }
 
-  const plainText = node.contentHtml ? getPlainTextContent(node.contentHtml) : "";
+  const plainText = node.contentHtml ? getPlainTextContent(node.contentHtml) : '';
   const index: NodeSearchIndex = {
     title: createSearchTextIndex(node.title),
     tags: node.tags.map((tag) => createSearchTextIndex(tag)),
@@ -160,15 +160,18 @@ function normalizeIndices(indices: [number, number][]): [number, number][] {
   return normalized;
 }
 
-function createSearchTextResult(text: string, indices: [number, number][]): SearchTextResult | null {
+function createSearchTextResult(
+  text: string,
+  indices: [number, number][]
+): SearchTextResult | null {
   const normalizedIndices = normalizeIndices(indices);
   if (normalizedIndices.length === 0) return null;
 
   const firstIdx = normalizedIndices[0];
   const start = Math.max(0, firstIdx[0] - 30);
   const end = Math.min(text.length, firstIdx[1] + 31);
-  const prefix = start > 0 ? "..." : "";
-  const suffix = end < text.length ? "..." : "";
+  const prefix = start > 0 ? '...' : '';
+  const suffix = end < text.length ? '...' : '';
   const preview = prefix + text.slice(start, end) + suffix;
   const previewOffset = prefix.length - start;
   const previewIndices = normalizedIndices
@@ -233,21 +236,21 @@ export function smartMatches(node: GraphNode, query: string): SearchMatch[] {
 
   const titleResult = searchIndexedText(index.title, lowerQuery, 0.3);
   if (titleResult) {
-    results.push({ field: "title", ...titleResult });
+    results.push({ field: 'title', ...titleResult });
   }
 
   if (!titleResult && hasPinyinMatch(index.title, lowerQuery)) {
-    results.push({ field: "title", indices: [], preview: index.title.text, previewIndices: [] });
+    results.push({ field: 'title', indices: [], preview: index.title.text, previewIndices: [] });
   }
 
   for (const tag of index.tags) {
     const tagResult = searchIndexedText(tag, lowerQuery, 0.3);
     if (tagResult) {
-      results.push({ field: "tag", ...tagResult });
+      results.push({ field: 'tag', ...tagResult });
       continue;
     }
     if (hasPinyinMatch(tag, lowerQuery)) {
-      results.push({ field: "tag", indices: [], preview: tag.text, previewIndices: [] });
+      results.push({ field: 'tag', indices: [], preview: tag.text, previewIndices: [] });
     }
   }
 
@@ -255,12 +258,12 @@ export function smartMatches(node: GraphNode, query: string): SearchMatch[] {
     const contentResult = searchIndexedText(index.content, lowerQuery, 0.4);
     if (contentResult) {
       results.push({
-        field: "content",
+        field: 'content',
         ...contentResult,
       });
     } else if (hasPinyinMatch(index.content, lowerQuery)) {
       results.push({
-        field: "content",
+        field: 'content',
         indices: [],
         preview: index.content.text.slice(0, 60),
         previewIndices: [],
@@ -297,7 +300,7 @@ export function getMatchingNodeResults(
       const hasTag = filters.selectedTags.some((tag) => node.tags.includes(tag));
       if (!hasTag) continue;
     }
-    if (filters.selectedColors.length > 0 && !filters.selectedColors.includes(node.color || "")) {
+    if (filters.selectedColors.length > 0 && !filters.selectedColors.includes(node.color || '')) {
       continue;
     }
 

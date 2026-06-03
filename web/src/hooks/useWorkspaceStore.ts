@@ -5,22 +5,22 @@ import {
   type Dispatch,
   type MutableRefObject,
   type SetStateAction,
-} from "react";
-import { EMPTY_GRAPH } from "../lib/workspaceState";
+} from 'react';
+import { EMPTY_GRAPH } from '../lib/workspaceState';
 import type {
   CanvasPosition,
   CanvasViewport,
   GraphContextMenuState,
   GraphData,
   NodeSize,
-} from "../types";
-import { createWorkspacePatchCommand } from "./canvasHistoryPatch";
+} from '../types';
+import { createWorkspacePatchCommand } from './canvasHistoryPatch';
 import {
   MAX_HISTORY,
   type CanvasCommand,
   type CanvasHistorySelectionState,
   type CanvasHistoryWorkspaceState,
-} from "./canvasHistoryTypes";
+} from './canvasHistoryTypes';
 
 export type WorkspaceSelectionState = CanvasHistorySelectionState & {
   contextMenu: GraphContextMenuState | null;
@@ -28,7 +28,7 @@ export type WorkspaceSelectionState = CanvasHistorySelectionState & {
 
 export interface WorkspaceStatusState {
   dirty: boolean;
-  status: "loading" | "ready" | "error";
+  status: 'loading' | 'ready' | 'error';
   errorMessage: string | null;
 }
 
@@ -58,9 +58,9 @@ export interface WorkspaceTransaction {
 }
 
 type WorkspaceHistoryTransaction =
-  | { type: "push"; command: CanvasCommand }
-  | { type: "replace"; undoStack: CanvasCommand[]; redoStack: CanvasCommand[] }
-  | { type: "clear" };
+  | { type: 'push'; command: CanvasCommand }
+  | { type: 'replace'; undoStack: CanvasCommand[]; redoStack: CanvasCommand[] }
+  | { type: 'clear' };
 
 export type WorkspaceTransactionInput =
   | WorkspaceTransaction
@@ -75,7 +75,7 @@ export interface WorkspaceStoreController {
   workspaceRef: MutableRefObject<WorkspaceStoreState>;
   dispatchWorkspaceTransaction: DispatchWorkspaceTransaction;
   setDirty: Dispatch<SetStateAction<boolean>>;
-  setStatus: Dispatch<SetStateAction<WorkspaceStatusState["status"]>>;
+  setStatus: Dispatch<SetStateAction<WorkspaceStatusState['status']>>;
   setErrorMessage: Dispatch<SetStateAction<string | null>>;
   setSelectedNodeId: Dispatch<SetStateAction<string | null>>;
   setSelectedNodeIds: Dispatch<SetStateAction<string[]>>;
@@ -88,7 +88,7 @@ export interface WorkspaceStoreController {
 }
 
 interface WorkspaceReducerAction {
-  type: "replace";
+  type: 'replace';
   state: WorkspaceStoreState;
 }
 
@@ -103,7 +103,7 @@ const EMPTY_SELECTION: WorkspaceSelectionState = {
 
 const EMPTY_STATUS: WorkspaceStatusState = {
   dirty: false,
-  status: "loading",
+  status: 'loading',
   errorMessage: null,
 };
 
@@ -117,7 +117,7 @@ function workspaceReducer(
   action: WorkspaceReducerAction
 ): WorkspaceStoreState {
   switch (action.type) {
-    case "replace":
+    case 'replace':
       return action.state;
     default:
       return state;
@@ -125,7 +125,7 @@ function workspaceReducer(
 }
 
 function resolveSetStateAction<T>(value: SetStateAction<T>, current: T): T {
-  return typeof value === "function" ? (value as (previous: T) => T)(current) : value;
+  return typeof value === 'function' ? (value as (previous: T) => T)(current) : value;
 }
 
 function areStringArraysEqual(left: string[], right: string[]) {
@@ -145,17 +145,17 @@ function reduceHistoryTransaction(
   }
 
   switch (transaction.type) {
-    case "push":
+    case 'push':
       return {
         undoStack: trimUndoStack([...history.undoStack, transaction.command]),
         redoStack: [],
       };
-    case "replace":
+    case 'replace':
       return {
         undoStack: trimUndoStack(transaction.undoStack),
         redoStack: transaction.redoStack,
       };
-    case "clear":
+    case 'clear':
       return EMPTY_HISTORY;
     default:
       return history;
@@ -209,10 +209,9 @@ export function reduceWorkspaceTransaction(
     graph,
     nodePositions: transaction.nodePositions ?? state.nodePositions,
     nodeSizes: transaction.nodeSizes ?? state.nodeSizes,
-    viewport:
-      Object.prototype.hasOwnProperty.call(transaction, "viewport")
-        ? transaction.viewport ?? null
-        : state.viewport,
+    viewport: Object.prototype.hasOwnProperty.call(transaction, 'viewport')
+      ? (transaction.viewport ?? null)
+      : state.viewport,
     selection,
     status: {
       ...state.status,
@@ -222,9 +221,7 @@ export function reduceWorkspaceTransaction(
   };
 }
 
-export function createWorkspaceSnapshot(
-  state: WorkspaceStoreState
-): CanvasHistoryWorkspaceState {
+export function createWorkspaceSnapshot(state: WorkspaceStoreState): CanvasHistoryWorkspaceState {
   const selection = sanitizeSelectionForGraph(state.selection, state.graph);
   return {
     graph: state.graph,
@@ -236,8 +233,7 @@ export function createWorkspaceSnapshot(
       selectedEdgeId: selection.selectedEdgeId,
       editingNodeId: selection.editingNodeId,
       quickEditingNodeId: selection.quickEditingNodeId,
-      pendingInspectorContentFocusNodeId:
-        selection.pendingInspectorContentFocusNodeId,
+      pendingInspectorContentFocusNodeId: selection.pendingInspectorContentFocusNodeId,
     },
   };
 }
@@ -259,8 +255,8 @@ export function createInitialWorkspaceStoreState(
     graph: overrides.graph ?? EMPTY_GRAPH,
     nodePositions: overrides.nodePositions ?? {},
     nodeSizes: overrides.nodeSizes ?? {},
-    viewport: Object.prototype.hasOwnProperty.call(overrides, "viewport")
-      ? overrides.viewport ?? null
+    viewport: Object.prototype.hasOwnProperty.call(overrides, 'viewport')
+      ? (overrides.viewport ?? null)
       : null,
     selection: {
       ...EMPTY_SELECTION,
@@ -288,21 +284,18 @@ export function useWorkspaceStore(
   const workspaceRef = useRef(workspace);
   workspaceRef.current = workspace;
 
-  const dispatchWorkspaceTransaction = useCallback<DispatchWorkspaceTransaction>(
-    (input) => {
-      const current = workspaceRef.current;
-      const transaction = typeof input === "function" ? input(current) : input;
-      if (!transaction) {
-        return null;
-      }
+  const dispatchWorkspaceTransaction = useCallback<DispatchWorkspaceTransaction>((input) => {
+    const current = workspaceRef.current;
+    const transaction = typeof input === 'function' ? input(current) : input;
+    if (!transaction) {
+      return null;
+    }
 
-      const next = reduceWorkspaceTransaction(current, transaction);
-      workspaceRef.current = next;
-      dispatch({ type: "replace", state: next });
-      return next;
-    },
-    []
-  );
+    const next = reduceWorkspaceTransaction(current, transaction);
+    workspaceRef.current = next;
+    dispatch({ type: 'replace', state: next });
+    return next;
+  }, []);
 
   const setStatusValue = useCallback(
     <K extends keyof WorkspaceStatusState>(
@@ -365,42 +358,40 @@ export function useWorkspaceStore(
   );
 
   const clearHistory = useCallback(() => {
-    dispatchWorkspaceTransaction({ history: { type: "clear" } });
+    dispatchWorkspaceTransaction({ history: { type: 'clear' } });
   }, [dispatchWorkspaceTransaction]);
 
   const setDirty = useCallback<Dispatch<SetStateAction<boolean>>>(
-    (value) => setStatusValue("dirty", value),
+    (value) => setStatusValue('dirty', value),
     [setStatusValue]
   );
-  const setStatus = useCallback<Dispatch<SetStateAction<WorkspaceStatusState["status"]>>>(
-    (value) => setStatusValue("status", value),
+  const setStatus = useCallback<Dispatch<SetStateAction<WorkspaceStatusState['status']>>>(
+    (value) => setStatusValue('status', value),
     [setStatusValue]
   );
   const setErrorMessage = useCallback<Dispatch<SetStateAction<string | null>>>(
-    (value) => setStatusValue("errorMessage", value),
+    (value) => setStatusValue('errorMessage', value),
     [setStatusValue]
   );
   const setSelectedEdgeId = useCallback<Dispatch<SetStateAction<string | null>>>(
-    (value) => setSelectionValue("selectedEdgeId", value),
+    (value) => setSelectionValue('selectedEdgeId', value),
     [setSelectionValue]
   );
-  const setContextMenu = useCallback<
-    Dispatch<SetStateAction<GraphContextMenuState | null>>
-  >((value) => setSelectionValue("contextMenu", value), [setSelectionValue]);
+  const setContextMenu = useCallback<Dispatch<SetStateAction<GraphContextMenuState | null>>>(
+    (value) => setSelectionValue('contextMenu', value),
+    [setSelectionValue]
+  );
   const setEditingNodeId = useCallback<Dispatch<SetStateAction<string | null>>>(
-    (value) => setSelectionValue("editingNodeId", value),
+    (value) => setSelectionValue('editingNodeId', value),
     [setSelectionValue]
   );
   const setQuickEditingNodeId = useCallback<Dispatch<SetStateAction<string | null>>>(
-    (value) => setSelectionValue("quickEditingNodeId", value),
+    (value) => setSelectionValue('quickEditingNodeId', value),
     [setSelectionValue]
   );
   const setPendingInspectorContentFocusNodeId = useCallback<
     Dispatch<SetStateAction<string | null>>
-  >(
-    (value) => setSelectionValue("pendingInspectorContentFocusNodeId", value),
-    [setSelectionValue]
-  );
+  >((value) => setSelectionValue('pendingInspectorContentFocusNodeId', value), [setSelectionValue]);
 
   return {
     workspace,

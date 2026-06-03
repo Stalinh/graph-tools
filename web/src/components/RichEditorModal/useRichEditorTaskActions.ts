@@ -1,6 +1,6 @@
-import type { Editor } from "@tiptap/core";
-import { Fragment, type Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { useCallback } from "react";
+import type { Editor } from '@tiptap/core';
+import { Fragment, type Node as ProseMirrorNode } from '@tiptap/pm/model';
+import { useCallback } from 'react';
 
 export function useRichEditorTaskActions(editor: Editor | null) {
   const setAllTasksChecked = useCallback(
@@ -12,7 +12,7 @@ export function useRichEditorTaskActions(editor: Editor | null) {
         .command(({ tr }) => {
           let hasChanges = false;
           tr.doc.descendants((node, pos) => {
-            if (node.type.name === "taskItem" && !!node.attrs.checked !== checked) {
+            if (node.type.name === 'taskItem' && !!node.attrs.checked !== checked) {
               tr.setNodeMarkup(pos, undefined, { ...node.attrs, checked });
               hasChanges = true;
             }
@@ -33,7 +33,7 @@ export function useRichEditorTaskActions(editor: Editor | null) {
         let hasChanges = false;
         const tasksToDelete: { from: number; to: number }[] = [];
         tr.doc.descendants((node, pos) => {
-          if (node.type.name === "taskItem" && node.attrs.checked) {
+          if (node.type.name === 'taskItem' && node.attrs.checked) {
             tasksToDelete.push({ from: pos, to: pos + node.nodeSize });
           }
         });
@@ -56,7 +56,7 @@ export function useRichEditorTaskActions(editor: Editor | null) {
       .command(({ tr }) => {
         let hasChanges = false;
         tr.doc.descendants((node, pos) => {
-          if (node.type.name !== "taskList") {
+          if (node.type.name !== 'taskList') {
             return;
           }
 

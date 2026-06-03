@@ -1,8 +1,5 @@
-import type { GraphData } from "../../types";
-import type {
-  DispatchWorkspaceTransaction,
-  WorkspaceStoreState,
-} from "../useWorkspaceStore";
+import type { GraphData } from '../../types';
+import type { DispatchWorkspaceTransaction, WorkspaceStoreState } from '../useWorkspaceStore';
 
 export interface UpdateGraphNodeOptions {
   pushToHistory?: boolean;

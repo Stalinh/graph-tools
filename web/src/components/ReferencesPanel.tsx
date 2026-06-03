@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
-import { useI18n } from "../i18n";
-import { isReferenceableNode } from "../lib/graphConstraints";
-import type { BacklinkItem, GraphNode } from "../types";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { useI18n } from '../i18n';
+import { isReferenceableNode } from '../lib/graphConstraints';
+import type { BacklinkItem, GraphNode } from '../types';
 
 interface ReferencesPanelProps {
   node: GraphNode;
@@ -60,7 +60,7 @@ function ReferencesSection({
   onReorderReferences,
   onCreateCitation,
 }: ReferencesSectionProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -94,18 +94,18 @@ function ReferencesSection({
   const hasAnyLinks = references.length > 0 || backlinks.length > 0;
 
   const handleDragStart = (e: DragEvent, index: number) => {
-    e.dataTransfer.setData("text/plain", String(index));
-    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData('text/plain', String(index));
+    e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
+    e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = (e: DragEvent, targetIndex: number) => {
     e.preventDefault();
-    const fromIndex = Number(e.dataTransfer.getData("text/plain"));
+    const fromIndex = Number(e.dataTransfer.getData('text/plain'));
     if (Number.isNaN(fromIndex) || fromIndex === targetIndex) return;
 
     const newOrder = references.map((r) => r.id);
@@ -121,7 +121,7 @@ function ReferencesSection({
           ref={searchRef}
           type="text"
           className="reference-search-input"
-          placeholder={isZh ? "搜索卡片以添加引用…" : "Search nodes to add links..."}
+          placeholder={isZh ? '搜索卡片以添加引用…' : 'Search nodes to add links...'}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setIsSearching(true)}
@@ -129,7 +129,7 @@ function ReferencesSection({
             if (blurTimerRef.current !== null) clearTimeout(blurTimerRef.current);
             blurTimerRef.current = setTimeout(() => setIsSearching(false), 150);
           }}
-          aria-label={isZh ? "搜索卡片以添加引用" : "Search nodes to add links"}
+          aria-label={isZh ? '搜索卡片以添加引用' : 'Search nodes to add links'}
         />
         {isSearching && candidates.length > 0 && (
           <ul className="reference-search-dropdown" role="listbox">
@@ -140,13 +140,13 @@ function ReferencesSection({
                   className="reference-search-option"
                   onClick={() => {
                     onCreateCitation?.(candidate.id);
-                    setSearchQuery("");
+                    setSearchQuery('');
                     setIsSearching(false);
                   }}
                 >
                   <span
                     className="reference-search-color"
-                    data-card-color={candidate.color || ""}
+                    data-card-color={candidate.color || ''}
                     aria-hidden="true"
                   />
                   <span className="reference-search-title">{candidate.title}</span>
@@ -157,7 +157,7 @@ function ReferencesSection({
         )}
         {isSearching && searchQuery.trim() && candidates.length === 0 && (
           <div className="reference-search-dropdown reference-search-empty">
-            {isZh ? "未找到匹配的卡片" : "No matching nodes found"}
+            {isZh ? '未找到匹配的卡片' : 'No matching nodes found'}
           </div>
         )}
       </div>
@@ -190,7 +190,7 @@ function ReferencesSection({
                     >
                       <span
                         className="reference-card__color-bar"
-                        data-card-color={allNodes.find((n) => n.id === reference.id)?.color || ""}
+                        data-card-color={allNodes.find((n) => n.id === reference.id)?.color || ''}
                         aria-hidden="true"
                       />
                       <span className="reference-card__badge">{reference.id}</span>
@@ -205,7 +205,7 @@ function ReferencesSection({
                             ? `删除引用 ${reference.id}: ${reference.title}`
                             : `Delete reference ${reference.id}: ${reference.title}`
                         }
-                        title={isZh ? "删除引用" : "Delete reference"}
+                        title={isZh ? '删除引用' : 'Delete reference'}
                         onClick={(e) => {
                           e.stopPropagation();
                           onDeleteCitation(reference.id);
@@ -235,11 +235,11 @@ function ReferencesSection({
         </>
       ) : (
         <div className="references-empty">
-          <p>{isZh ? "暂无引用。" : "No links yet."}</p>
+          <p>{isZh ? '暂无引用。' : 'No links yet.'}</p>
           <p className="references-empty__hint">
             {isZh
-              ? "在上方搜索框查找卡片，或右键点击画布节点创建引用。"
-              : "Use the search field above, or right-click a canvas node to create a link."}
+              ? '在上方搜索框查找卡片，或右键点击画布节点创建引用。'
+              : 'Use the search field above, or right-click a canvas node to create a link.'}
           </p>
         </div>
       )}
@@ -281,7 +281,7 @@ function BacklinksSection({
           >
             <span
               className="reference-card__color-bar"
-              data-card-color={allNodes.find((n) => n.id === backlink.id)?.color || ""}
+              data-card-color={allNodes.find((n) => n.id === backlink.id)?.color || ''}
               aria-hidden="true"
             />
             <span className="reference-card__badge">{backlink.id}</span>

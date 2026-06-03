@@ -1,32 +1,31 @@
-import { useCallback } from "react";
+import { useCallback } from 'react';
 import {
   DEFAULT_GROUP_SIZE,
   constrainGroupNodeSize,
   snapPositionToGrid,
-} from "../../lib/graphLayout";
-import { estimateNodeSize } from "../../lib/graphNodeMetrics";
+} from '../../lib/graphLayout';
+import { estimateNodeSize } from '../../lib/graphNodeMetrics';
 import {
   adjustGroupSizeAndPosition,
   isGroupPlacementBlocked,
   resolveGroupMoveTarget,
   resolveGroupMoveTargets,
-} from "../../lib/groupNodeLayout";
-import type { NodeSize } from "../../types";
-import { createWorkspacePatchCommandFromTransaction } from "../useWorkspaceStore";
-import type { GraphNodeActionContext } from "./graphNodeActionTypes";
+} from '../../lib/groupNodeLayout';
+import type { NodeSize } from '../../types';
+import { createWorkspacePatchCommandFromTransaction } from '../useWorkspaceStore';
+import type { GraphNodeActionContext } from './graphNodeActionTypes';
 import {
   findContainingGroup,
   getAbsoluteNodePosition,
   getNodeCenter,
   getRelativeNodePosition,
   updateNodeParentMetadata,
-} from "./graphNodeLayoutUtils";
+} from './graphNodeLayoutUtils';
 
-interface UseGraphNodeLayoutActionsOptions
-  extends Pick<
-    GraphNodeActionContext,
-    "workspaceRef" | "dispatchWorkspaceTransaction"
-  > {}
+interface UseGraphNodeLayoutActionsOptions extends Pick<
+  GraphNodeActionContext,
+  'workspaceRef' | 'dispatchWorkspaceTransaction'
+> {}
 
 export function useGraphNodeLayoutActions({
   workspaceRef,
@@ -43,7 +42,7 @@ export function useGraphNodeLayoutActions({
       if (!node) return;
 
       // Group nodes cannot be nested in other groups
-      if (node.type === "group") {
+      if (node.type === 'group') {
         const candidateTo = snapPositionToGrid(to);
         const finalTo = resolveGroupMoveTarget(
           node.id,
@@ -76,7 +75,7 @@ export function useGraphNodeLayoutActions({
           dispatchWorkspaceTransaction({
             ...transaction,
             history: {
-              type: "push",
+              type: 'push',
               command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
             },
           });
@@ -128,7 +127,7 @@ export function useGraphNodeLayoutActions({
           dispatchWorkspaceTransaction({
             ...transaction,
             history: {
-              type: "push",
+              type: 'push',
               command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
             },
           });
@@ -192,7 +191,7 @@ export function useGraphNodeLayoutActions({
       dispatchWorkspaceTransaction({
         ...transaction,
         history: {
-          type: "push",
+          type: 'push',
           command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
         },
       });
@@ -208,7 +207,7 @@ export function useGraphNodeLayoutActions({
       const beforeSizes = beforeState.nodeSizes;
       const currentNodes = beforeGraph.nodes;
       const normalizedMoves = moves.map((move) =>
-        currentNodes.some((node) => node.id === move.nodeId && node.type === "group")
+        currentNodes.some((node) => node.id === move.nodeId && node.type === 'group')
           ? { ...move, to: snapPositionToGrid(move.to) }
           : move
       );
@@ -236,7 +235,7 @@ export function useGraphNodeLayoutActions({
           return;
         }
 
-        if (node.type === "group") {
+        if (node.type === 'group') {
           const resolvedPosition = resolvedGroupPositions[nodeId] ?? to;
           updatedPositions[nodeId] = resolvedPosition;
           return;
@@ -277,11 +276,7 @@ export function useGraphNodeLayoutActions({
             }),
           };
 
-          const finalToPos = getRelativeNodePosition(
-            absTo,
-            newParentId,
-            beforePositions
-          );
+          const finalToPos = getRelativeNodePosition(absTo, newParentId, beforePositions);
 
           updatedPositions[nodeId] = finalToPos;
         }
@@ -290,7 +285,7 @@ export function useGraphNodeLayoutActions({
       const affectedGroups = new Set<string>();
       meaningfulMoves.forEach((move) => {
         const node = beforeGraph.nodes.find((n) => n.id === move.nodeId);
-        if (node && node.type !== "group") {
+        if (node && node.type !== 'group') {
           if (node.parentId) affectedGroups.add(node.parentId);
           const targetNode = afterGraph.nodes.find((n) => n.id === move.nodeId);
           if (targetNode && targetNode.parentId) affectedGroups.add(targetNode.parentId);
@@ -323,7 +318,7 @@ export function useGraphNodeLayoutActions({
       dispatchWorkspaceTransaction({
         ...transaction,
         history: {
-          type: "push",
+          type: 'push',
           command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
         },
       });
@@ -340,7 +335,7 @@ export function useGraphNodeLayoutActions({
       const node = beforeGraph.nodes.find((n) => n.id === nodeId);
       if (!node) return;
 
-      const finalSize = node.type === "group" ? constrainGroupNodeSize(size) : size;
+      const finalSize = node.type === 'group' ? constrainGroupNodeSize(size) : size;
       const before = beforeSizes[nodeId];
       const fallbackBefore = before ?? estimateNodeSize(node);
 
@@ -349,7 +344,7 @@ export function useGraphNodeLayoutActions({
       }
 
       if (
-        node.type === "group" &&
+        node.type === 'group' &&
         isGroupPlacementBlocked(
           nodeId,
           beforePositions[nodeId] ?? { x: 0, y: 0 },
@@ -393,7 +388,7 @@ export function useGraphNodeLayoutActions({
       dispatchWorkspaceTransaction({
         ...transaction,
         history: {
-          type: "push",
+          type: 'push',
           command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
         },
       });
@@ -410,7 +405,7 @@ export function useGraphNodeLayoutActions({
       const currentNodes = beforeGraph.nodes;
       const currentNodeById = new Map(currentNodes.map((node) => [node.id, node]));
       const orderedGroupIds = [...new Set(nodeIds)].filter(
-        (nodeId) => currentNodeById.get(nodeId)?.type === "group"
+        (nodeId) => currentNodeById.get(nodeId)?.type === 'group'
       );
       const referenceId = orderedGroupIds[0];
       const referenceNode = referenceId ? currentNodeById.get(referenceId) : undefined;
@@ -471,7 +466,7 @@ export function useGraphNodeLayoutActions({
       dispatchWorkspaceTransaction({
         ...transaction,
         history: {
-          type: "push",
+          type: 'push',
           command: createWorkspacePatchCommandFromTransaction(beforeState, transaction),
         },
       });

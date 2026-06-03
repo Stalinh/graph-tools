@@ -1,6 +1,6 @@
-import { FileText, X } from "lucide-react";
-import { getShortcutDescription } from "./richEditorConfig";
-import type { ShortcutItem } from "./richEditorTypes";
+import { FileText, X } from 'lucide-react';
+import { getShortcutDescription } from './richEditorConfig';
+import type { ShortcutItem } from './richEditorTypes';
 
 interface ShortcutHelpOverlayProps {
   filteredShortcuts: ShortcutItem[];
@@ -25,14 +25,14 @@ export function ShortcutHelpOverlay({
         <div className="editor-help-header">
           <div className="editor-help-title">
             <FileText size={16} />
-            <span>{isZh ? "键盘快捷键与编辑指令" : "Keyboard shortcuts and editor commands"}</span>
+            <span>{isZh ? '键盘快捷键与编辑指令' : 'Keyboard shortcuts and editor commands'}</span>
           </div>
           <button
             type="button"
             className="toolbar-button modal-close"
             onClick={onClose}
-            aria-label={isZh ? "关闭快捷键帮助" : "Close shortcuts help"}
-            style={{ border: "none", background: "transparent", margin: 0, padding: 4 }}
+            aria-label={isZh ? '关闭快捷键帮助' : 'Close shortcuts help'}
+            style={{ border: 'none', background: 'transparent', margin: 0, padding: 4 }}
           >
             <X size={16} />
           </button>
@@ -42,7 +42,9 @@ export function ShortcutHelpOverlay({
           <input
             type="text"
             className="editor-help-search-input"
-            placeholder={isZh ? "搜索快捷键或编辑指令..." : "Search shortcuts or editor commands..."}
+            placeholder={
+              isZh ? '搜索快捷键或编辑指令...' : 'Search shortcuts or editor commands...'
+            }
             value={helpSearch}
             onChange={(event) => onHelpSearchChange(event.target.value)}
             autoFocus
@@ -61,7 +63,7 @@ export function ShortcutHelpOverlay({
                   {catItems.map((item) => (
                     <div
                       key={item.id}
-                      className={`editor-help-item ${helpSearch ? "is-highlighted" : ""}`}
+                      className={`editor-help-item ${helpSearch ? 'is-highlighted' : ''}`}
                     >
                       <span className="editor-help-item-desc">
                         {getShortcutDescription(item.id, isZh)}
@@ -70,14 +72,14 @@ export function ShortcutHelpOverlay({
                         {item.keys.map((key, keyIdx) => (
                           <span
                             key={keyIdx}
-                            style={{ display: "inline-flex", alignItems: "center" }}
+                            style={{ display: 'inline-flex', alignItems: 'center' }}
                           >
                             {keyIdx > 0 && (
                               <span
                                 style={{
-                                  margin: "0 4px",
-                                  fontSize: "11px",
-                                  color: "var(--color-muted)",
+                                  margin: '0 4px',
+                                  fontSize: '11px',
+                                  color: 'var(--color-muted)',
                                 }}
                               >
                                 +
@@ -96,13 +98,13 @@ export function ShortcutHelpOverlay({
           {filteredShortcuts.length === 0 && (
             <div
               style={{
-                textAlign: "center",
-                color: "var(--color-muted)",
-                padding: "20px 0",
-                fontSize: "13px",
+                textAlign: 'center',
+                color: 'var(--color-muted)',
+                padding: '20px 0',
+                fontSize: '13px',
               }}
             >
-              {isZh ? "没有找到匹配的快捷键或指令" : "No matching shortcuts or commands found"}
+              {isZh ? '没有找到匹配的快捷键或指令' : 'No matching shortcuts or commands found'}
             </div>
           )}
         </div>

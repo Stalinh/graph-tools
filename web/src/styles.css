@@ -1,12 +1,12 @@
 @charset "UTF-8";
 
-@import "./styles/base.css";
-@import "./styles/sidebar.css";
-@import "./styles/workspace.css";
-@import "./styles/graph-canvas.css";
-@import "./styles/inspector.css";
-@import "./styles/editor-controls.css";
-@import "./styles/references.css";
-@import "./styles/search-filters.css";
-@import "./styles/rich-editor.css";
-@import "./styles/group-node.css";
+@import './styles/base.css';
+@import './styles/sidebar.css';
+@import './styles/workspace.css';
+@import './styles/graph-canvas.css';
+@import './styles/inspector.css';
+@import './styles/editor-controls.css';
+@import './styles/references.css';
+@import './styles/search-filters.css';
+@import './styles/rich-editor.css';
+@import './styles/group-node.css';

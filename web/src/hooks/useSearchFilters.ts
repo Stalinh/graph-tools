@@ -1,20 +1,20 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from 'react';
 
 export const FILTER_COLORS = [
-  { key: "", label: "Default" },
-  { key: "amber", label: "Amber" },
-  { key: "rose", label: "Rose" },
-  { key: "green", label: "Green" },
-  { key: "blue", label: "Blue" },
-  { key: "purple", label: "Purple" },
-  { key: "orange", label: "Orange" },
-  { key: "teal", label: "Teal" },
-  { key: "pink", label: "Pink" },
-  { key: "indigo", label: "Indigo" },
-  { key: "lime", label: "Lime" },
-  { key: "lavender", label: "Lavender" },
-  { key: "brown", label: "Brown" },
-  { key: "slate", label: "Slate" },
+  { key: '', label: 'Default' },
+  { key: 'amber', label: 'Amber' },
+  { key: 'rose', label: 'Rose' },
+  { key: 'green', label: 'Green' },
+  { key: 'blue', label: 'Blue' },
+  { key: 'purple', label: 'Purple' },
+  { key: 'orange', label: 'Orange' },
+  { key: 'teal', label: 'Teal' },
+  { key: 'pink', label: 'Pink' },
+  { key: 'indigo', label: 'Indigo' },
+  { key: 'lime', label: 'Lime' },
+  { key: 'lavender', label: 'Lavender' },
+  { key: 'brown', label: 'Brown' },
+  { key: 'slate', label: 'Slate' },
 ] as const;
 
 export interface SearchFilters {

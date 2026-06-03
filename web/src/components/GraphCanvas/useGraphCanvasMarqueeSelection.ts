@@ -1,7 +1,18 @@
-import { SelectionMode } from "@xyflow/react";
-import { useCallback, useRef, useState, type MouseEvent as ReactMouseEvent, type RefObject } from "react";
-import type { GraphNode } from "../../types";
-import { containsRect, getScreenRect, intersectsRect, type ScreenPoint } from "./canvasInteractionUtils";
+import { SelectionMode } from '@xyflow/react';
+import {
+  useCallback,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type RefObject,
+} from 'react';
+import type { GraphNode } from '../../types';
+import {
+  containsRect,
+  getScreenRect,
+  intersectsRect,
+  type ScreenPoint,
+} from './canvasInteractionUtils';
 
 interface MarqueeSelectionDrag {
   active: boolean;
@@ -46,8 +57,8 @@ export function useGraphCanvasMarqueeSelection({
       const graphNodeIds = new Set(graphNodes.map((node) => node.id));
       const selectedIds = new Set<string>();
 
-      container.querySelectorAll<HTMLElement>(".react-flow__node[data-id]").forEach((element) => {
-        const nodeId = element.getAttribute("data-id");
+      container.querySelectorAll<HTMLElement>('.react-flow__node[data-id]').forEach((element) => {
+        const nodeId = element.getAttribute('data-id');
         if (!nodeId || !graphNodeIds.has(nodeId)) {
           return;
         }
@@ -113,7 +124,7 @@ export function useGraphCanvasMarqueeSelection({
       if (
         event.button !== 0 ||
         !(target instanceof Element) ||
-        !target.closest(".react-flow__pane")
+        !target.closest('.react-flow__pane')
       ) {
         return;
       }

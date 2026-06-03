@@ -1,23 +1,23 @@
 /**
  * @vitest-environment jsdom
  */
-import { render } from "@testing-library/react";
-import type { ComponentProps } from "react";
-import { describe, expect, it, vi } from "vitest";
-import type { EdgeStyle } from "../../types";
-import { CitationEdge } from "./CitationEdge";
+import { render } from '@testing-library/react';
+import type { ComponentProps } from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import type { EdgeStyle } from '../../types';
+import { CitationEdge } from './CitationEdge';
 
 const { nodeLookup } = vi.hoisted(() => ({
   nodeLookup: new Map([
     [
-      "#1",
+      '#1',
       {
         measured: { width: 80, height: 80 },
         internals: { positionAbsolute: { x: 0, y: 0 } },
       },
     ],
     [
-      "#2",
+      '#2',
       {
         measured: { width: 80, height: 80 },
         internals: { positionAbsolute: { x: 160, y: 0 } },
@@ -26,7 +26,7 @@ const { nodeLookup } = vi.hoisted(() => ({
   ]),
 }));
 
-vi.mock("@xyflow/react", () => ({
+vi.mock('@xyflow/react', () => ({
   useStore: (selector: (state: { nodeLookup: typeof nodeLookup }) => unknown) =>
     selector({ nodeLookup }),
   useStoreApi: () => ({
@@ -36,9 +36,9 @@ vi.mock("@xyflow/react", () => ({
 
 function renderCitationEdge(style: EdgeStyle | undefined) {
   const props = {
-    id: `edge-${style ?? "legacy"}`,
-    source: "#1",
-    target: "#2",
+    id: `edge-${style ?? 'legacy'}`,
+    source: '#1',
+    target: '#2',
     sourceX: 40,
     sourceY: 40,
     targetX: 160,
@@ -46,10 +46,10 @@ function renderCitationEdge(style: EdgeStyle | undefined) {
     interactionWidth: 40,
     style: { strokeWidth: 1.8, opacity: 1 },
     data: {
-      direction: "unidirectional",
+      direction: 'unidirectional',
       selected: false,
       style,
-      color: "amber",
+      color: 'amber',
     },
   } as ComponentProps<typeof CitationEdge>;
 
@@ -60,25 +60,25 @@ function renderCitationEdge(style: EdgeStyle | undefined) {
   );
 }
 
-describe("CitationEdge", () => {
-  it("renders solid edges without note dash stroke data", () => {
-    const { container } = renderCitationEdge("solid");
+describe('CitationEdge', () => {
+  it('renders solid edges without note dash stroke data', () => {
+    const { container } = renderCitationEdge('solid');
 
-    expect(container.querySelector(".graph-edge--style-solid")).not.toBeNull();
+    expect(container.querySelector('.graph-edge--style-solid')).not.toBeNull();
     expect(
-      container.querySelector(".edge-visible-path")?.getAttribute("stroke-dasharray")
+      container.querySelector('.edge-visible-path')?.getAttribute('stroke-dasharray')
     ).toBeNull();
   });
 
-  it("renders note dash for explicit and legacy styles", () => {
-    const explicit = renderCitationEdge("note-dash");
+  it('renders note dash for explicit and legacy styles', () => {
+    const explicit = renderCitationEdge('note-dash');
     const legacy = renderCitationEdge(undefined);
 
     expect(
       explicit.container
-        .querySelector(".graph-edge--style-note-dash .edge-visible-path")
-        ?.getAttribute("stroke-dasharray")
-    ).toBe("15 7 3 6");
-    expect(legacy.container.querySelector(".graph-edge--style-note-dash")).not.toBeNull();
+        .querySelector('.graph-edge--style-note-dash .edge-visible-path')
+        ?.getAttribute('stroke-dasharray')
+    ).toBe('15 7 3 6');
+    expect(legacy.container.querySelector('.graph-edge--style-note-dash')).not.toBeNull();
   });
 });

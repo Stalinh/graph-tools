@@ -1,7 +1,15 @@
-import type { Editor } from "@tiptap/core";
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type RefObject } from "react";
-import { getSlashCommands } from "./richEditorConfig";
-import type { SlashCommandItem, SlashMenuState } from "./richEditorTypes";
+import type { Editor } from '@tiptap/core';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type RefObject,
+} from 'react';
+import { getSlashCommands } from './richEditorConfig';
+import type { SlashCommandItem, SlashMenuState } from './richEditorTypes';
 
 interface UseRichEditorSlashMenuOptions {
   editorRef: RefObject<Editor | null>;
@@ -14,7 +22,7 @@ export function useRichEditorSlashMenu({ editorRef, isZh }: UseRichEditorSlashMe
     isOpen: false,
     pos: 0,
     coords: { top: 0, left: 0 },
-    query: "",
+    query: '',
     activeIndex: 0,
   });
 
@@ -22,7 +30,7 @@ export function useRichEditorSlashMenu({ editorRef, isZh }: UseRichEditorSlashMe
     isOpen: false,
     activeIndex: 0,
     filteredCommands: [] as SlashCommandItem[],
-    query: "",
+    query: '',
     pos: 0,
   });
   const slashMenuCheckTimerRef = useRef<number | null>(null);
@@ -56,7 +64,7 @@ export function useRichEditorSlashMenu({ editorRef, isZh }: UseRichEditorSlashMe
       const { selection } = state;
       const { $from } = selection;
 
-      if (!selection.empty || $from.parent.type.name !== "paragraph") {
+      if (!selection.empty || $from.parent.type.name !== 'paragraph') {
         setSlashMenu((prev) => (prev.isOpen ? { ...prev, isOpen: false } : prev));
         return;
       }
@@ -136,13 +144,13 @@ export function useRichEditorSlashMenu({ editorRef, isZh }: UseRichEditorSlashMe
 
       const { activeIndex, filteredCommands: currentCommands, pos, query } = slashMenuRef.current;
 
-      if (event.key === "ArrowDown") {
+      if (event.key === 'ArrowDown') {
         event.preventDefault();
         event.stopPropagation();
         const nextIndex =
           currentCommands.length > 0 ? (activeIndex + 1) % currentCommands.length : 0;
         setSlashMenu((prev) => ({ ...prev, activeIndex: nextIndex }));
-      } else if (event.key === "ArrowUp") {
+      } else if (event.key === 'ArrowUp') {
         event.preventDefault();
         event.stopPropagation();
         const nextIndex =
@@ -150,7 +158,7 @@ export function useRichEditorSlashMenu({ editorRef, isZh }: UseRichEditorSlashMe
             ? (activeIndex - 1 + currentCommands.length) % currentCommands.length
             : 0;
         setSlashMenu((prev) => ({ ...prev, activeIndex: nextIndex }));
-      } else if (event.key === "Enter" || event.key === "Tab") {
+      } else if (event.key === 'Enter' || event.key === 'Tab') {
         const activeCmd = currentCommands[activeIndex];
         if (activeCmd) {
           event.preventDefault();
@@ -164,7 +172,7 @@ export function useRichEditorSlashMenu({ editorRef, isZh }: UseRichEditorSlashMe
           }
           setSlashMenu((prev) => ({ ...prev, isOpen: false }));
         }
-      } else if (event.key === "Escape") {
+      } else if (event.key === 'Escape') {
         event.preventDefault();
         event.stopPropagation();
         setSlashMenu((prev) => ({ ...prev, isOpen: false }));

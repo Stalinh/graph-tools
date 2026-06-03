@@ -2,13 +2,13 @@ import {
   createInitialProjectRecords,
   sanitizeProjectRecords,
   sanitizeProjectRecordsWithReport,
-} from "./projectModel";
-import type { ProjectRecord } from "./projectTypes";
+} from './projectModel';
+import type { ProjectRecord } from './projectTypes';
 
-const PROJECT_MANAGEMENT_DRAFT_STORAGE_KEY = "project-management-draft-records";
-const LEGACY_PROJECT_MANAGEMENT_STORAGE_KEY = "project-management-records";
-const LEGACY_PROJECT_REGISTER_STORAGE_KEY = "project-register-records";
-const LEGACY_PROJECT_SHEET_STORAGE_KEY = "local-kg-project-sheet-records";
+const PROJECT_MANAGEMENT_DRAFT_STORAGE_KEY = 'project-management-draft-records';
+const LEGACY_PROJECT_MANAGEMENT_STORAGE_KEY = 'project-management-records';
+const LEGACY_PROJECT_REGISTER_STORAGE_KEY = 'project-register-records';
+const LEGACY_PROJECT_SHEET_STORAGE_KEY = 'local-kg-project-sheet-records';
 
 interface ProjectDraftState {
   records: ProjectRecord[];

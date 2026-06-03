@@ -1,5 +1,5 @@
-import { Check, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { Check, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 
 export interface ProjectInlineSelectOption {
   value: string;
@@ -17,7 +17,7 @@ interface ProjectInlineSelectProps {
 
 export function ProjectInlineSelect({
   ariaLabel,
-  className = "",
+  className = '',
   getOptionToneClassName,
   onChange,
   options,
@@ -25,12 +25,12 @@ export function ProjectInlineSelect({
 }: ProjectInlineSelectProps) {
   const [open, setOpen] = useState(false);
   const selectedOption = options.find((option) => option.value === value);
-  const selectedLabel = selectedOption?.label || value || "-";
-  const selectedToneClassName = getOptionToneClassName?.(value) ?? "";
+  const selectedLabel = selectedOption?.label || value || '-';
+  const selectedToneClassName = getOptionToneClassName?.(value) ?? '';
 
   return (
     <div
-      className={`project-sheet__custom-select ${open ? "is-open" : ""} ${className}`}
+      className={`project-sheet__custom-select ${open ? 'is-open' : ''} ${className}`}
       onBlur={(event) => {
         const nextTarget = event.relatedTarget;
         if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
@@ -58,15 +58,15 @@ export function ProjectInlineSelect({
       {open ? (
         <div className="project-sheet__custom-select-menu" role="listbox" aria-label={ariaLabel}>
           {options.map((option) => {
-            const optionToneClassName = getOptionToneClassName?.(option.value) ?? "";
+            const optionToneClassName = getOptionToneClassName?.(option.value) ?? '';
             const selected = option.value === value;
 
             return (
               <button
                 className={`project-sheet__custom-select-option ${optionToneClassName} ${
-                  selected ? "is-selected" : ""
+                  selected ? 'is-selected' : ''
                 }`}
-                key={option.value || "__empty"}
+                key={option.value || '__empty'}
                 type="button"
                 role="option"
                 aria-selected={selected}
