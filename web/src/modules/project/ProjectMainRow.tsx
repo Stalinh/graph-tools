@@ -42,12 +42,29 @@ function renderProgressBar(progressValue: string, ariaLabel: string) {
   );
 }
 
+function renderProjectLevelBadge(projectLevel: string, isZh: boolean) {
+  const displayValue = projectLevel || (isZh ? '未定' : 'Unset');
+
+  return (
+    <span
+      className={`project-level-badge ${projectLevel ? '' : 'project-level-badge--empty'}`}
+      title={displayValue}
+    >
+      {displayValue}
+    </span>
+  );
+}
+
 function renderProjectCell(record: ProjectLine, field: ProjectRecordField, isZh: boolean) {
-  if (field !== 'progress') {
-    return getFieldValue(record, field);
+  if (field === 'progress') {
+    return renderProgressBar(record.progress, isZh ? '项目进度' : 'Project progress');
   }
 
-  return renderProgressBar(record.progress, isZh ? '项目进度' : 'Project progress');
+  if (field === 'projectLevel') {
+    return renderProjectLevelBadge(record.projectLevel, isZh);
+  }
+
+  return getFieldValue(record, field);
 }
 
 export function ProjectMainRow({
@@ -75,6 +92,7 @@ export function ProjectMainRow({
     if (field === 'projectLevel') {
       return (
         <ProjectInlineSelect
+          className="project-sheet__custom-select--level"
           ariaLabel={label}
           value={value}
           options={[
@@ -201,7 +219,10 @@ export function ProjectMainRow({
         )}
       </th>
       {visibleColumns.map((column) => (
-        <td key={column.field}>
+        <td
+          key={column.field}
+          className={`project-sheet__cell project-sheet__cell--${column.field}`}
+        >
           {isEditMode
             ? renderProjectEditCell(column.field)
             : renderProjectCell(record, column.field, isZh)}

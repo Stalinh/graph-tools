@@ -238,12 +238,20 @@ describe('useWorkspaceStore', () => {
     expect(result.current.workspace.selection.selectedEdgeId).toBe('edge-1');
 
     act(() => {
-      result.current.setContextMenu({ x: 10, y: 20, type: 'canvas' });
+      result.current.setContextMenu({
+        x: 10,
+        y: 20,
+        flowPosition: { x: 30, y: 40 },
+        nodeId: null,
+        selectedNodeIdAtOpen: null,
+      });
     });
     expect(result.current.workspace.selection.contextMenu).toEqual({
       x: 10,
       y: 20,
-      type: 'canvas',
+      flowPosition: { x: 30, y: 40 },
+      nodeId: null,
+      selectedNodeIdAtOpen: null,
     });
 
     act(() => {

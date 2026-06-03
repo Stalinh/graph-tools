@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 // charset: utf-8
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { Node, NodeChange } from '@xyflow/react';
 import type { GraphNode, NodeSize } from '../../types';
 import {

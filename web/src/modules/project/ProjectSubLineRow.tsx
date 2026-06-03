@@ -55,7 +55,7 @@ function renderSubLineWorkloadRatioCell(taskName: string, isZh: boolean, key?: s
     <td
       key={key}
       className={
-        'project-sheet__subline-progress-cell' +
+        'project-sheet__cell project-sheet__cell--progress project-sheet__subline-progress-cell' +
         (isMissing ? ' project-sheet__subline-progress-cell--missing' : '')
       }
       title={
@@ -100,7 +100,10 @@ export function ProjectSubLineRow({
       {visibleColumns.map((column) => {
         if (column.field === 'projectName') {
           return (
-            <td key={column.field} className="project-sheet__subline-task-cell">
+            <td
+              key={column.field}
+              className="project-sheet__cell project-sheet__cell--projectName project-sheet__subline-task-cell"
+            >
               <span className="project-subline__task" title={`${subLineLabel}.${subLine.taskName}`}>
                 {`${subLineLabel}.${subLine.taskName}`}
               </span>
@@ -110,7 +113,10 @@ export function ProjectSubLineRow({
 
         if (column.field === 'contractAmount') {
           return (
-            <td key={column.field} className="project-sheet__subline-status-cell">
+            <td
+              key={column.field}
+              className="project-sheet__cell project-sheet__cell--contractAmount project-sheet__subline-status-cell"
+            >
               {isEditMode ? (
                 <ProjectInlineSelect
                   className="project-sheet__custom-select--status"
@@ -138,7 +144,10 @@ export function ProjectSubLineRow({
 
         if (column.field === 'detailDesign') {
           return (
-            <td key={column.field} className="project-sheet__subline-detail-design-cell">
+            <td
+              key={column.field}
+              className="project-sheet__cell project-sheet__cell--detailDesign project-sheet__subline-detail-design-cell"
+            >
               {isEditMode ? (
                 <input
                   className="project-sheet__inline-input"
@@ -158,7 +167,11 @@ export function ProjectSubLineRow({
         }
 
         return (
-          <td key={column.field} className="project-sheet__subline-empty-cell" aria-hidden="true" />
+          <td
+            key={column.field}
+            className={`project-sheet__cell project-sheet__cell--${column.field} project-sheet__subline-empty-cell`}
+            aria-hidden="true"
+          />
         );
       })}
       <td>

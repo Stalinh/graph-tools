@@ -1,7 +1,10 @@
+import { useMemo } from 'react';
 import { useI18n } from '../../i18n';
 import './ProjectSheetPage.css';
+import { ProjectExecutiveSummary } from './ProjectExecutiveSummary';
 import { ProjectSheetHeader } from './ProjectSheetHeader';
 import { ProjectSheetTable } from './ProjectSheetTable';
+import { calculateProjectMetrics } from './projectMetrics';
 import { useProjectSheetState, type DroppedProjectFile } from './useProjectSheetState';
 
 interface ProjectSheetPageProps {
@@ -19,6 +22,10 @@ export function ProjectSheetPage({
     isZh,
     onDroppedProjectFileHandled,
   });
+  const metrics = useMemo(
+    () => calculateProjectMetrics(projectSheet.records),
+    [projectSheet.records]
+  );
 
   return (
     <section
@@ -28,8 +35,6 @@ export function ProjectSheetPage({
       <ProjectSheetHeader
         isEditMode={projectSheet.isEditMode}
         isZh={isZh}
-        recordCount={projectSheet.recordCount}
-        subLineCount={projectSheet.subLineCount}
         onAddProjectRecord={projectSheet.addProjectRecord}
         onEnterEditMode={projectSheet.enterEditMode}
         onEnterReadMode={projectSheet.enterReadMode}
@@ -51,6 +56,7 @@ export function ProjectSheetPage({
         {projectSheet.dirty ? <strong>{isZh ? '未保存' : 'Unsaved'}</strong> : null}
         {projectSheet.fileStatus ? <em>{projectSheet.fileStatus}</em> : null}
       </div>
+      <ProjectExecutiveSummary isZh={isZh} metrics={metrics} />
       <ProjectSheetTable
         expandedProjectIds={projectSheet.expandedProjectIds}
         isEditMode={projectSheet.isEditMode}

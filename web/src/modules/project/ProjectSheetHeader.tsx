@@ -3,8 +3,6 @@ import { Eye, FilePlus, FolderOpen, Pencil, Plus, Save, SaveAll } from 'lucide-r
 interface ProjectSheetHeaderProps {
   isEditMode: boolean;
   isZh: boolean;
-  recordCount: number;
-  subLineCount: number;
   onAddProjectRecord: () => void;
   onEnterEditMode: () => void;
   onEnterReadMode: () => void;
@@ -17,8 +15,6 @@ interface ProjectSheetHeaderProps {
 export function ProjectSheetHeader({
   isEditMode,
   isZh,
-  recordCount,
-  subLineCount,
   onAddProjectRecord,
   onEnterEditMode,
   onEnterReadMode,
@@ -30,6 +26,9 @@ export function ProjectSheetHeader({
   return (
     <header className="project-sheet-page__header">
       <div className="project-sheet-page__title-group">
+        <span className="project-sheet-page__eyebrow">
+          {isZh ? '项目组合' : 'Project Portfolio'}
+        </span>
         <h1>{isZh ? '项目管理' : 'Project Management'}</h1>
         <p>
           {isZh
@@ -105,17 +104,6 @@ export function ProjectSheetHeader({
             <SaveAll size={15} />
             <span>{isZh ? '另存' : 'Save as'}</span>
           </button>
-        </div>
-        <div
-          className="project-sheet-page__summary"
-          aria-label={isZh ? '项目统计' : 'Project summary'}
-        >
-          <span>
-            {isZh ? '项目数' : 'Projects'} <strong>{recordCount}</strong>
-          </span>
-          <span>
-            {isZh ? '子行' : 'Sublines'} <strong>{subLineCount}</strong>
-          </span>
         </div>
         <button
           className="project-sheet-page__add-button"
