@@ -14,7 +14,7 @@ import {
   type ScreenPoint,
 } from './canvasInteractionUtils';
 
-interface MarqueeSelectionDrag {
+export interface MarqueeSelectionDrag {
   active: boolean;
   additive: boolean;
   baseSelectedNodeIds: string[];
