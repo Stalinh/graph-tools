@@ -22,12 +22,15 @@ pnpm-debug.log*
 ## OS files
 .DS_Store
 Thumbs.db
+desktop.ini
 
 ## Editor caches
 .idea/
 .vscode/
 CLAUDE.md
 .claude/
+*.swp
+*.swo
 
 ## Local code indexes
 .codegraph/
