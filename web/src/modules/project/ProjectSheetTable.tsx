@@ -203,6 +203,25 @@ export function ProjectSheetTable({
             const hasSubLines = record.subLines.length > 0;
             const isExpanded = expandedProjectIds.has(record.id);
 
+            // Compute display labels for sublines (专项 items get 12-1, 12-2, etc.)
+            const subLineLabels = (() => {
+              const firstZxIdx = record.subLines.findIndex((sl) =>
+                sl.taskName.startsWith("专项-")
+              );
+              if (firstZxIdx < 0) {
+                return record.subLines.map((_, i) => String(i + 1));
+              }
+              const zxBase = firstZxIdx + 1;
+              let zxCnt = 0;
+              return record.subLines.map((sl, i) => {
+                if (sl.taskName.startsWith("专项-")) {
+                  zxCnt++;
+                  return `${zxBase}-${zxCnt}`;
+                }
+                return String(i + 1);
+              });
+            })();
+
             return (
               <Fragment key={record.id}>
                 <tr>
@@ -338,8 +357,8 @@ export function ProjectSheetTable({
                           </div>
                         </th>
                         <td className="project-sheet__subline-task-cell">
-                          <span className="project-subline__task" title={subLine.taskName}>
-                            {subLine.taskName}
+                          <span className="project-subline__task" title={`${subLineLabels[subLineIndex]}.${subLine.taskName}`}>
+                            {`${subLineLabels[subLineIndex]}.${subLine.taskName}`}
                           </span>
                         </td>
                         <td className="project-sheet__subline-status-cell">
