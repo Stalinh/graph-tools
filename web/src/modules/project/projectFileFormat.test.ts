@@ -20,11 +20,10 @@ describe('project file format and model', () => {
     const records = [
       createProjectRecord({
         projectName: ' Alpha ',
-        progress: '42.6',
         subLines: [
           createProjectSubLine({
-            taskName: 'Main',
-            status: '待处理',
+            taskName: '三维建模',
+            status: '已提资/已完成',
           }),
         ],
       }),
@@ -34,9 +33,9 @@ describe('project file format and model', () => {
 
     expect(parsed).toHaveLength(1);
     expect(parsed[0].projectName).toBe('Alpha');
-    expect(parsed[0].progress).toBe('43');
-    expect(parsed[0].subLines[0].taskName).toBe('Main');
-    expect(parsed[0].subLines[0].status).toBe('待处理');
+    expect(parsed[0].progress).toBe('27');
+    expect(parsed[0].subLines[0].taskName).toBe('三维建模');
+    expect(parsed[0].subLines[0].status).toBe('已提资/已完成');
   });
 
   it('rejects malformed, wrong-module, unsupported-version, duplicate-name, and invalid-record files', () => {
