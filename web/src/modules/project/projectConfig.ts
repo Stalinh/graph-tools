@@ -6,7 +6,7 @@ export const PROJECT_COLUMNS: ProjectColumn[] = [
     field: 'contractAmount',
     labelZh: '合同额',
     labelEn: 'Amount',
-    width: '80px',
+    width: '105px',
     inputMode: 'decimal',
   },
   { field: 'projectLevel', labelZh: '项目等级', labelEn: 'Level', width: '65px' },
