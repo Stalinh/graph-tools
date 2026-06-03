@@ -31,31 +31,53 @@ const SHOULD_USE_TEST_NODE_SIZE_FALLBACK =
   typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
 const EMPTY_PREVIOUS_NODES_BY_ID: ReadonlyMap<string, Node> = new Map();
 
-export function createGraphNodes(
-  graphNodes: GraphNode[],
-  selectedNodeIds: string[],
-  onSelectNode: (nodeId: string | null) => void,
-  quickEditingNodeId: string | null,
+export interface CreateGraphNodesOptions {
+  graphNodes: GraphNode[];
+  selectedNodeIds: string[];
+  onSelectNode: (nodeId: string | null) => void;
+  quickEditingNodeId: string | null;
   onQuickEditSubmit: (
     nodeId: string,
     title: string,
     options?: { focusInspectorContent?: boolean }
-  ) => void,
-  previousNodesById: ReadonlyMap<string, Node> = EMPTY_PREVIOUS_NODES_BY_ID,
-  savedNodePositions: Record<string, { x: number; y: number }> = {},
-  savedNodeSizes: Record<string, { width: number; height: number }> = {},
+  ) => void;
+  previousNodesById?: ReadonlyMap<string, Node>;
+  savedNodePositions?: Record<string, { x: number; y: number }>;
+  savedNodeSizes?: Record<string, { width: number; height: number }>;
+  searchQuery?: string;
+  connectedNodeIds?: Set<string>;
+  images?: Map<string, Blob>;
+  nodeFilter?: EntityType | 'locked' | 'all';
+  selectedEdgeActive?: boolean;
+  citationSelectionActive?: boolean;
+  onNodeMouseDown?: (event: MouseEvent, nodeId: string) => void;
+  matchingNodeIds?: Set<string> | null;
+  onQuickAddChild?: (parentId: string) => void;
+  onNodeResize?: (nodeId: string) => void;
+  onNodeResizeEnd?: (nodeId: string, size: { width: number; height: number }) => void;
+}
+
+export function createGraphNodes({
+  graphNodes,
+  selectedNodeIds,
+  onSelectNode,
+  quickEditingNodeId,
+  onQuickEditSubmit,
+  previousNodesById = EMPTY_PREVIOUS_NODES_BY_ID,
+  savedNodePositions = {},
+  savedNodeSizes = {},
   searchQuery = '',
-  connectedNodeIds: Set<string> = new Set(),
-  images: Map<string, Blob> = new Map(),
-  nodeFilter: EntityType | 'locked' | 'all' = 'all',
+  connectedNodeIds = new Set(),
+  images = new Map(),
+  nodeFilter = 'all',
   selectedEdgeActive = false,
   citationSelectionActive = false,
-  onNodeMouseDown?: (event: MouseEvent, nodeId: string) => void,
-  matchingNodeIds: Set<string> | null = null,
-  onQuickAddChild?: (parentId: string) => void,
-  onNodeResize?: (nodeId: string) => void,
-  onNodeResizeEnd?: (nodeId: string, size: { width: number; height: number }) => void
-) {
+  onNodeMouseDown,
+  matchingNodeIds = null,
+  onQuickAddChild,
+  onNodeResize,
+  onNodeResizeEnd,
+}: CreateGraphNodesOptions) {
   const selectedNodeIdSet = new Set(selectedNodeIds);
 
   const childCounts = new Map<string, number>();

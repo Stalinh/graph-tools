@@ -1,7 +1,7 @@
 import type { Node } from '@xyflow/react';
 import { describe, expect, it } from 'vitest';
 import type { GraphNode } from '../../types';
-import { createGraphNodes } from './graphUtils';
+import { createGraphNodes, type CreateGraphNodesOptions } from './graphUtils';
 
 const onSelectNode = () => undefined;
 const onQuickEditSubmit = () => undefined;
@@ -53,7 +53,7 @@ function createCanvasNodes({
   connectedNodeIds?: Set<string>;
   graphNodes: GraphNode[];
   matchingNodeIds?: Set<string> | null;
-  nodeFilter?: Parameters<typeof createGraphNodes>[11];
+  nodeFilter?: CreateGraphNodesOptions['nodeFilter'];
   previousNodesById?: ReadonlyMap<string, Node>;
   savedNodePositions?: Record<string, { x: number; y: number }>;
   savedNodeSizes?: Record<string, { width: number; height: number }>;
@@ -61,27 +61,27 @@ function createCanvasNodes({
   selectedEdgeActive?: boolean;
   selectedNodeIds?: string[];
 }) {
-  return createGraphNodes(
+  return createGraphNodes({
     graphNodes,
     selectedNodeIds,
     onSelectNode,
-    null,
+    quickEditingNodeId: null,
     onQuickEditSubmit,
     previousNodesById,
     savedNodePositions,
     savedNodeSizes,
     searchQuery,
     connectedNodeIds,
-    new Map(),
+    images: new Map(),
     nodeFilter,
     selectedEdgeActive,
-    false,
+    citationSelectionActive: false,
     onNodeMouseDown,
     matchingNodeIds,
     onQuickAddChild,
     onNodeResize,
-    onNodeResizeEnd
-  );
+    onNodeResizeEnd,
+  });
 }
 
 describe('createGraphNodes', () => {

@@ -69,27 +69,27 @@ export function useGraphCanvasNodes({
   );
 
   const [nodes, setNodes] = useState<Node[]>(() =>
-    createGraphNodes(
+    createGraphNodes({
       graphNodes,
       selectedNodeIds,
       onSelectNode,
       quickEditingNodeId,
       onQuickEditSubmit,
-      new Map(),
-      nodePositions,
-      nodeSizes,
-      '',
-      new Set(),
+      previousNodesById: new Map(),
+      savedNodePositions: nodePositions,
+      savedNodeSizes: nodeSizes,
+      searchQuery: '',
+      connectedNodeIds: new Set(),
       images,
-      'all',
-      false,
-      false,
-      dispatchNodeMouseDown,
-      null,
-      handleQuickAddChild,
-      onGroupNodeResize,
-      onGroupNodeResizeEnd
-    )
+      nodeFilter: 'all',
+      selectedEdgeActive: false,
+      citationSelectionActive: false,
+      onNodeMouseDown: dispatchNodeMouseDown,
+      matchingNodeIds: null,
+      onQuickAddChild: handleQuickAddChild,
+      onNodeResize: onGroupNodeResize,
+      onNodeResizeEnd: onGroupNodeResizeEnd,
+    })
   );
   const nodesRef = useRef<Node[]>(nodes);
   nodesRef.current = nodes;
@@ -98,27 +98,27 @@ export function useGraphCanvasNodes({
     setNodes((previousNodes) => {
       const previousNodesById = new Map(previousNodes.map((node) => [node.id, node]));
 
-      return createGraphNodes(
+      return createGraphNodes({
         graphNodes,
         selectedNodeIds,
-        onSelectNodeRef.current,
+        onSelectNode: onSelectNodeRef.current,
         quickEditingNodeId,
         onQuickEditSubmit,
         previousNodesById,
-        nodePositions,
-        nodeSizes,
+        savedNodePositions: nodePositions,
+        savedNodeSizes: nodeSizes,
         searchQuery,
         connectedNodeIds,
         images,
         nodeFilter,
-        Boolean(selectedEdgeId),
-        pendingCitation,
-        dispatchNodeMouseDown,
+        selectedEdgeActive: Boolean(selectedEdgeId),
+        citationSelectionActive: pendingCitation,
+        onNodeMouseDown: dispatchNodeMouseDown,
         matchingNodeIds,
-        handleQuickAddChild,
-        onGroupNodeResize,
-        onGroupNodeResizeEnd
-      );
+        onQuickAddChild: handleQuickAddChild,
+        onNodeResize: onGroupNodeResize,
+        onNodeResizeEnd: onGroupNodeResizeEnd,
+      });
     });
   }, [
     connectedNodeIds,
