@@ -36,5 +36,15 @@ CLAUDE.md
 ## Tool caches and temp files
 .eslintcache
 .prettiercache
+.vitest-cache/
 *.tmp
 *.temp
+
+## Stray lock files
+yarn.lock
+pnpm-lock.yaml
+
+## Local data and extension files
+*.project
+*.graph
+.history/
