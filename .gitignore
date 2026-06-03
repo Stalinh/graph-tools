@@ -34,7 +34,10 @@ CLAUDE.md
 
 ## Local code indexes
 .codegraph/
-*.md
+
+## Planning documents
+docs/superpowers/specs/
+docs/superpowers/plans/
 
 ## Tool caches and temp files
 .eslintcache
