@@ -6,17 +6,15 @@ import { describe, expect, it, vi } from "vitest";
 import { createProjectRecord, createProjectSubLine } from "./projectModel";
 import { ProjectSheetTable } from "./ProjectSheetTable";
 
-function renderTable(records = [createProjectRecord({ projectName: "P1" })]) {
+function renderTable(records = [createProjectRecord({ projectName: "P1" })], isEditMode = false) {
   return render(
     <ProjectSheetTable
       expandedProjectIds={new Set(records.map((r) => r.id))}
-      isEditMode={false}
+      isEditMode={isEditMode}
       isZh
       records={records}
-      onAddSubLineRecord={vi.fn()}
       onCommitProjectField={vi.fn()}
       onRemoveRecord={vi.fn()}
-      onRemoveSubLine={vi.fn()}
       onToggleProjectExpanded={vi.fn()}
       onUpdateProjectField={vi.fn()}
       onUpdateSubLineField={vi.fn()}
@@ -25,9 +23,10 @@ function renderTable(records = [createProjectRecord({ projectName: "P1" })]) {
 }
 
 describe("ProjectSheetTable workload ratio column", () => {
-  it("renders the workload ratio column header", () => {
+  it("does not render a standalone workload ratio column header", () => {
     renderTable();
-    expect(screen.getByRole("columnheader", { name: "工作量占比" })).toBeTruthy();
+    expect(screen.queryByRole("columnheader", { name: "工作量占比" })).toBeNull();
+    expect(screen.getByRole("columnheader", { name: "进度" })).toBeTruthy();
   });
 
   it("renders the ratio for sublines with a registered task name", () => {
@@ -41,6 +40,18 @@ describe("ProjectSheetTable workload ratio column", () => {
     expect(within(subRow!).getByText("11%")).toBeTruthy();
   });
 
+  it("does not render a workload ratio value for the main row", () => {
+    const record = createProjectRecord({
+      projectName: "P2",
+      subLines: [createProjectSubLine({ taskName: "主机设备" })],
+    });
+    renderTable([record]);
+    const projectRow = screen.getByTitle(record.lineNo).closest("tr");
+    expect(projectRow).toBeTruthy();
+    expect(within(projectRow!).queryByText("—")).toBeNull();
+    expect(within(projectRow!).queryByText("11%")).toBeNull();
+  });
+
   it("renders 'error' for sublines with an unregistered task name", () => {
     const record = createProjectRecord({
       projectName: "P3",
@@ -50,6 +61,19 @@ describe("ProjectSheetTable workload ratio column", () => {
     const subRow = screen.getByTitle("未注册任务").closest("tr");
     expect(subRow).toBeTruthy();
     const cell = within(subRow!).getByText("error");
-    expect(cell.className).toContain("project-sheet__subline-workload-ratio-cell--missing");
+    expect(cell.className).toContain("project-sheet__subline-progress-cell--missing");
+  });
+
+  it("does not expose subline add or delete actions in edit mode", () => {
+    const record = createProjectRecord({
+      projectName: "P4",
+      subLines: [createProjectSubLine({ taskName: "主机设备" })],
+    });
+
+    renderTable([record], true);
+
+    expect(screen.queryByRole("button", { name: "新增子行" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "删除子行" })).toBeNull();
+    expect(screen.getByRole("button", { name: "删除项目" })).toBeTruthy();
   });
 });

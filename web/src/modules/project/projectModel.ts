@@ -16,6 +16,9 @@ const LEGACY_PROJECT_SUB_LINE_STATUS_MAP: Record<string, ProjectSubLineStatus> =
   已下单: "已提资/已完成",
 };
 const OPTIONAL_PROJECT_LINE_FIELDS = new Set(["detailDesign", "lineNo", "progress"]);
+const PROJECT_SUB_LINE_ORDER_BY_TASK_NAME = new Map(
+  PROJECT_DEFAULT_SUB_LINE_TASK_NAMES.map((taskName, index) => [taskName, index])
+);
 
 export interface ProjectRecordsSanitizeReport {
   records: ProjectRecord[];
@@ -27,6 +30,7 @@ export interface ProjectRecordsSanitizeReport {
 export interface ProjectDefaultSubLinesResult {
   records: ProjectRecord[];
   addedSubLineCount: number;
+  reorderedSubLineRecordCount: number;
 }
 
 function createProjectId() {
@@ -58,7 +62,7 @@ export function createProjectRecord(
 ): ProjectRecord {
   return {
     ...createProjectLine(values),
-    subLines: values.subLines ?? [],
+    subLines: orderProjectSubLines(values.subLines ?? []),
   };
 }
 
@@ -74,6 +78,44 @@ export function createProjectSubLine(values: Partial<Omit<ProjectSubLine, "id">>
 
 export function createDefaultProjectSubLines() {
   return PROJECT_DEFAULT_SUB_LINE_TASK_NAMES.map((taskName) => createProjectSubLine({ taskName }));
+}
+
+export function orderProjectSubLines(subLines: readonly ProjectSubLine[]) {
+  return subLines
+    .map((subLine, index) => ({ subLine, index }))
+    .sort((a, b) => {
+      const aOrder = PROJECT_SUB_LINE_ORDER_BY_TASK_NAME.get(
+        normalizeProjectSubLineTaskName(a.subLine.taskName)
+      );
+      const bOrder = PROJECT_SUB_LINE_ORDER_BY_TASK_NAME.get(
+        normalizeProjectSubLineTaskName(b.subLine.taskName)
+      );
+
+      if (aOrder !== undefined && bOrder !== undefined) {
+        return aOrder - bOrder;
+      }
+
+      if (aOrder !== undefined) {
+        return -1;
+      }
+
+      if (bOrder !== undefined) {
+        return 1;
+      }
+
+      return a.index - b.index;
+    })
+    .map(({ subLine }) => subLine);
+}
+
+function hasProjectSubLineOrderChanged(
+  currentSubLines: readonly ProjectSubLine[],
+  nextSubLines: readonly ProjectSubLine[]
+) {
+  return (
+    currentSubLines.length === nextSubLines.length &&
+    currentSubLines.some((subLine, index) => subLine.id !== nextSubLines[index]?.id)
+  );
 }
 
 export function createInitialProjectRecords() {
@@ -190,10 +232,12 @@ export function sanitizeProjectRecord(record: unknown): ProjectRecord | null {
 
   return {
     ...sanitizedRecord,
-    subLines: subLines.flatMap((subLine) => {
-      const sanitizedSubLine = sanitizeProjectSubLine(subLine);
-      return sanitizedSubLine ? [sanitizedSubLine] : [];
-    }),
+    subLines: orderProjectSubLines(
+      subLines.flatMap((subLine) => {
+        const sanitizedSubLine = sanitizeProjectSubLine(subLine);
+        return sanitizedSubLine ? [sanitizedSubLine] : [];
+      })
+    ),
   };
 }
 
@@ -280,18 +324,18 @@ export function ensureProjectDefaultSubLines(record: ProjectRecord): ProjectDefa
   const missingSubLines = PROJECT_DEFAULT_SUB_LINE_TASK_NAMES.filter(
     (taskName) => !knownTaskNames.has(taskName)
   ).map((taskName) => createProjectSubLine({ taskName }));
+  const nextSubLines = orderProjectSubLines([...record.subLines, ...missingSubLines]);
 
   return {
-    records:
-      missingSubLines.length > 0
-        ? [
-            {
-              ...record,
-              subLines: [...record.subLines, ...missingSubLines],
-            },
-          ]
-        : [record],
+    records: [
+      {
+        ...record,
+        subLines: nextSubLines,
+      },
+    ],
     addedSubLineCount: missingSubLines.length,
+    reorderedSubLineRecordCount:
+      missingSubLines.length === 0 && hasProjectSubLineOrderChanged(record.subLines, nextSubLines) ? 1 : 0,
   };
 }
 
@@ -300,15 +344,18 @@ export function ensureProjectRecordsDefaultSubLines(
 ): ProjectDefaultSubLinesResult {
   const nextRecords: ProjectRecord[] = [];
   let addedSubLineCount = 0;
+  let reorderedSubLineRecordCount = 0;
 
   records.forEach((record) => {
     const result = ensureProjectDefaultSubLines(record);
     nextRecords.push(...result.records);
     addedSubLineCount += result.addedSubLineCount;
+    reorderedSubLineRecordCount += result.reorderedSubLineRecordCount;
   });
 
   return {
     records: nextRecords,
     addedSubLineCount,
+    reorderedSubLineRecordCount,
   };
 }

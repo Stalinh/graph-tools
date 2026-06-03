@@ -57,10 +57,8 @@ export function ProjectSheetPage({
         isEditMode={projectSheet.isEditMode}
         isZh={isZh}
         records={projectSheet.records}
-        onAddSubLineRecord={projectSheet.addSubLineRecord}
         onCommitProjectField={projectSheet.commitProjectField}
         onRemoveRecord={projectSheet.removeRecord}
-        onRemoveSubLine={projectSheet.removeSubLine}
         onToggleProjectExpanded={projectSheet.toggleProjectExpanded}
         onUpdateProjectField={projectSheet.updateProjectField}
         onUpdateSubLineField={projectSheet.updateSubLineField}

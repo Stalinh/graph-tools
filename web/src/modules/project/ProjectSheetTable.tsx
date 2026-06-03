@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { Fragment } from "react";
 import {
   PROJECT_COLUMNS,
@@ -23,10 +23,8 @@ interface ProjectSheetTableProps {
   isEditMode: boolean;
   isZh: boolean;
   records: ProjectRecord[];
-  onAddSubLineRecord: (parentId: string) => void;
   onCommitProjectField: (recordId: string, field: ProjectRecordField) => void;
   onRemoveRecord: (recordId: string) => void;
-  onRemoveSubLine: (parentId: string, subLineId: string) => void;
   onToggleProjectExpanded: (recordId: string) => void;
   onUpdateProjectField: (recordId: string, field: ProjectRecordField, value: string) => void;
   onUpdateSubLineField: (
@@ -91,8 +89,8 @@ function renderSubLineWorkloadRatioCell(taskName: string, isZh: boolean) {
   return (
     <td
       className={
-        "project-sheet__subline-workload-ratio-cell" +
-        (isMissing ? " project-sheet__subline-workload-ratio-cell--missing" : "")
+        "project-sheet__subline-progress-cell" +
+        (isMissing ? " project-sheet__subline-progress-cell--missing" : "")
       }
       title={
         isMissing
@@ -114,10 +112,8 @@ export function ProjectSheetTable({
   isEditMode,
   isZh,
   records,
-  onAddSubLineRecord,
   onCommitProjectField,
   onRemoveRecord,
-  onRemoveSubLine,
   onToggleProjectExpanded,
   onUpdateProjectField,
   onUpdateSubLineField,
@@ -178,11 +174,10 @@ export function ProjectSheetTable({
       <table>
         <colgroup>
           <col className="project-sheet__index-col" />
-          {PROJECT_COLUMNS.slice(0, 2).map((column) => (
+          {PROJECT_COLUMNS.slice(0, 3).map((column) => (
             <col key={column.field} style={{ width: column.width }} />
           ))}
-          <col style={{ width: "120px" }} />
-          {PROJECT_COLUMNS.slice(2).map((column) => (
+          {PROJECT_COLUMNS.slice(3).map((column) => (
             <col key={column.field} style={{ width: column.width }} />
           ))}
           <col className="project-sheet__actions-col" />
@@ -190,13 +185,12 @@ export function ProjectSheetTable({
         <thead>
           <tr>
             <th scope="col">{isZh ? "编号" : "No."}</th>
-            {PROJECT_COLUMNS.slice(0, 2).map((column) => (
+            {PROJECT_COLUMNS.slice(0, 3).map((column) => (
               <th key={column.field} scope="col">
                 {isZh ? column.labelZh : column.labelEn}
               </th>
             ))}
-            <th scope="col">{isZh ? "工作量占比" : "Workload Ratio"}</th>
-            {PROJECT_COLUMNS.slice(2).map((column) => (
+            {PROJECT_COLUMNS.slice(3).map((column) => (
               <th key={column.field} scope="col">
                 {isZh ? column.labelZh : column.labelEn}
               </th>
@@ -295,17 +289,14 @@ export function ProjectSheetTable({
                       </div>
                     )}
                   </th>
-                  {PROJECT_COLUMNS.slice(0, 2).map((column) => (
+                  {PROJECT_COLUMNS.slice(0, 3).map((column) => (
                     <td key={column.field}>
                       {isEditMode
                         ? renderProjectEditCell(record, column.field)
                         : renderProjectCell(record, column.field, isZh)}
                     </td>
                   ))}
-                  <td className="project-sheet__project-workload-ratio-cell">
-                    —
-                  </td>
-                  {PROJECT_COLUMNS.slice(2).map((column) => (
+                  {PROJECT_COLUMNS.slice(3).map((column) => (
                     <td key={column.field}>
                       {isEditMode
                         ? renderProjectEditCell(record, column.field)
@@ -315,26 +306,15 @@ export function ProjectSheetTable({
                   <td>
                     <div className="project-sheet__row-actions">
                       {isEditMode ? (
-                        <>
-                          <button
-                            className="project-sheet__row-action"
-                            type="button"
-                            aria-label={isZh ? "新增子行" : "New subline"}
-                            title={isZh ? "新增子行" : "New subline"}
-                            onClick={() => onAddSubLineRecord(record.id)}
-                          >
-                            <Plus size={15} />
-                          </button>
-                          <button
-                            className="project-sheet__row-action project-sheet__row-action--danger"
-                            type="button"
-                            aria-label={isZh ? "删除项目" : "Delete project"}
-                            title={isZh ? "删除项目" : "Delete project"}
-                            onClick={() => onRemoveRecord(record.id)}
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </>
+                        <button
+                          className="project-sheet__row-action project-sheet__row-action--danger"
+                          type="button"
+                          aria-label={isZh ? "删除项目" : "Delete project"}
+                          title={isZh ? "删除项目" : "Delete project"}
+                          onClick={() => onRemoveRecord(record.id)}
+                        >
+                          <Trash2 size={15} />
+                        </button>
                       ) : null}
                     </div>
                   </td>
@@ -385,7 +365,6 @@ export function ProjectSheetTable({
                         </td>
                         {renderSubLineWorkloadRatioCell(subLine.taskName, isZh)}
                         <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
-                        <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
                         <td className="project-sheet__subline-detail-design-cell">
                           {isEditMode ? (
                             <input
@@ -413,19 +392,7 @@ export function ProjectSheetTable({
                           aria-hidden="true"
                         />
                         <td>
-                          <div className="project-sheet__row-actions">
-                            {isEditMode ? (
-                              <button
-                                className="project-sheet__row-action project-sheet__row-action--danger"
-                                type="button"
-                                aria-label={isZh ? "删除子行" : "Delete subline"}
-                                title={isZh ? "删除子行" : "Delete subline"}
-                                onClick={() => onRemoveSubLine(record.id, subLine.id)}
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            ) : null}
-                          </div>
+                          <div className="project-sheet__row-actions" />
                         </td>
                       </tr>
                     ))

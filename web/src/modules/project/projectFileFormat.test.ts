@@ -9,6 +9,7 @@ import {
   createProjectRecord,
   createProjectSubLine,
   ensureProjectRecordsDefaultSubLines,
+  sanitizeProjectRecords,
   normalizeProjectProgress,
   normalizeProjectSubLineStatus,
   sanitizeProjectRecordsWithReport,
@@ -123,5 +124,41 @@ describe("project file format and model", () => {
     expect(result.records[0].subLines.map((subLine) => subLine.taskName)).toContain("主机设备");
     expect(result.records[0].subLines.filter((subLine) => subLine.taskName === "主机设备")).toHaveLength(1);
     expect(result.addedSubLineCount).toBeGreaterThan(0);
+  });
+
+  it("normalizes sublines to the fixed default order", () => {
+    const sourceRecord = {
+      ...createProjectRecord({ projectName: "Ordered" }),
+      subLines: [
+        createProjectSubLine({ taskName: "主机设备" }),
+        createProjectSubLine({ taskName: "平台" }),
+        createProjectSubLine({ taskName: "评审交底" }),
+        createProjectSubLine({ taskName: "三维建模" }),
+      ],
+    };
+
+    const [record] = sanitizeProjectRecords([sourceRecord]);
+    const taskNames = record.subLines.map((subLine) => subLine.taskName);
+
+    expect(taskNames[0]).toBe("三维建模");
+    expect(taskNames[taskNames.indexOf("平台") + 1]).toBe("评审交底");
+    expect(taskNames.indexOf("主机设备")).toBeGreaterThan(taskNames.indexOf("评审交底"));
+  });
+
+  it("fills missing default sublines in fixed order", () => {
+    const record = {
+      ...createProjectRecord({ projectName: "Filled" }),
+      subLines: [
+        createProjectSubLine({ taskName: "主机设备" }),
+        createProjectSubLine({ taskName: "平台" }),
+      ],
+    };
+
+    const result = ensureProjectRecordsDefaultSubLines([record]);
+    const taskNames = result.records[0].subLines.map((subLine) => subLine.taskName);
+
+    expect(taskNames[0]).toBe("三维建模");
+    expect(taskNames[taskNames.indexOf("平台") + 1]).toBe("评审交底");
+    expect(taskNames).toHaveLength(17);
   });
 });

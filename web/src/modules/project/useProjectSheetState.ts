@@ -3,7 +3,6 @@ import { projectFileManager } from "./projectFileSystem";
 import {
   createDefaultProjectSubLines,
   createProjectRecord,
-  createProjectSubLine,
   ensureProjectRecordsDefaultSubLines,
   normalizeProjectLineNo,
   normalizeProjectName,
@@ -144,10 +143,13 @@ export function useProjectSheetState({
     openedFromDrop = false
   ) => {
     const openedRecordsWithDefaultSubLines = ensureProjectRecordsDefaultSubLines(openedRecords);
+    const hasAutomaticSubLineUpdates =
+      openedRecordsWithDefaultSubLines.addedSubLineCount > 0 ||
+      openedRecordsWithDefaultSubLines.reorderedSubLineRecordCount > 0;
     setExpandedProjectIds(new Set());
     replaceRecords(
       openedRecordsWithDefaultSubLines.records,
-      openedRecordsWithDefaultSubLines.addedSubLineCount > 0
+      hasAutomaticSubLineUpdates
     );
     setCurrentFileName(fileName);
     clearProjectDraftRecords();
@@ -160,6 +162,10 @@ export function useProjectSheetState({
           ? isZh
             ? "拖入的项目文件已打开，保存时将另存为。"
             : "Dropped project file opened. Saving will use Save As."
+          : openedRecordsWithDefaultSubLines.reorderedSubLineRecordCount > 0
+            ? isZh
+              ? `项目文件已打开，并自动固定 ${openedRecordsWithDefaultSubLines.reorderedSubLineRecordCount} 个项目的子行顺序。`
+              : `Project file opened and subline order was fixed for ${openedRecordsWithDefaultSubLines.reorderedSubLineRecordCount} projects.`
           : isZh
             ? "项目文件已打开。"
             : "Project file opened."
@@ -362,39 +368,6 @@ export function useProjectSheetState({
     setDirty(true);
   };
 
-  const addSubLineRecord = (parentId: string) => {
-    if (!isEditMode) {
-      return;
-    }
-
-    setRecords((currentRecords) =>
-      currentRecords.map((record) => {
-        if (record.id !== parentId) {
-          return record;
-        }
-
-        const baseTaskName = isZh ? "新任务" : "New Task";
-        const knownTaskNames = new Set(
-          record.subLines.map((subLine) => normalizeProjectSubLineTaskName(subLine.taskName))
-        );
-        let taskName = baseTaskName;
-        let suffix = 2;
-
-        while (knownTaskNames.has(taskName)) {
-          taskName = `${baseTaskName} ${suffix}`;
-          suffix += 1;
-        }
-
-        return {
-          ...record,
-          subLines: [...record.subLines, createProjectSubLine({ taskName })],
-        };
-      })
-    );
-    setExpandedProjectIds((currentIds) => new Set(currentIds).add(parentId));
-    setDirty(true);
-  };
-
   const removeRecord = (recordId: string) => {
     setRecords((currentRecords) => currentRecords.filter((record) => record.id !== recordId));
     setExpandedProjectIds((currentIds) => {
@@ -402,17 +375,6 @@ export function useProjectSheetState({
       nextIds.delete(recordId);
       return nextIds;
     });
-    setDirty(true);
-  };
-
-  const removeSubLine = (parentId: string, subLineId: string) => {
-    setRecords((currentRecords) =>
-      currentRecords.map((record) =>
-        record.id === parentId
-          ? { ...record, subLines: record.subLines.filter((subLine) => subLine.id !== subLineId) }
-          : record
-      )
-    );
     setDirty(true);
   };
 
@@ -485,7 +447,6 @@ export function useProjectSheetState({
 
   return {
     addProjectRecord,
-    addSubLineRecord,
     commitProjectField,
     currentFileName,
     dirty,
@@ -501,7 +462,6 @@ export function useProjectSheetState({
     recordCount,
     records,
     removeRecord,
-    removeSubLine,
     subLineCount,
     toggleProjectExpanded,
     updateProjectField,

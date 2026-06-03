@@ -28,22 +28,22 @@ export const PROJECT_SUB_LINE_STATUS_OPTIONS: ProjectSubLineStatus[] = [
 
 export const PROJECT_DEFAULT_SUB_LINE_TASK_NAMES = [
   "三维建模",
-  "专项-液体模块",
+  "主机设备",
+  "常规外购",
+  "个性化外购",
+  "输送设备",
+  "预制件",
+  "溜管",
+  "钢材软连接",
+  "辅材",
+  "平台",
+  "评审交底",
   "专项-料仓",
   "专项-风网",
   "专项-液体",
   "专项-蒸汽",
   "专项-空压",
-  "平台",
-  "评审交底",
-  "主机设备",
-  "输送设备",
-  "常规外购",
-  "个性化外购",
-  "预制件",
-  "溜管",
-  "钢材软连接",
-  "辅材",
+  "专项-液体模块",
 ];
 
 export const PROJECT_SUB_LINE_WORKLOAD_RATIO: Record<string, number> = {
