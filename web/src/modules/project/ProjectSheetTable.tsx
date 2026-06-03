@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Trash2, Copy } from 'lucide-react';
 import { Fragment, useState } from 'react';
 import {
   PROJECT_COLUMNS,
@@ -129,6 +129,12 @@ export function ProjectSheetTable({
 
   const visibleColumns = PROJECT_COLUMNS.filter((col) => !hiddenColumns.has(col.field));
 
+  const visibleColumnsWidth = visibleColumns.reduce((sum, col) => {
+    const w = parseInt(col.width, 10);
+    return sum + (isNaN(w) ? 0 : w);
+  }, 0);
+  const totalTableWidth = 112 + 80 + 136 + visibleColumnsWidth;
+
   const toggleColumnVisibility = (field: string) => {
     setHiddenColumns((prev) => {
       const next = new Set(prev);
@@ -245,17 +251,19 @@ export function ProjectSheetTable({
           </div>
         </>
       )}
-      <table>
+      <table style={{ width: `${totalTableWidth}px`, minWidth: `${totalTableWidth}px` }}>
         <colgroup>
-          <col className="project-sheet__index-col" />
+          <col className="project-sheet__index-col" style={{ width: '112px' }} />
+          <col className="project-sheet__copy-col" style={{ width: '80px' }} />
           {visibleColumns.map((column) => (
             <col key={column.field} style={{ width: column.width }} />
           ))}
-          <col className="project-sheet__actions-col" />
+          <col className="project-sheet__actions-col" style={{ width: '136px' }} />
         </colgroup>
         <thead>
           <tr>
             <th scope="col">{isZh ? '编号' : 'No.'}</th>
+            <th scope="col">{isZh ? '操作' : 'Actions'}</th>
             {visibleColumns.map((column) => (
               <th
                 key={column.field}
@@ -267,7 +275,7 @@ export function ProjectSheetTable({
                 {isZh ? column.labelZh : column.labelEn}
               </th>
             ))}
-            <th scope="col">{isZh ? '操作' : 'Actions'}</th>
+            <th scope="col">{isZh ? '删除' : 'Delete'}</th>
           </tr>
         </thead>
         <tbody>
@@ -390,6 +398,18 @@ export function ProjectSheetTable({
                       </div>
                     )}
                   </th>
+                  <td>
+                    <div className="project-sheet__row-actions">
+                      <button
+                        className="project-sheet__row-action"
+                        type="button"
+                        aria-label={isZh ? '复制项目' : 'Copy project'}
+                        title={isZh ? '复制项目' : 'Copy project'}
+                      >
+                        <Copy size={15} />
+                      </button>
+                    </div>
+                  </td>
                   {visibleColumns.map((column) => (
                     <td key={column.field}>
                       {isEditMode
@@ -431,6 +451,7 @@ export function ProjectSheetTable({
                             </span>
                           </div>
                         </th>
+                        <td className="project-sheet__subline-empty-cell" aria-hidden="true" />
                         {!hiddenColumns.has('projectName') && (
                           <td className="project-sheet__subline-task-cell">
                             <span
