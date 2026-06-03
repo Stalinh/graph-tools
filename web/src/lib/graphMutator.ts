@@ -1,7 +1,19 @@
-import type { EdgeDirection, EdgeStyle, GraphData, GraphEdge, GraphNode } from '../types';
+import type {
+  EdgeDirection,
+  EdgeStyle,
+  GraphData,
+  GraphEdge,
+  GraphNode,
+  GraphNodeMap,
+} from '../types';
 
 import { isReferenceableNode, sanitizeReferences } from './graphConstraints';
 import { normalizeEdgeColor, normalizeNodeColor } from './nodeColors';
+
+/** 从节点数组构建 id → node 的快速索引 */
+export function buildNodeIndex(nodes: GraphNode[]): GraphNodeMap {
+  return new Map(nodes.map((node) => [node.id, node]));
+}
 
 function makeEdgeId(sourceId: string, targetId: string) {
   return `edge-${sourceId}-${targetId}`;
@@ -31,7 +43,8 @@ export function removeNode(
   removedEdges: GraphEdge[];
   affectedRefs: { ownerId: string; refId: string }[];
 } {
-  const nodeToRemove = graph.nodes.find((n) => n.id === nodeId);
+  const nodeIndex = buildNodeIndex(graph.nodes);
+  const nodeToRemove = nodeIndex.get(nodeId) ?? null;
   if (!nodeToRemove) {
     return {
       graph,
@@ -102,8 +115,9 @@ export function addCitation(
   targetId: string,
   direction: EdgeDirection = 'unidirectional'
 ): GraphData {
-  const sourceNode = graph.nodes.find((node) => node.id === sourceId);
-  const targetNode = graph.nodes.find((node) => node.id === targetId);
+  const nodeIndex = buildNodeIndex(graph.nodes);
+  const sourceNode = nodeIndex.get(sourceId);
+  const targetNode = nodeIndex.get(targetId);
 
   if (!sourceNode || !targetNode) {
     return graph;
@@ -214,7 +228,8 @@ export function updateNodeOpacity(graph: GraphData, nodeId: string, opacity: num
 
 export function updateNodeFields(graph: GraphData, updatedNode: GraphNode): GraphData {
   const now = new Date().toISOString();
-  const oldNode = graph.nodes.find((n) => n.id === updatedNode.id);
+  const nodeIndex = buildNodeIndex(graph.nodes);
+  const oldNode = nodeIndex.get(updatedNode.id);
 
   if (oldNode && oldNode.type === 'group' && oldNode.title !== updatedNode.title) {
     const oldTitle = oldNode.title;
@@ -255,8 +270,9 @@ export function updateEdgeDirection(
   if (!edge) return graph;
   if (edge.direction === direction) return graph;
 
-  const sourceNode = graph.nodes.find((n) => n.id === edge.sourceId);
-  const targetNode = graph.nodes.find((n) => n.id === edge.targetId);
+  const nodeIndex = buildNodeIndex(graph.nodes);
+  const sourceNode = nodeIndex.get(edge.sourceId);
+  const targetNode = nodeIndex.get(edge.targetId);
   if (
     !sourceNode ||
     !targetNode ||
@@ -332,7 +348,8 @@ export function reorderReferences(
   sourceId: string,
   newOrder: string[]
 ): GraphData {
-  const sourceNode = graph.nodes.find((n) => n.id === sourceId);
+  const nodeIndex = buildNodeIndex(graph.nodes);
+  const sourceNode = nodeIndex.get(sourceId);
   if (!sourceNode) {
     return graph;
   }

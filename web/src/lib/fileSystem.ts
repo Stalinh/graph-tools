@@ -27,6 +27,12 @@ export interface WorkspacePackage {
   images: Map<string, Blob>;
 }
 
+export interface SaveResult {
+  success: boolean;
+  error?: string; // 用户可读的错误描述
+  errorDetail?: Error; // 原始错误对象（用于日志）
+}
+
 function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
   return readBlobAsArrayBuffer(file);
 }

@@ -51,6 +51,8 @@ export interface GraphData {
   edges: GraphEdge[];
 }
 
+export type GraphNodeMap = Map<string, GraphNode>;
+
 export interface CustomField {
   id: string;
   entityId: string;

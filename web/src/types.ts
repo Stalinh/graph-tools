@@ -9,6 +9,7 @@ export type {
   GraphData,
   GraphEdge,
   GraphNode,
+  GraphNodeMap,
   ReferenceItem,
   ViewportState,
   WorkspaceState,

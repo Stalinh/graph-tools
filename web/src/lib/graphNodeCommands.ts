@@ -5,7 +5,7 @@ import {
   detachChildrenFromGroup,
   findAvailableGroupPosition,
 } from './groupNodeLayout';
-import { addNode, removeNode } from './graphMutator';
+import { addNode, buildNodeIndex, removeNode } from './graphMutator';
 
 interface CreateNodeDraftOptions {
   createdAt: string;
@@ -58,9 +58,8 @@ export function createNodeDraft({
     };
   }
 
-  const parentGroup = resolvedParentId
-    ? graph.nodes.find((node) => node.id === resolvedParentId)
-    : undefined;
+  const nodeIndex = buildNodeIndex(graph.nodes);
+  const parentGroup = resolvedParentId ? nodeIndex.get(resolvedParentId) : undefined;
   const initialTags = parentGroup && parentGroup.title ? [parentGroup.title] : [];
   const node = createNodeData({
     createdAt,
@@ -108,7 +107,8 @@ export function deleteNodeDraft(
   positions: Record<string, CanvasPosition>,
   sizes: Record<string, NodeSize>
 ) {
-  const nodeToDelete = graph.nodes.find((node) => node.id === nodeId);
+  const nodeIndex = buildNodeIndex(graph.nodes);
+  const nodeToDelete = nodeIndex.get(nodeId);
   let removalGraph = graph;
   let removalPositions = positions;
   let removalSizes = sizes;
@@ -166,13 +166,14 @@ export function deleteNodesDraft(
     return null;
   }
 
+  const nodeIndex = buildNodeIndex(graph.nodes);
   const removedNodeIds: string[] = [];
   let currentGraph = graph;
   let currentPositions = positions;
   let currentSizes = sizes;
 
   uniqueNodeIds.forEach((nodeId) => {
-    const nodeToDelete = currentGraph.nodes.find((node) => node.id === nodeId);
+    const nodeToDelete = nodeIndex.get(nodeId);
     let removalGraph = currentGraph;
     let removalPositions = currentPositions;
     let removalSizes = currentSizes;
@@ -212,7 +213,7 @@ export function deleteNodesDraft(
 
   const affectedParents = new Set<string>();
   removedNodeIds.forEach((nodeId) => {
-    const removedNode = graph.nodes.find((node) => node.id === nodeId);
+    const removedNode = nodeIndex.get(nodeId);
     if (removedNode?.parentId) {
       affectedParents.add(removedNode.parentId);
     }
