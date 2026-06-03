@@ -1,10 +1,14 @@
 /**
  * @vitest-environment jsdom
  */
-import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { render, screen, within, cleanup, fireEvent, act } from '@testing-library/react';
+import { describe, expect, it, vi, afterEach } from 'vitest';
 import { createProjectRecord, createProjectSubLine } from './projectModel';
 import { ProjectSheetTable } from './ProjectSheetTable';
+
+afterEach(() => {
+  cleanup();
+});
 
 function renderTable(records = [createProjectRecord({ projectName: 'P1' })], isEditMode = false) {
   return render(
@@ -76,5 +80,34 @@ describe('ProjectSheetTable workload ratio column', () => {
     expect(screen.queryByRole('button', { name: '新增子行' })).toBeNull();
     expect(screen.queryByRole('button', { name: '删除子行' })).toBeNull();
     expect(screen.getByRole('button', { name: '删除项目' })).toBeTruthy();
+  });
+});
+
+describe('ProjectSheetTable action buttons', () => {
+  it('renders both a copy button and a download button under operations', () => {
+    const record = createProjectRecord({ projectName: 'P1' });
+    renderTable([record]);
+
+    expect(screen.getByRole('button', { name: '复制项目' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '下载项目' })).toBeTruthy();
+  });
+
+  it('toggles the download button to a checkmark on click and reverts after 3 seconds', async () => {
+    vi.useFakeTimers();
+    const record = createProjectRecord({ projectName: 'P1' });
+    renderTable([record]);
+
+    const downloadBtn = screen.getByRole('button', { name: '下载项目' });
+    expect(downloadBtn.className).not.toContain('is-downloaded');
+
+    await fireEvent.click(downloadBtn);
+    expect(downloadBtn.className).toContain('is-downloaded');
+
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+    expect(downloadBtn.className).not.toContain('is-downloaded');
+
+    vi.useRealTimers();
   });
 });

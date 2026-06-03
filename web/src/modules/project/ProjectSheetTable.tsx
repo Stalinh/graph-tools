@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Trash2, Copy } from 'lucide-react';
+import { ChevronDown, ChevronRight, Trash2, Copy, Check, Download } from 'lucide-react';
 import { Fragment, useState } from 'react';
 import {
   PROJECT_COLUMNS,
@@ -126,6 +126,27 @@ export function ProjectSheetTable({
     y: 0,
     open: false,
   });
+  const [copiedRecordId, setCopiedRecordId] = useState<string | null>(null);
+  const [downloadedRecordId, setDownloadedRecordId] = useState<string | null>(null);
+
+  const handleCopy = (recordId: string) => {
+    const record = records.find((r) => r.id === recordId);
+    if (record) {
+      const textToCopy = `${record.lineNo} ${record.projectName}`;
+      void navigator.clipboard.writeText(textToCopy);
+    }
+    setCopiedRecordId(recordId);
+    setTimeout(() => {
+      setCopiedRecordId((current) => (current === recordId ? null : current));
+    }, 3000);
+  };
+
+  const handleDownload = (recordId: string) => {
+    setDownloadedRecordId(recordId);
+    setTimeout(() => {
+      setDownloadedRecordId((current) => (current === recordId ? null : current));
+    }, 3000);
+  };
 
   const visibleColumns = PROJECT_COLUMNS.filter((col) => !hiddenColumns.has(col.field));
 
@@ -399,14 +420,32 @@ export function ProjectSheetTable({
                     )}
                   </th>
                   <td>
-                    <div className="project-sheet__row-actions">
+                    <div className="project-sheet__row-actions" style={{ gap: '4px' }}>
                       <button
-                        className="project-sheet__row-action"
+                        className={`project-sheet__row-action project-sheet__copy-button ${
+                          copiedRecordId === record.id ? 'is-copied' : ''
+                        }`}
                         type="button"
                         aria-label={isZh ? '复制项目' : 'Copy project'}
                         title={isZh ? '复制项目' : 'Copy project'}
+                        onClick={() => handleCopy(record.id)}
                       >
-                        <Copy size={15} />
+                        {copiedRecordId === record.id ? <Check size={16} /> : <Copy size={16} />}
+                      </button>
+                      <button
+                        className={`project-sheet__row-action project-sheet__download-button ${
+                          downloadedRecordId === record.id ? 'is-downloaded' : ''
+                        }`}
+                        type="button"
+                        aria-label={isZh ? '下载项目' : 'Download project'}
+                        title={isZh ? '下载项目' : 'Download project'}
+                        onClick={() => handleDownload(record.id)}
+                      >
+                        {downloadedRecordId === record.id ? (
+                          <Check size={16} />
+                        ) : (
+                          <Download size={16} />
+                        )}
                       </button>
                     </div>
                   </td>
