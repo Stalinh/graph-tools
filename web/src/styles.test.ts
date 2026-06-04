@@ -44,4 +44,16 @@ describe('styles entrypoint', () => {
     expect(motionStyles).toContain('.graph-zone--executive');
     expect(motionStyles).toContain('grid-template-rows: auto auto minmax(0, 1fr);');
   });
+
+  it('defines executive workbench design tokens', async () => {
+    // @ts-expect-error Vitest runs this structural test in Node, while app types stay browser-only.
+    const { readFileSync } = (await import('node:fs')) as FileSystemModule;
+    const baseStyles = readFileSync(new URL('./styles/base.css', import.meta.url), 'utf8');
+
+    expect(baseStyles).toContain('--color-executive-navy: #071b3a;');
+    expect(baseStyles).toContain('--color-executive-teal: #00a3a1;');
+    expect(baseStyles).toContain('--color-executive-red: #c1121f;');
+    expect(baseStyles).toContain('--shadow-workbench-panel:');
+    expect(baseStyles).toContain('--shadow-workbench-node:');
+  });
 });
