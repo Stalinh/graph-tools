@@ -165,4 +165,23 @@ describe('createGraphNodes', () => {
     expect(nextNodes[1]).toBe(previousNodes[1]);
     expect(nextNodes[1].data.searchQuery).toBeUndefined();
   });
+
+  it('adds executive status classes for selected, locked, and matched nodes', () => {
+    const graphNodes: GraphNode[] = [
+      { ...cardNode('#1', 'Selected'), locked: true },
+      cardNode('#2', 'Dimmed'),
+    ];
+
+    const nodes = createCanvasNodes({
+      graphNodes,
+      matchingNodeIds: new Set(['#1']),
+      selectedNodeIds: ['#1'],
+    });
+
+    expect(nodes[0].className).toContain('graph-node--executive');
+    expect(nodes[0].className).toContain('is-selected');
+    expect(nodes[0].className).toContain('is-locked');
+    expect(nodes[0].className).toContain('is-search-match');
+    expect(nodes[1].className).toContain('is-search-dimmed');
+  });
 });

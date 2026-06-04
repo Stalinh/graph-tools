@@ -132,6 +132,7 @@ export function createGraphNodes({
     const isReferenceDisabled = citationSelectionActive && !isReferenceableNode(node);
     const classNames = [
       'graph-node',
+      'graph-node--executive',
       `graph-node--${node.type}`,
       node.locked ? 'is-locked' : '',
       isSelected ? 'is-selected' : '',

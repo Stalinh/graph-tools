@@ -3,13 +3,17 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-workbench-line);
   border-radius: 8px;
-  background: var(--color-surface-muted);
+  background: var(--color-workbench-panel-muted);
 }
 
 .graph-canvas {
   position: relative;
+}
+
+.graph-canvas--executive {
+  box-shadow: var(--shadow-workbench-panel);
 }
 
 .graph-message {
@@ -20,7 +24,11 @@
 }
 
 .react-flow {
-  background: var(--color-canvas-bg);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-workbench-panel-muted) 86%, var(--color-workbench-panel) 14%) 0%,
+    var(--color-workbench-panel-muted) 100%
+  );
 }
 
 .graph-canvas .react-flow__background {
@@ -67,12 +75,16 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  border: 1px solid var(--color-control-border);
-  border-radius: 10px;
+  border: 1px solid var(--color-workbench-line);
+  border-radius: 8px;
   padding: 4px;
   color: var(--color-control-icon);
-  background: color-mix(in srgb, var(--color-control-bg) 92%, white 8%);
-  box-shadow: var(--shadow-panel);
+  background: color-mix(
+    in srgb,
+    var(--color-workbench-panel) 92%,
+    var(--color-workbench-panel-muted) 8%
+  );
+  box-shadow: var(--shadow-workbench-panel);
 }
 
 .graph-scale-indicator__button,
@@ -82,7 +94,7 @@
   justify-content: center;
   height: 28px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 6px;
   background: transparent;
   color: var(--color-control-icon);
   cursor: pointer;
@@ -111,15 +123,19 @@
 .graph-canvas-panel {
   display: inline-flex;
   align-items: center;
-  border: 1px solid var(--color-control-border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-control-bg) 92%, white 8%);
-  box-shadow: var(--shadow-panel);
+  border: 1px solid var(--color-workbench-line);
+  border-radius: 8px;
+  background: color-mix(
+    in srgb,
+    var(--color-workbench-panel) 92%,
+    var(--color-workbench-panel-muted) 8%
+  );
+  box-shadow: var(--shadow-workbench-panel);
 }
 
 .graph-canvas-panel--status {
-  max-width: min(320px, calc(100vw - 360px));
-  padding: 6px 10px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 7px 8px;
 }
 
 .graph-canvas-panel--citation-pending {
@@ -129,27 +145,74 @@
   font-weight: 800;
 }
 
-.graph-canvas-panel__status-text {
+.graph-canvas-panel--executive-status {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  color: var(--color-text);
+}
+
+.graph-canvas-panel__status-kicker {
+  color: var(--color-workbench-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
 .graph-canvas-panel__status-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--color-control-icon);
+  color: var(--color-text);
   font-size: 11px;
   font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.graph-canvas-panel__status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  border: 1px solid color-mix(in srgb, var(--color-success) 42%, var(--color-workbench-line) 58%);
+  border-radius: 7px;
+  padding: 4px 7px;
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 10%, var(--color-workbench-panel) 90%);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.graph-canvas-panel__status-pill.is-dirty {
+  border-color: color-mix(
+    in srgb,
+    var(--color-executive-amber) 58%,
+    var(--color-workbench-line) 42%
+  );
+  color: color-mix(in srgb, var(--color-executive-amber) 74%, var(--color-text) 26%);
+  background: color-mix(
+    in srgb,
+    var(--color-executive-amber) 14%,
+    var(--color-workbench-panel) 86%
+  );
 }
 
 .graph-node {
   width: max-content;
   min-width: 140px;
   max-width: 400px;
-  border: 1px solid var(--color-node-border);
-  border-radius: 12px;
+  border: 1px solid var(--color-workbench-line);
+  border-radius: 8px;
   color: var(--color-text);
-  background: var(--color-node-bg);
-  box-shadow: var(--shadow-node);
+  background: var(--color-workbench-panel);
+  box-shadow: var(--shadow-workbench-node);
   outline: none;
   overflow: visible;
   translate: 0 0;
@@ -165,8 +228,8 @@
 }
 
 .graph-node:hover {
-  border-color: var(--color-border-active);
-  box-shadow: var(--shadow-node-hover);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-workbench-node);
   translate: 0 -0.5px;
   scale: 1.001;
 }
@@ -179,20 +242,6 @@
   max-width: none;
 }
 
-.graph-node.is-selected {
-  outline: 2px solid var(--color-accent);
-  outline-offset: -2px;
-  border-color: var(--color-accent);
-  background: var(--color-node-bg-selected, var(--color-node-bg));
-  box-shadow: var(--shadow-node-selected);
-  translate: 0 -1px;
-}
-
-.graph-node.is-selected:hover {
-  translate: 0 -0.5px;
-  scale: 1.001;
-}
-
 .graph-node.is-search-match {
   border-color: color-mix(in srgb, var(--color-accent) 66%, var(--color-border-active) 34%);
   background: linear-gradient(
@@ -201,14 +250,14 @@
     color-mix(in srgb, var(--color-accent) 8%, var(--color-surface-muted) 92%) 100%
   );
   box-shadow:
-    var(--shadow-node),
+    var(--shadow-workbench-node),
     0 0 0 2px color-mix(in srgb, var(--color-accent) 44%, transparent);
 }
 
 .graph-node.is-edge-connected {
   border-color: color-mix(in srgb, var(--color-primary) 56%, var(--color-border-active) 44%);
   box-shadow:
-    var(--shadow-node),
+    var(--shadow-workbench-node),
     0 0 0 2px color-mix(in srgb, var(--color-primary) 34%, transparent);
 }
 
@@ -216,7 +265,7 @@
   border-style: solid;
   border-color: color-mix(in srgb, var(--color-accent) 58%, var(--color-border) 42%);
   box-shadow:
-    var(--shadow-node),
+    var(--shadow-workbench-node),
     0 0 0 1px color-mix(in srgb, var(--color-accent) 26%, transparent),
     inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 16%, transparent);
   background: linear-gradient(
@@ -224,6 +273,20 @@
     color-mix(in srgb, var(--color-accent) 4%, var(--color-surface) 96%) 0%,
     color-mix(in srgb, var(--color-accent) 2%, var(--color-surface-muted) 98%) 100%
   );
+}
+
+.graph-node.is-selected {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-color: var(--color-primary);
+  background: var(--color-node-bg-selected, var(--color-workbench-panel));
+  box-shadow: var(--shadow-workbench-node), var(--shadow-focus);
+  translate: 0 -1px;
+}
+
+.graph-node.is-selected:hover {
+  translate: 0 -0.5px;
+  scale: 1.001;
 }
 
 .graph-node.is-locked:not(.is-selected):not(.is-search-match):not(.is-edge-connected) {
@@ -289,7 +352,7 @@
   position: absolute;
   inset: 0 auto 0 0;
   width: var(--graph-node-color-bar-width);
-  border-radius: 11px 0 0 11px;
+  border-radius: 7px 0 0 7px;
   background: var(--graph-node-color-bar, var(--color-card-0));
   pointer-events: none;
 }
@@ -506,7 +569,7 @@
   width: var(--image-node-media-width);
   max-width: none;
   overflow: hidden;
-  border-radius: 11px 11px 0 0;
+  border-radius: 7px 7px 0 0;
 }
 
 .graph-node__image {
@@ -542,7 +605,7 @@
   gap: 4px;
   width: var(--image-node-media-width);
   padding: 8px 12px 10px calc(12px + var(--graph-node-color-bar-width));
-  border-radius: 0 0 11px 11px;
+  border-radius: 0 0 7px 7px;
 }
 
 .graph-edge--style-solid .edge-visible-path,

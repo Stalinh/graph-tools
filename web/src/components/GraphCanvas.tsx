@@ -205,7 +205,7 @@ export function GraphCanvas({
 
   return (
     <div
-      className="graph-canvas"
+      className="graph-canvas graph-canvas--executive"
       ref={containerRef}
       onMouseDownCapture={handleMouseDownCapture}
       onMouseMoveCapture={handleMouseMoveCapture}

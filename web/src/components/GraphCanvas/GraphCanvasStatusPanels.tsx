@@ -13,16 +13,22 @@ export function GraphCanvasFileStatusPanel({
   fileStatus,
 }: GraphCanvasFileStatusProps) {
   const { isZh } = useI18n();
+  const fileName = currentFileName ? currentFileName : isZh ? '未打开文件' : 'No file opened';
+  const dirtyText = dirty ? (isZh ? '未保存' : 'Unsaved') : isZh ? '已同步' : 'Synced';
+
   return (
     <Panel
       position="bottom-right"
-      className="graph-canvas-panel graph-canvas-panel--status"
+      className="graph-canvas-panel graph-canvas-panel--status graph-canvas-panel--executive-status"
       role="status"
     >
+      <span className="graph-canvas-panel__status-kicker">{isZh ? '文件状态' : 'File status'}</span>
       <span className="graph-canvas-panel__status-text">
-        {currentFileName ? currentFileName : isZh ? '未打开文件' : 'No file opened'}
-        {dirty ? (isZh ? ' · 未保存' : ' · Unsaved') : ''}
+        {fileName}
         {fileStatus ? ` — ${fileStatus}` : ''}
+      </span>
+      <span className={`graph-canvas-panel__status-pill${dirty ? ' is-dirty' : ''}`}>
+        {dirtyText}
       </span>
     </Panel>
   );
