@@ -67,18 +67,32 @@ export function createGraphCanvasInteractionModel({
   };
 }
 
-export function useGraphCanvasInteractionModel(
-  options: CreateGraphCanvasInteractionModelOptions
-): GraphCanvasInteractionModel {
+export function useGraphCanvasInteractionModel({
+  graph,
+  matchingNodeIds,
+  nodeFilter,
+  pendingCitation,
+  selectedEdgeId,
+  selectedNodeIds,
+}: CreateGraphCanvasInteractionModelOptions): GraphCanvasInteractionModel {
   return useMemo(
-    () => createGraphCanvasInteractionModel(options),
+    () =>
+      createGraphCanvasInteractionModel({
+        graph,
+        matchingNodeIds,
+        nodeFilter,
+        pendingCitation,
+        selectedEdgeId,
+        selectedNodeIds,
+      }),
     [
-      options.graph,
-      options.matchingNodeIds,
-      options.nodeFilter,
-      options.pendingCitation,
-      options.selectedEdgeId,
-      options.selectedNodeIds,
+      graph.edges,
+      graph.nodes,
+      matchingNodeIds,
+      nodeFilter,
+      pendingCitation,
+      selectedEdgeId,
+      selectedNodeIds,
     ]
   );
 }
