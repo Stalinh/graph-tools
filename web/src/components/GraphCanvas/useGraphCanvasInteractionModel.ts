@@ -68,7 +68,7 @@ export function createGraphCanvasInteractionModel({
 }
 
 export function useGraphCanvasInteractionModel({
-  graph,
+  graph: { edges, nodes },
   matchingNodeIds,
   nodeFilter,
   pendingCitation,
@@ -78,21 +78,13 @@ export function useGraphCanvasInteractionModel({
   return useMemo(
     () =>
       createGraphCanvasInteractionModel({
-        graph,
+        graph: { edges, nodes },
         matchingNodeIds,
         nodeFilter,
         pendingCitation,
         selectedEdgeId,
         selectedNodeIds,
       }),
-    [
-      graph.edges,
-      graph.nodes,
-      matchingNodeIds,
-      nodeFilter,
-      pendingCitation,
-      selectedEdgeId,
-      selectedNodeIds,
-    ]
+    [edges, nodes, matchingNodeIds, nodeFilter, pendingCitation, selectedEdgeId, selectedNodeIds]
   );
 }
