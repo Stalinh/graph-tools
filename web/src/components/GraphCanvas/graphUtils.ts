@@ -48,6 +48,7 @@ export interface CreateGraphNodesOptions {
   connectedNodeIds?: Set<string>;
   images?: Map<string, Blob>;
   nodeFilter?: EntityType | 'locked' | 'all';
+  visibleNodeIds?: Set<string>;
   selectedEdgeActive?: boolean;
   citationSelectionActive?: boolean;
   onNodeMouseDown?: (event: MouseEvent, nodeId: string) => void;
@@ -70,6 +71,7 @@ export function createGraphNodes({
   connectedNodeIds = new Set(),
   images = new Map(),
   nodeFilter = 'all',
+  visibleNodeIds,
   selectedEdgeActive = false,
   citationSelectionActive = false,
   onNodeMouseDown,
@@ -108,11 +110,13 @@ export function createGraphNodes({
     const rfNodeType =
       node.type === 'image' ? 'imageNode' : node.type === 'group' ? 'groupNode' : 'cardNode';
     const isVisibleByFilter =
-      nodeFilter === 'all'
-        ? true
-        : nodeFilter === 'locked'
-          ? Boolean(node.locked)
-          : node.type === nodeFilter;
+      visibleNodeIds !== undefined
+        ? visibleNodeIds.has(node.id)
+        : nodeFilter === 'all'
+          ? true
+          : nodeFilter === 'locked'
+            ? Boolean(node.locked)
+            : node.type === nodeFilter;
 
     const isMatch = !matchingNodeIds || matchingNodeIds.has(node.id);
     const isConnected = connectedNodeIds.has(node.id);

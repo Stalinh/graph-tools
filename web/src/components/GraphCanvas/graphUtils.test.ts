@@ -49,6 +49,7 @@ function createCanvasNodes({
   searchQuery = '',
   selectedEdgeActive = false,
   selectedNodeIds = [],
+  visibleNodeIds,
 }: {
   connectedNodeIds?: Set<string>;
   graphNodes: GraphNode[];
@@ -60,6 +61,7 @@ function createCanvasNodes({
   searchQuery?: string;
   selectedEdgeActive?: boolean;
   selectedNodeIds?: string[];
+  visibleNodeIds?: Set<string>;
 }) {
   return createGraphNodes({
     graphNodes,
@@ -78,6 +80,7 @@ function createCanvasNodes({
     citationSelectionActive: false,
     onNodeMouseDown,
     matchingNodeIds,
+    visibleNodeIds,
     onQuickAddChild,
     onNodeResize,
     onNodeResizeEnd,
@@ -190,6 +193,74 @@ describe('createGraphNodes', () => {
 
     expect(nextNodes[0]).toBe(previousNodes[0]);
     expect(nextNodes[1]).toBe(previousNodes[1]);
+  });
+
+  it('only replaces nodes whose selected state changes', () => {
+    const graphNodes = [cardNode('#1'), cardNode('#2'), cardNode('#3')];
+    const savedNodePositions = createSavedPositions(graphNodes);
+    const savedNodeSizes = createSavedSizes(graphNodes);
+    const previousNodes = createCanvasNodes({
+      graphNodes,
+      savedNodePositions,
+      savedNodeSizes,
+      selectedNodeIds: ['#1'],
+    });
+    const previousNodesById = new Map(previousNodes.map((node) => [node.id, node]));
+
+    const nextNodes = createCanvasNodes({
+      graphNodes,
+      previousNodesById,
+      savedNodePositions,
+      savedNodeSizes,
+      selectedNodeIds: ['#2'],
+    });
+
+    expect(nextNodes[0]).not.toBe(previousNodes[0]);
+    expect(nextNodes[1]).not.toBe(previousNodes[1]);
+    expect(nextNodes[2]).toBe(previousNodes[2]);
+    expect(nextNodes[2].data).toBe(previousNodes[2].data);
+  });
+
+  it('does not rebuild node data when only edge selection dimming changes', () => {
+    const graphNodes = [cardNode('#1'), cardNode('#2'), cardNode('#3')];
+    const savedNodePositions = createSavedPositions(graphNodes);
+    const savedNodeSizes = createSavedSizes(graphNodes);
+    const previousNodes = createCanvasNodes({
+      connectedNodeIds: new Set(['#1', '#2']),
+      graphNodes,
+      savedNodePositions,
+      savedNodeSizes,
+      selectedEdgeActive: true,
+    });
+    const previousNodesById = new Map(previousNodes.map((node) => [node.id, node]));
+
+    const nextNodes = createCanvasNodes({
+      connectedNodeIds: new Set(['#2', '#3']),
+      graphNodes,
+      previousNodesById,
+      savedNodePositions,
+      savedNodeSizes,
+      selectedEdgeActive: true,
+    });
+
+    expect(nextNodes[0]).not.toBe(previousNodes[0]);
+    expect(nextNodes[1]).toBe(previousNodes[1]);
+    expect(nextNodes[2]).not.toBe(previousNodes[2]);
+    expect(nextNodes[0].data).toBe(previousNodes[0].data);
+    expect(nextNodes[2].data).toBe(previousNodes[2].data);
+  });
+
+  it('uses visible node ids for filter dimming when provided', () => {
+    const graphNodes = [cardNode('#1'), cardNode('#2')];
+
+    const nodes = createCanvasNodes({
+      graphNodes,
+      nodeFilter: 'all',
+      visibleNodeIds: new Set(['#1']),
+    });
+
+    expect(nodes[0].className).not.toContain('is-filter-dimmed');
+    expect(nodes[1].className).toContain('is-filter-dimmed');
   });
 
   it('adds executive status classes for selected, locked, and matched nodes', () => {

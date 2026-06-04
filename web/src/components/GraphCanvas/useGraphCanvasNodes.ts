@@ -6,23 +6,19 @@ import {
   useState,
   type MouseEvent as ReactMouseEvent,
 } from 'react';
-import type { CanvasPosition, GraphNode, NodeSize, WorkspaceNodeFilter } from '../../types';
+import type { CanvasPosition, GraphNode, NodeSize } from '../../types';
 import { createGraphNodes } from './graphUtils';
+import type { GraphCanvasInteractionModel } from './useGraphCanvasInteractionModel';
 
 interface UseGraphCanvasNodesOptions {
-  connectedNodeIds: Set<string>;
   dispatchNodeMouseDown: (event: ReactMouseEvent<Element>, nodeId: string) => void;
   graphNodes: GraphNode[];
   images: Map<string, Blob>;
-  matchingNodeIds: Set<string> | null;
-  nodeFilter: WorkspaceNodeFilter;
+  interactionModel: GraphCanvasInteractionModel;
   nodePositions?: Record<string, CanvasPosition>;
   nodeSizes: Record<string, NodeSize>;
-  pendingCitation: boolean;
   quickEditingNodeId: string | null;
   searchQuery: string;
-  selectedEdgeId: string | null;
-  selectedNodeIds: string[];
   onCreateNode: (type: GraphNode['type'], position: CanvasPosition, parentId?: string) => void;
   onGroupNodeResize: (nodeId: string) => void;
   onGroupNodeResizeEnd: (nodeId: string, size: NodeSize) => void;
@@ -35,19 +31,14 @@ interface UseGraphCanvasNodesOptions {
 }
 
 export function useGraphCanvasNodes({
-  connectedNodeIds,
   dispatchNodeMouseDown,
   graphNodes,
   images,
-  matchingNodeIds,
-  nodeFilter,
+  interactionModel,
   nodePositions,
   nodeSizes,
-  pendingCitation,
   quickEditingNodeId,
   searchQuery,
-  selectedEdgeId,
-  selectedNodeIds,
   onCreateNode,
   onGroupNodeResize,
   onGroupNodeResizeEnd,
@@ -71,21 +62,21 @@ export function useGraphCanvasNodes({
   const [nodes, setNodes] = useState<Node[]>(() =>
     createGraphNodes({
       graphNodes,
-      selectedNodeIds,
+      selectedNodeIds: Array.from(interactionModel.selectedNodeIdSet),
       onSelectNode,
       quickEditingNodeId,
       onQuickEditSubmit,
       previousNodesById: new Map(),
       savedNodePositions: nodePositions,
       savedNodeSizes: nodeSizes,
-      searchQuery: '',
-      connectedNodeIds: new Set(),
+      searchQuery,
+      connectedNodeIds: interactionModel.connectedNodeIds,
       images,
-      nodeFilter: 'all',
-      selectedEdgeActive: false,
-      citationSelectionActive: false,
+      visibleNodeIds: interactionModel.visibleNodeIds,
+      selectedEdgeActive: interactionModel.selectedEdgeActive,
+      citationSelectionActive: interactionModel.citationSelectionActive,
       onNodeMouseDown: dispatchNodeMouseDown,
-      matchingNodeIds: null,
+      matchingNodeIds: interactionModel.matchingNodeIds,
       onQuickAddChild: handleQuickAddChild,
       onNodeResize: onGroupNodeResize,
       onNodeResizeEnd: onGroupNodeResizeEnd,
@@ -100,7 +91,7 @@ export function useGraphCanvasNodes({
 
       return createGraphNodes({
         graphNodes,
-        selectedNodeIds,
+        selectedNodeIds: Array.from(interactionModel.selectedNodeIdSet),
         onSelectNode: onSelectNodeRef.current,
         quickEditingNodeId,
         onQuickEditSubmit,
@@ -108,33 +99,28 @@ export function useGraphCanvasNodes({
         savedNodePositions: nodePositions,
         savedNodeSizes: nodeSizes,
         searchQuery,
-        connectedNodeIds,
+        connectedNodeIds: interactionModel.connectedNodeIds,
         images,
-        nodeFilter,
-        selectedEdgeActive: Boolean(selectedEdgeId),
-        citationSelectionActive: pendingCitation,
+        visibleNodeIds: interactionModel.visibleNodeIds,
+        selectedEdgeActive: interactionModel.selectedEdgeActive,
+        citationSelectionActive: interactionModel.citationSelectionActive,
         onNodeMouseDown: dispatchNodeMouseDown,
-        matchingNodeIds,
+        matchingNodeIds: interactionModel.matchingNodeIds,
         onQuickAddChild: handleQuickAddChild,
         onNodeResize: onGroupNodeResize,
         onNodeResizeEnd: onGroupNodeResizeEnd,
       });
     });
   }, [
-    connectedNodeIds,
     dispatchNodeMouseDown,
     graphNodes,
     images,
-    nodeFilter,
+    interactionModel,
     nodePositions,
     nodeSizes,
     onQuickEditSubmit,
     quickEditingNodeId,
     searchQuery,
-    selectedNodeIds,
-    matchingNodeIds,
-    pendingCitation,
-    selectedEdgeId,
     handleQuickAddChild,
     onGroupNodeResize,
     onGroupNodeResizeEnd,

@@ -17,6 +17,7 @@ import { useGraphCanvasCitationSelection } from './GraphCanvas/useGraphCanvasCit
 import { useGraphCanvasContextMenu } from './GraphCanvas/useGraphCanvasContextMenu';
 import { useGraphCanvasDragAutoPan } from './GraphCanvas/useGraphCanvasDragAutoPan';
 import { useGraphCanvasEdges } from './GraphCanvas/useGraphCanvasEdges';
+import { useGraphCanvasInteractionModel } from './GraphCanvas/useGraphCanvasInteractionModel';
 import { useGraphCanvasInteractions } from './GraphCanvas/useGraphCanvasInteractions';
 import { useGraphCanvasMarqueeSelection } from './GraphCanvas/useGraphCanvasMarqueeSelection';
 import { useGraphCanvasNodeDragLifecycle } from './GraphCanvas/useGraphCanvasNodeDragLifecycle';
@@ -126,26 +127,23 @@ export function GraphCanvas({
     selectedNodeIds,
   });
 
-  const connectedNodeIds = useMemo(() => {
-    if (!selectedEdgeId) return new Set<string>();
-    const edge = graph.edges.find((e) => e.id === selectedEdgeId);
-    if (!edge) return new Set<string>();
-    return new Set([edge.sourceId, edge.targetId]);
-  }, [graph.edges, selectedEdgeId]);
+  const interactionModel = useGraphCanvasInteractionModel({
+    graph,
+    matchingNodeIds,
+    nodeFilter,
+    pendingCitation: Boolean(pendingCitation),
+    selectedEdgeId,
+    selectedNodeIds,
+  });
   const { nodes, nodesRef, setNodes } = useGraphCanvasNodes({
-    connectedNodeIds,
     dispatchNodeMouseDown,
     graphNodes: graph.nodes,
     images,
-    matchingNodeIds,
-    nodeFilter,
+    interactionModel,
     nodePositions,
     nodeSizes,
-    pendingCitation: Boolean(pendingCitation),
     quickEditingNodeId,
     searchQuery,
-    selectedEdgeId,
-    selectedNodeIds,
     onCreateNode,
     onGroupNodeResize: handleGroupNodeResize,
     onGroupNodeResizeEnd: handleGroupNodeResizeEnd,
@@ -175,11 +173,11 @@ export function GraphCanvas({
     onViewportChange,
   });
   const edges = useGraphCanvasEdges({
-    connectedNodeIds,
+    connectedNodeIds: interactionModel.connectedNodeIds,
     graphEdges: graph.edges,
     graphNodes: graph.nodes,
     isInteractionActive: isDraggingNodes || isMarqueeSelectionActive,
-    matchingNodeIds,
+    matchingNodeIds: interactionModel.matchingNodeIds,
     nodeFilter,
     selectedEdgeId,
   });
