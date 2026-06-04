@@ -409,14 +409,3 @@
   line-height: 1.5;
   white-space: nowrap;
 }
-
-/* Responsive Toolbar Optimization */
-@media (max-width: 1080px) {
-  .workspace-toolbar__meta,
-  .workspace-toolbar__meta + .toolbar-divider {
-    display: none;
-  }
-  .toolbar-divider {
-    margin: 0 6px;
-  }
-}
