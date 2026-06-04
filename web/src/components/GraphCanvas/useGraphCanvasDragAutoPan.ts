@@ -30,6 +30,7 @@ export function useGraphCanvasDragAutoPan({
   const dragAutoPanFrameRef = useRef<number | null>(null);
   const alignmentGuideFrameRef = useRef<number | null>(null);
   const lastGuidePointRef = useRef<{ x: number; y: number } | null>(null);
+  const hasNotifiedInteractionDragRef = useRef(false);
 
   const stopDragAutoPan = useCallback(() => {
     if (dragAutoPanFrameRef.current !== null) {
@@ -41,6 +42,7 @@ export function useGraphCanvasDragAutoPan({
       alignmentGuideFrameRef.current = null;
     }
     lastGuidePointRef.current = null;
+    hasNotifiedInteractionDragRef.current = false;
   }, []);
 
   const handleNodeDrag = useCallback(
@@ -59,7 +61,10 @@ export function useGraphCanvasDragAutoPan({
         cancelAnimationFrame(dragAutoPanFrameRef.current);
         dragAutoPanFrameRef.current = null;
       }
-      onInteractionDrag();
+      if (!hasNotifiedInteractionDragRef.current) {
+        hasNotifiedInteractionDragRef.current = true;
+        onInteractionDrag();
+      }
       const lastGuidePoint = lastGuidePointRef.current;
       const shouldRefreshGuides =
         !lastGuidePoint ||
@@ -145,7 +150,6 @@ export function useGraphCanvasDragAutoPan({
       reactFlowInstanceRef,
       selectedNodeIds,
       showAlignmentGuidesForNodeIds,
-      stopDragAutoPan,
     ]
   );
 

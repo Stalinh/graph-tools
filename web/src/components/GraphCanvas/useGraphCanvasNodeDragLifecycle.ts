@@ -39,11 +39,12 @@ export function useGraphCanvasNodeDragLifecycle({
       stopDragAutoPan();
       clearAlignmentGuides();
       const currentNodes = nodesRef.current ?? [];
+      const currentNodeById = new Map(
+        currentNodes.map((currentNode) => [currentNode.id, currentNode])
+      );
       if (selectedNodeIds.length > 1 && selectedNodeIds.includes(node.id)) {
         selectedNodeIds.forEach((selectedNodeId) => {
-          const selectedNode = currentNodes.find(
-            (currentNode) => currentNode.id === selectedNodeId
-          );
+          const selectedNode = currentNodeById.get(selectedNodeId);
           if (selectedNode) {
             nodeDragStartPositions.current[selectedNodeId] = { ...selectedNode.position };
           }
@@ -63,7 +64,10 @@ export function useGraphCanvasNodeDragLifecycle({
       setIsDraggingNodes(false);
       const from = nodeDragStartPositions.current[node.id] ?? node.position;
       const currentNodes = nodesRef.current ?? [];
-      const resolvedNode = currentNodes.find((canvasNode) => canvasNode.id === node.id) ?? node;
+      const currentNodeById = new Map(
+        currentNodes.map((currentNode) => [currentNode.id, currentNode])
+      );
+      const resolvedNode = currentNodeById.get(node.id) ?? node;
       const startTime = nodeDragStartTimeRef.current[node.id];
       const dx = Math.abs(resolvedNode.position.x - from.x);
       const dy = Math.abs(resolvedNode.position.y - from.y);
@@ -76,7 +80,7 @@ export function useGraphCanvasNodeDragLifecycle({
       if (selectedNodeIds.length > 1 && selectedNodeIds.includes(node.id)) {
         const moves = selectedNodeIds
           .map((selectedNodeId) => {
-            const currentNode = currentNodes.find((canvasNode) => canvasNode.id === selectedNodeId);
+            const currentNode = currentNodeById.get(selectedNodeId);
             const startPosition = nodeDragStartPositions.current[selectedNodeId];
             if (!currentNode || !startPosition) {
               return null;
