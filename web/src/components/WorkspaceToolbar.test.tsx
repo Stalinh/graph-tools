@@ -13,6 +13,12 @@ interface FileSystemModule {
   readFileSync: (path: string, encoding: 'utf8') => string;
 }
 
+function cssBlock(styles: string, selector: string) {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = styles.match(new RegExp(`${escapedSelector}\\s*\\{(?<body>[^}]*)\\}`, 'u'));
+  return match?.groups?.body ?? '';
+}
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -137,5 +143,13 @@ describe('WorkspaceToolbar', () => {
     expect(workspaceStyles).toContain('overflow-x: auto;');
     expect(searchFilterStyles).not.toContain('.workspace-toolbar__meta');
     expect(searchFilterStyles).not.toContain('.toolbar-divider');
+
+    const executiveSearchDropdown = cssBlock(
+      searchFilterStyles,
+      '.search-results-dropdown--executive'
+    );
+    expect(executiveSearchDropdown).not.toContain('100vw');
+    expect(executiveSearchDropdown).not.toContain('calc(100vw');
+    expect(executiveSearchDropdown).toContain('min-width: 0;');
   });
 });

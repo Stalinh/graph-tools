@@ -214,7 +214,7 @@
 }
 
 .search-results-dropdown--executive {
-  min-width: min(520px, calc(100vw - 80px));
+  min-width: 0;
 }
 
 .search-results-dropdown__header {
