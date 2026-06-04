@@ -9,6 +9,7 @@ const stylePaths = [
   './styles/base.css',
   './styles/sidebar.css',
   './styles/workspace.css',
+  './styles/motion.css',
   './styles/graph-canvas.css',
   './styles/inspector.css',
   './styles/editor-controls.css',
