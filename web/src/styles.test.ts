@@ -19,6 +19,14 @@ function cssBlockAtLineStart(styles: string, selector: string) {
   return match?.groups?.body ?? '';
 }
 
+function normalizeCssForAssertion(value: string) {
+  return value.replace(/\s+/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').trim();
+}
+
+function expectCssToContain(styles: string, expected: string) {
+  expect(normalizeCssForAssertion(styles)).toContain(normalizeCssForAssertion(expected));
+}
+
 const stylePaths = [
   './styles/base.css',
   './styles/sidebar.css',
@@ -131,7 +139,8 @@ describe('styles entrypoint', () => {
     expect(graphNodeHover).toContain('scale: 1;');
 
     const searchMatch = cssBlock(graphCanvasStyles, '.graph-node.is-search-match');
-    expect(searchMatch).toContain(
+    expectCssToContain(
+      searchMatch,
       'border-color: color-mix(in srgb, var(--color-executive-teal) 32%, var(--color-workbench-line) 68%);'
     );
     expect(searchMatch).toContain(
@@ -142,7 +151,8 @@ describe('styles entrypoint', () => {
     );
 
     const edgeConnected = cssBlock(graphCanvasStyles, '.graph-node.is-edge-connected');
-    expect(edgeConnected).toContain(
+    expectCssToContain(
+      edgeConnected,
       'border-color: color-mix(in srgb, var(--color-primary) 36%, var(--color-workbench-line) 64%);'
     );
     expect(edgeConnected).toContain(
@@ -150,7 +160,8 @@ describe('styles entrypoint', () => {
     );
 
     const lockedNode = cssBlock(graphCanvasStyles, '.graph-node.is-locked');
-    expect(lockedNode).toContain(
+    expectCssToContain(
+      lockedNode,
       'border-color: color-mix(in srgb, var(--color-workbench-muted) 42%, var(--color-workbench-line) 58%);'
     );
     expect(lockedNode).toContain(
@@ -163,10 +174,12 @@ describe('styles entrypoint', () => {
     const labelBar = cssBlock(graphCanvasStyles, '.graph-node__label::before');
     expect(labelBar).toContain('opacity: 0.78;');
 
-    expect(graphCanvasStyles).toContain(
+    expectCssToContain(
+      graphCanvasStyles,
       '--graph-node-color-bar: color-mix(in srgb, var(--color-card-amber) 72%, var(--color-workbench-ink) 28%);'
     );
-    expect(graphCanvasStyles).toContain(
+    expectCssToContain(
+      graphCanvasStyles,
       '--graph-node-color-bar: color-mix(in srgb, var(--color-card-purple) 58%, var(--color-workbench-ink) 42%);'
     );
 
