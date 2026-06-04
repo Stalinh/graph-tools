@@ -77,4 +77,82 @@ describe('useGraphCanvasEdges', () => {
 
     expect(result.current[0].data?.isInteractionActive).toBe(true);
   });
+
+  it('reuses edges whose visual state does not change when selection moves', () => {
+    const graphNodes = [cardNode('#1', 'One'), cardNode('#2', 'Two'), cardNode('#3', 'Three')];
+    const graphEdges: GraphData['edges'] = [
+      {
+        ...citationEdge('edge-1', 'solid'),
+        sourceId: '#1',
+        targetId: '#2',
+      },
+      {
+        ...citationEdge('edge-2', 'solid'),
+        sourceId: '#2',
+        targetId: '#3',
+      },
+      {
+        ...citationEdge('edge-3', 'solid'),
+        sourceId: '#3',
+        targetId: '#1',
+      },
+    ];
+
+    const { result, rerender } = renderHook(
+      (props: { selectedEdgeId: string | null }) =>
+        useGraphCanvasEdges({
+          connectedNodeIds:
+            props.selectedEdgeId === 'edge-1'
+              ? new Set(['#1', '#2'])
+              : props.selectedEdgeId === 'edge-2'
+                ? new Set(['#2', '#3'])
+                : new Set<string>(),
+          graphEdges,
+          graphNodes,
+          isInteractionActive: false,
+          matchingNodeIds: null,
+          nodeFilter: 'all',
+          selectedEdgeId: props.selectedEdgeId,
+        }),
+      { initialProps: { selectedEdgeId: 'edge-1' as string | null } }
+    );
+
+    const previousEdges = result.current;
+
+    rerender({ selectedEdgeId: 'edge-2' });
+
+    expect(result.current[0]).not.toBe(previousEdges[0]);
+    expect(result.current[1]).not.toBe(previousEdges[1]);
+    expect(result.current[2]).toBe(previousEdges[2]);
+  });
+
+  it('keeps structural edge fields stable when only interaction activity changes', () => {
+    const graphNodes = [cardNode('#1', 'One'), cardNode('#2', 'Two')];
+    const graphEdges: GraphData['edges'] = [citationEdge('edge-sketch', 'sketch')];
+
+    const { result, rerender } = renderHook(
+      (props: { active: boolean }) =>
+        useGraphCanvasEdges({
+          connectedNodeIds: new Set<string>(),
+          graphEdges,
+          graphNodes,
+          isInteractionActive: props.active,
+          matchingNodeIds: null,
+          nodeFilter: 'all',
+          selectedEdgeId: null,
+        }),
+      { initialProps: { active: false } }
+    );
+
+    const previousEdge = result.current[0];
+
+    rerender({ active: true });
+
+    expect(result.current[0]).not.toBe(previousEdge);
+    expect(result.current[0].id).toBe(previousEdge.id);
+    expect(result.current[0].source).toBe(previousEdge.source);
+    expect(result.current[0].target).toBe(previousEdge.target);
+    expect(result.current[0].type).toBe(previousEdge.type);
+    expect(result.current[0].data?.style).toBe(previousEdge.data?.style);
+  });
 });

@@ -1,5 +1,5 @@
 import type { Edge } from '@xyflow/react';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { normalizeEdgeStyle } from '../../lib/edgeStyles';
 import type { GraphData, GraphNode, WorkspaceNodeFilter } from '../../types';
 import { getEdgeVisualStyle, shouldDimEdgeByFilter } from './graphUtils';
@@ -18,6 +18,36 @@ interface UseGraphCanvasEdgesOptions {
   selectedEdgeId: string | null;
 }
 
+function areEdgeStylesEqual(left: Edge['style'], right: Edge['style']) {
+  return (
+    left?.opacity === right?.opacity &&
+    left?.strokeWidth === right?.strokeWidth &&
+    left?.stroke === right?.stroke
+  );
+}
+
+function areEdgeDataEqual(left: Edge['data'], right: Edge['data']) {
+  return (
+    left?.direction === right?.direction &&
+    left?.selected === right?.selected &&
+    left?.isInteractionActive === right?.isInteractionActive &&
+    left?.color === right?.color &&
+    left?.style === right?.style
+  );
+}
+
+function canReuseEdge(previousEdge: Edge, nextEdge: Edge) {
+  return (
+    previousEdge.source === nextEdge.source &&
+    previousEdge.target === nextEdge.target &&
+    previousEdge.type === nextEdge.type &&
+    previousEdge.interactionWidth === nextEdge.interactionWidth &&
+    previousEdge.className === nextEdge.className &&
+    areEdgeStylesEqual(previousEdge.style, nextEdge.style) &&
+    areEdgeDataEqual(previousEdge.data, nextEdge.data)
+  );
+}
+
 export function useGraphCanvasEdges({
   connectedNodeIds,
   graphEdges,
@@ -27,6 +57,8 @@ export function useGraphCanvasEdges({
   nodeFilter,
   selectedEdgeId,
 }: UseGraphCanvasEdgesOptions) {
+  const previousEdgesByIdRef = useRef<ReadonlyMap<string, Edge>>(new Map());
+
   return useMemo<Edge[]>(() => {
     const filterMatchesNode = (node: GraphNode) => {
       if (nodeFilter === 'all') return true;
@@ -34,8 +66,9 @@ export function useGraphCanvasEdges({
       return node.type === nodeFilter;
     };
     const visibleNodeIds = new Set(graphNodes.filter(filterMatchesNode).map((node) => node.id));
+    const previousEdgesById = previousEdgesByIdRef.current;
 
-    return graphEdges.map((edge) => {
+    const nextEdges = graphEdges.map((edge) => {
       const isDimmed =
         matchingNodeIds !== null &&
         !matchingNodeIds.has(edge.sourceId) &&
@@ -49,7 +82,7 @@ export function useGraphCanvasEdges({
         isDimmedByFilter: isHiddenByFilter,
       });
 
-      return {
+      const nextEdge: Edge = {
         id: edge.id,
         source: edge.sourceId,
         target: edge.targetId,
@@ -69,7 +102,26 @@ export function useGraphCanvasEdges({
           strokeWidth: visualStyle.strokeWidth,
         },
       };
+
+      const previousEdge = previousEdgesById.get(nextEdge.id);
+      if (!previousEdge) {
+        return nextEdge;
+      }
+
+      if (areEdgeStylesEqual(previousEdge.style, nextEdge.style)) {
+        nextEdge.style = previousEdge.style;
+      }
+
+      if (areEdgeDataEqual(previousEdge.data, nextEdge.data)) {
+        nextEdge.data = previousEdge.data;
+      }
+
+      return canReuseEdge(previousEdge, nextEdge) ? previousEdge : nextEdge;
     });
+
+    previousEdgesByIdRef.current = new Map(nextEdges.map((edge) => [edge.id, edge]));
+
+    return nextEdges;
   }, [
     connectedNodeIds,
     graphEdges,
