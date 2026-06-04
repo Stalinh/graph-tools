@@ -115,6 +115,28 @@ describe('styles entrypoint', () => {
     expect(selectedNode).toContain(
       '0 0 0 3px color-mix(in srgb, var(--color-primary) 24%, transparent)'
     );
+
+    const alignmentGuide = cssBlock(graphCanvasStyles, '.alignment-guide');
+    expect(alignmentGuide).toContain('--alignment-guide-thickness: 1px;');
+    expect(alignmentGuide).toContain(
+      '--alignment-guide-color: color-mix(in srgb, var(--color-executive-teal) 58%, white 18%);'
+    );
+    expect(alignmentGuide).toContain(
+      'filter: drop-shadow(0 0 0.75px color-mix(in srgb, var(--color-executive-teal) 22%, transparent));'
+    );
+    expect(alignmentGuide).toContain('opacity: 0.92;');
+
+    const verticalGuide = cssBlock(graphCanvasStyles, '.alignment-guide--vertical');
+    expect(verticalGuide).toContain('width: var(--alignment-guide-thickness);');
+    expect(verticalGuide).toContain('background-image: linear-gradient(');
+    expect(verticalGuide).toContain('transparent 10px,');
+    expect(verticalGuide).toContain('var(--alignment-guide-color) calc(100% - 10px),');
+
+    const horizontalGuide = cssBlock(graphCanvasStyles, '.alignment-guide--horizontal');
+    expect(horizontalGuide).toContain('height: var(--alignment-guide-thickness);');
+    expect(horizontalGuide).toContain('background-image: linear-gradient(');
+    expect(horizontalGuide).toContain('transparent 10px,');
+    expect(horizontalGuide).toContain('var(--alignment-guide-color) calc(100% - 10px),');
   });
 
   it('scopes sidebar icon button colors to the rail', async () => {

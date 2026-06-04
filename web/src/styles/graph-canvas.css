@@ -44,29 +44,39 @@
 }
 
 .alignment-guide {
-  --alignment-guide-color: color-mix(in srgb, var(--color-accent) 82%, transparent);
+  --alignment-guide-thickness: 1px;
+  --alignment-guide-color: color-mix(in srgb, var(--color-executive-teal) 58%, white 18%);
   position: absolute;
   display: block;
   background: transparent;
-  filter: drop-shadow(0 0 1px color-mix(in srgb, var(--color-accent) 32%, transparent));
+  filter: drop-shadow(0 0 0.75px color-mix(in srgb, var(--color-executive-teal) 22%, transparent));
+  opacity: 0.92;
 }
 
 .alignment-guide--vertical {
-  width: 1px;
-  background-image: repeating-linear-gradient(
+  width: var(--alignment-guide-thickness);
+  background-image: linear-gradient(
     to bottom,
-    var(--alignment-guide-color) 0 7px,
-    transparent 7px 12px
+    transparent 0,
+    transparent 10px,
+    var(--alignment-guide-color) 10px,
+    var(--alignment-guide-color) calc(100% - 10px),
+    transparent calc(100% - 10px),
+    transparent 100%
   );
   transform: translateX(-0.5px);
 }
 
 .alignment-guide--horizontal {
-  height: 1px;
-  background-image: repeating-linear-gradient(
+  height: var(--alignment-guide-thickness);
+  background-image: linear-gradient(
     to right,
-    var(--alignment-guide-color) 0 7px,
-    transparent 7px 12px
+    transparent 0,
+    transparent 10px,
+    var(--alignment-guide-color) 10px,
+    var(--alignment-guide-color) calc(100% - 10px),
+    transparent calc(100% - 10px),
+    transparent 100%
   );
   transform: translateY(-0.5px);
 }
