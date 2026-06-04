@@ -4,6 +4,10 @@
   will-change: transform, opacity;
 }
 
+.graph-zone--executive {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
 .graph-zone__canvas-wrap {
   display: grid;
   min-width: 0;

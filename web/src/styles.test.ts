@@ -35,4 +35,13 @@ describe('styles entrypoint', () => {
       expect(readFileSync(styleUrl, 'utf8').trim().length).toBeGreaterThan(0);
     }
   });
+
+  it('keeps executive workbench canvas in the flexible grid row', async () => {
+    // @ts-expect-error Vitest runs this structural test in Node, while app types stay browser-only.
+    const { readFileSync } = (await import('node:fs')) as FileSystemModule;
+    const motionStyles = readFileSync(new URL('./styles/motion.css', import.meta.url), 'utf8');
+
+    expect(motionStyles).toContain('.graph-zone--executive');
+    expect(motionStyles).toContain('grid-template-rows: auto auto minmax(0, 1fr);');
+  });
 });
