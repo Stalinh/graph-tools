@@ -134,8 +134,8 @@
 }
 
 .graph-canvas-panel--status {
-  max-width: min(420px, calc(100vw - 32px));
-  padding: 7px 8px;
+  max-width: min(360px, 100%);
+  padding: 8px 10px;
 }
 
 .graph-canvas-panel--citation-pending {
@@ -147,16 +147,19 @@
 
 .graph-canvas-panel--executive-status {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  max-width: min(360px, 100%);
+  gap: 3px 8px;
   align-items: center;
   color: var(--color-text);
+  padding: 8px 10px;
 }
 
 .graph-canvas-panel__status-kicker {
+  grid-column: 1 / -1;
   color: var(--color-workbench-muted);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 850;
   letter-spacing: 0;
   line-height: 1;
   text-transform: uppercase;
@@ -179,24 +182,20 @@
   align-items: center;
   justify-content: center;
   min-width: 52px;
-  border: 1px solid color-mix(in srgb, var(--color-success) 42%, var(--color-workbench-line) 58%);
-  border-radius: 7px;
-  padding: 4px 7px;
-  color: var(--color-success);
+  border: 1px solid color-mix(in srgb, var(--color-executive-teal) 30%, transparent);
+  border-radius: 999px;
+  padding: 2px 7px;
+  color: var(--color-executive-teal);
   background: color-mix(in srgb, var(--color-success) 10%, var(--color-workbench-panel) 90%);
   font-size: 10px;
-  font-weight: 800;
-  line-height: 1;
+  font-weight: 850;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
 .graph-canvas-panel__status-pill.is-dirty {
-  border-color: color-mix(
-    in srgb,
-    var(--color-executive-amber) 58%,
-    var(--color-workbench-line) 42%
-  );
-  color: color-mix(in srgb, var(--color-executive-amber) 74%, var(--color-text) 26%);
+  border-color: color-mix(in srgb, var(--color-executive-amber) 44%, transparent);
+  color: var(--color-executive-amber);
   background: color-mix(
     in srgb,
     var(--color-executive-amber) 14%,
@@ -277,10 +276,12 @@
 
 .graph-node.is-selected {
   outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+  outline-offset: -2px;
   border-color: var(--color-primary);
-  background: var(--color-node-bg-selected, var(--color-workbench-panel));
-  box-shadow: var(--shadow-workbench-node), var(--shadow-focus);
+  background: var(--color-node-bg-selected, var(--color-node-bg));
+  box-shadow:
+    var(--shadow-workbench-node),
+    0 0 0 3px color-mix(in srgb, var(--color-primary) 24%, transparent);
   translate: 0 -1px;
 }
 

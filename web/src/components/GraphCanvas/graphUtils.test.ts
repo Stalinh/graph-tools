@@ -184,4 +184,36 @@ describe('createGraphNodes', () => {
     expect(nodes[0].className).toContain('is-search-match');
     expect(nodes[1].className).toContain('is-search-dimmed');
   });
+
+  it('replaces legacy nodes once before reusing executive nodes', () => {
+    const graphNodes = [cardNode('#1')];
+    const savedNodePositions = createSavedPositions(graphNodes);
+    const savedNodeSizes = createSavedSizes(graphNodes);
+    const executiveNodes = createCanvasNodes({
+      graphNodes,
+      savedNodePositions,
+      savedNodeSizes,
+    });
+    const legacyNode = {
+      ...executiveNodes[0],
+      className: executiveNodes[0].className?.replace('graph-node--executive ', ''),
+    };
+
+    const upgradedNodes = createCanvasNodes({
+      graphNodes,
+      previousNodesById: new Map([[legacyNode.id, legacyNode]]),
+      savedNodePositions,
+      savedNodeSizes,
+    });
+    const reusedNodes = createCanvasNodes({
+      graphNodes,
+      previousNodesById: new Map([[upgradedNodes[0].id, upgradedNodes[0]]]),
+      savedNodePositions,
+      savedNodeSizes,
+    });
+
+    expect(upgradedNodes[0]).not.toBe(legacyNode);
+    expect(upgradedNodes[0].className).toContain('graph-node--executive');
+    expect(reusedNodes[0]).toBe(upgradedNodes[0]);
+  });
 });

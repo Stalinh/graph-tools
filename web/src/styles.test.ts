@@ -5,6 +5,12 @@ interface FileSystemModule {
   readFileSync: (path: URL, encoding: 'utf8') => string;
 }
 
+function cssBlock(styles: string, selector: string) {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = styles.match(new RegExp(`${escapedSelector}\\s*\\{(?<body>[^}]*)\\}`, 'u'));
+  return match?.groups?.body ?? '';
+}
+
 const stylePaths = [
   './styles/base.css',
   './styles/sidebar.css',
@@ -55,6 +61,52 @@ describe('styles entrypoint', () => {
     expect(baseStyles).toContain('--color-executive-red: #c1121f;');
     expect(baseStyles).toContain('--shadow-workbench-panel:');
     expect(baseStyles).toContain('--shadow-workbench-node:');
+  });
+
+  it('keeps graph canvas executive chrome aligned to the workbench plan', async () => {
+    // @ts-expect-error Vitest runs this structural test in Node, while app types stay browser-only.
+    const { readFileSync } = (await import('node:fs')) as FileSystemModule;
+    const graphCanvasStyles = readFileSync(
+      new URL('./styles/graph-canvas.css', import.meta.url),
+      'utf8'
+    );
+
+    const statusPanel = cssBlock(graphCanvasStyles, '.graph-canvas-panel--executive-status');
+    expect(statusPanel).toContain('display: grid;');
+    expect(statusPanel).toContain('grid-template-columns: minmax(0, 1fr) auto;');
+    expect(statusPanel).toContain('max-width: min(360px, 100%);');
+    expect(statusPanel).toContain('gap: 3px 8px;');
+    expect(statusPanel).toContain('padding: 8px 10px;');
+    expect(statusPanel).not.toContain('100vw');
+
+    const statusKicker = cssBlock(graphCanvasStyles, '.graph-canvas-panel__status-kicker');
+    expect(statusKicker).toContain('grid-column: 1 / -1;');
+    expect(statusKicker).toContain('font-weight: 850;');
+
+    const statusPill = cssBlock(graphCanvasStyles, '.graph-canvas-panel__status-pill');
+    expect(statusPill).toContain(
+      'border: 1px solid color-mix(in srgb, var(--color-executive-teal) 30%, transparent);'
+    );
+    expect(statusPill).toContain('border-radius: 999px;');
+    expect(statusPill).toContain('padding: 2px 7px;');
+    expect(statusPill).toContain('color: var(--color-executive-teal);');
+    expect(statusPill).toContain('font-weight: 850;');
+    expect(statusPill).toContain('line-height: 1.2;');
+
+    const dirtyPill = cssBlock(graphCanvasStyles, '.graph-canvas-panel__status-pill.is-dirty');
+    expect(dirtyPill).toContain(
+      'border-color: color-mix(in srgb, var(--color-executive-amber) 44%, transparent);'
+    );
+    expect(dirtyPill).toContain('color: var(--color-executive-amber);');
+
+    const selectedNode = cssBlock(graphCanvasStyles, '.graph-node.is-selected');
+    expect(selectedNode).toContain('outline-offset: -2px;');
+    expect(selectedNode).toContain(
+      'background: var(--color-node-bg-selected, var(--color-node-bg));'
+    );
+    expect(selectedNode).toContain(
+      '0 0 0 3px color-mix(in srgb, var(--color-primary) 24%, transparent)'
+    );
   });
 
   it('scopes sidebar icon button colors to the rail', async () => {
