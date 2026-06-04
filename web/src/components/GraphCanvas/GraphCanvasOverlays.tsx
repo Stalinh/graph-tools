@@ -6,7 +6,7 @@ import type {
   GraphData,
 } from '../../types';
 import { GraphContextMenu } from './GraphContextMenu';
-import type { AlignmentGuide } from './canvasInteractionUtils';
+import type { AlignmentGuide, ScreenRect } from './canvasInteractionUtils';
 
 interface GraphCanvasAlignmentGuidesProps {
   alignmentGuides: AlignmentGuide[];
@@ -14,6 +14,10 @@ interface GraphCanvasAlignmentGuidesProps {
 
 interface GraphCanvasPendingCitationPanelProps {
   message: string;
+}
+
+interface GraphCanvasMarqueeSelectionOverlayProps {
+  selectionRect: ScreenRect | null;
 }
 
 interface GraphCanvasContextMenuOverlayProps {
@@ -66,6 +70,27 @@ export function GraphCanvasPendingCitationPanel({ message }: GraphCanvasPendingC
     >
       {message}
     </div>
+  );
+}
+
+export function GraphCanvasMarqueeSelectionOverlay({
+  selectionRect,
+}: GraphCanvasMarqueeSelectionOverlayProps) {
+  if (!selectionRect) {
+    return null;
+  }
+
+  return (
+    <div
+      aria-hidden="true"
+      className="graph-canvas-marquee"
+      style={{
+        left: selectionRect.left,
+        top: selectionRect.top,
+        width: selectionRect.right - selectionRect.left,
+        height: selectionRect.bottom - selectionRect.top,
+      }}
+    />
   );
 }
 

@@ -1,6 +1,6 @@
 import { ReactFlow, type ReactFlowInstance } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useCallback, useMemo, useRef, type MouseEvent as ReactMouseEvent } from 'react';
+import { useCallback, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { useI18n } from '../i18n';
 import type { CanvasPosition, EntityType } from '../types';
 
@@ -9,6 +9,7 @@ import { GraphCanvasFlowPanels } from './GraphCanvas/GraphCanvasFlowPanels';
 import {
   GraphCanvasAlignmentGuides,
   GraphCanvasContextMenuOverlay,
+  GraphCanvasMarqueeSelectionOverlay,
 } from './GraphCanvas/GraphCanvasOverlays';
 import { EDGE_TYPES, EMPTY_NODE_SIZES, NODE_TYPES } from './GraphCanvas/graphCanvasConfig';
 import { useGraphCanvasAlignmentGuides } from './GraphCanvas/useGraphCanvasAlignmentGuides';
@@ -62,6 +63,7 @@ export function GraphCanvas({
   const { isZh } = useI18n();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
+  const [isMarqueeSelectionActive, setIsMarqueeSelectionActive] = useState(false);
   const handleNodeMouseDownRef = useRef<
     ((event: ReactMouseEvent<Element>, nodeId: string) => void) | null
   >(null);
@@ -99,6 +101,9 @@ export function GraphCanvas({
   });
   const { handleNodeDrag, stopDragAutoPan } = useGraphCanvasDragAutoPan({
     containerRef,
+    onInteractionDrag: () => {
+      setIsDraggingNodes(true);
+    },
     reactFlowInstanceRef,
     selectedNodeIds,
     showAlignmentGuidesForNodeIds,
@@ -109,11 +114,13 @@ export function GraphCanvas({
     handleMouseUpCapture,
     handleSelectionEnd,
     handleSelectionStart,
+    selectionRect,
     selectionDragRef,
     selectionMode,
   } = useGraphCanvasMarqueeSelection({
     containerRef,
     graphNodes: graph.nodes,
+    setIsMarqueeSelectionActive,
     onEdgeSelect,
     onSelectNodeIds,
     selectedNodeIds,
@@ -145,15 +152,20 @@ export function GraphCanvas({
     onQuickEditSubmit,
     onSelectNode,
   });
-  const { handleNodeDragStart, handleNodeDragStop, hasJustDraggedRef } =
-    useGraphCanvasNodeDragLifecycle({
-      clearAlignmentGuides,
-      nodesRef,
-      onNodeDragEnd,
-      onNodesDragEnd,
-      selectedNodeIds,
-      stopDragAutoPan,
-    });
+  const {
+    handleNodeDragStart,
+    handleNodeDragStop,
+    hasJustDraggedRef,
+    isDraggingNodes,
+    setIsDraggingNodes,
+  } = useGraphCanvasNodeDragLifecycle({
+    clearAlignmentGuides,
+    nodesRef,
+    onNodeDragEnd,
+    onNodesDragEnd,
+    selectedNodeIds,
+    stopDragAutoPan,
+  });
   const viewportHandlers = useGraphCanvasViewport({
     focusNodeId,
     nodes,
@@ -166,6 +178,7 @@ export function GraphCanvas({
     connectedNodeIds,
     graphEdges: graph.edges,
     graphNodes: graph.nodes,
+    isInteractionActive: isDraggingNodes || isMarqueeSelectionActive,
     matchingNodeIds,
     nodeFilter,
     selectedEdgeId,
@@ -225,7 +238,7 @@ export function GraphCanvas({
         autoPanOnNodeDrag={false}
         panOnDrag={[1]}
         selectionMode={selectionMode}
-        selectionOnDrag
+        selectionOnDrag={false}
         onAuxClick={interactionHandlers.handleCanvasAuxClick}
         onInit={(instance) => {
           reactFlowInstanceRef.current = instance;
@@ -262,6 +275,7 @@ export function GraphCanvas({
           onZoomReset={viewportHandlers.handleZoomReset}
         />
       </ReactFlow>
+      <GraphCanvasMarqueeSelectionOverlay selectionRect={selectionRect} />
       <GraphCanvasAlignmentGuides alignmentGuides={alignmentGuides} />
       <GraphCanvasContextMenuOverlay
         contextMenu={contextMenu}

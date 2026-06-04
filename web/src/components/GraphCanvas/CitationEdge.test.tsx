@@ -50,6 +50,7 @@ function renderCitationEdge(style: EdgeStyle | undefined) {
       selected: false,
       style,
       color: 'amber',
+      isInteractionActive: false,
     },
   } as ComponentProps<typeof CitationEdge>;
 
@@ -80,5 +81,36 @@ describe('CitationEdge', () => {
         ?.getAttribute('stroke-dasharray')
     ).toBe('15 7 3 6');
     expect(legacy.container.querySelector('.graph-edge--style-note-dash')).not.toBeNull();
+  });
+
+  it('degrades sketch edges during interaction without extra sketch paths', () => {
+    const props = {
+      id: 'edge-sketch-interaction',
+      source: '#1',
+      target: '#2',
+      sourceX: 40,
+      sourceY: 40,
+      targetX: 160,
+      targetY: 40,
+      interactionWidth: 40,
+      style: { strokeWidth: 1.8, opacity: 1 },
+      data: {
+        direction: 'unidirectional',
+        selected: false,
+        style: 'sketch',
+        color: 'amber',
+        isInteractionActive: true,
+      },
+    } as ComponentProps<typeof CitationEdge>;
+
+    const { container } = render(
+      <svg>
+        <CitationEdge {...props} />
+      </svg>
+    );
+
+    expect(container.querySelector('.graph-edge--style-solid')).not.toBeNull();
+    expect(container.querySelectorAll('.edge-visible-path--secondary')).toHaveLength(0);
+    expect(container.querySelectorAll('.edge-selected-halo')).toHaveLength(0);
   });
 });

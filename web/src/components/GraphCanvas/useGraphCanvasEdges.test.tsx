@@ -44,6 +44,7 @@ describe('useGraphCanvasEdges', () => {
         connectedNodeIds: new Set<string>(),
         graphEdges,
         graphNodes,
+        isInteractionActive: false,
         matchingNodeIds: null,
         nodeFilter: 'all',
         selectedEdgeId: null,
@@ -56,5 +57,24 @@ describe('useGraphCanvasEdges', () => {
       'note-dash',
       'note-dash',
     ]);
+  });
+
+  it('marks edges as interaction-active during canvas interactions', () => {
+    const graphNodes = [cardNode('#1', 'One'), cardNode('#2', 'Two')];
+    const graphEdges: GraphData['edges'] = [citationEdge('edge-sketch', 'sketch')];
+
+    const { result } = renderHook(() =>
+      useGraphCanvasEdges({
+        connectedNodeIds: new Set<string>(),
+        graphEdges,
+        graphNodes,
+        isInteractionActive: true,
+        matchingNodeIds: null,
+        nodeFilter: 'all',
+        selectedEdgeId: null,
+      })
+    );
+
+    expect(result.current[0].data?.isInteractionActive).toBe(true);
   });
 });

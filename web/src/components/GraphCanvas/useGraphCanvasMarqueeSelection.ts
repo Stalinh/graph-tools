@@ -11,6 +11,7 @@ import {
   containsRect,
   getScreenRect,
   intersectsRect,
+  type ScreenRect,
   type ScreenPoint,
 } from './canvasInteractionUtils';
 
@@ -20,6 +21,7 @@ export interface MarqueeSelectionDrag {
   baseSelectedNodeIds: string[];
   currentX: number;
   currentY: number;
+  nodeRects: Array<{ nodeId: string; rect: ScreenRect }>;
   startX: number;
   startY: number;
 }
@@ -28,6 +30,7 @@ interface UseGraphCanvasMarqueeSelectionOptions {
   containerRef: RefObject<HTMLDivElement | null>;
   graphNodes: GraphNode[];
   selectedNodeIds: string[];
+  setIsMarqueeSelectionActive?: (active: boolean) => void;
   onEdgeSelect: (edgeId: string | null) => void;
   onSelectNodeIds: (nodeIds: string[]) => void;
 }
@@ -36,16 +39,55 @@ export function useGraphCanvasMarqueeSelection({
   containerRef,
   graphNodes,
   selectedNodeIds,
+  setIsMarqueeSelectionActive,
   onEdgeSelect,
   onSelectNodeIds,
 }: UseGraphCanvasMarqueeSelectionOptions) {
   const selectionDragRef = useRef<MarqueeSelectionDrag | null>(null);
-  const [selectionMode, setSelectionMode] = useState<SelectionMode>(SelectionMode.Full);
+  const [selectionMode] = useState<SelectionMode>(SelectionMode.Full);
+
+  const snapshotNodeRects = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) {
+      return [];
+    }
+
+    const graphNodeIds = new Set(graphNodes.map((node) => node.id));
+
+    return Array.from(container.querySelectorAll<HTMLElement>('.react-flow__node[data-id]'))
+      .flatMap((element) => {
+        const nodeId = element.getAttribute('data-id');
+        if (!nodeId || !graphNodeIds.has(nodeId)) {
+          return [];
+        }
+
+        const bounds = element.getBoundingClientRect();
+        if (bounds.width <= 0 || bounds.height <= 0) {
+          return [];
+        }
+
+        return [
+          {
+            nodeId,
+            rect: {
+              bottom: bounds.bottom,
+              left: bounds.left,
+              right: bounds.right,
+              top: bounds.top,
+            },
+          },
+        ];
+      })
+      .sort(
+        (left, right) =>
+          graphNodes.findIndex((node) => node.id === left.nodeId) -
+          graphNodes.findIndex((node) => node.id === right.nodeId)
+      );
+  }, [containerRef, graphNodes]);
 
   const getMarqueeSelectedNodeIds = useCallback(
     (selectionDrag: MarqueeSelectionDrag) => {
-      const container = containerRef.current;
-      if (!container) {
+      if (selectionDrag.nodeRects.length === 0) {
         return [];
       }
 
@@ -54,26 +96,9 @@ export function useGraphCanvasMarqueeSelection({
         { x: selectionDrag.currentX, y: selectionDrag.currentY }
       );
       const requiresFullContainment = selectionDrag.currentX >= selectionDrag.startX;
-      const graphNodeIds = new Set(graphNodes.map((node) => node.id));
       const selectedIds = new Set<string>();
 
-      container.querySelectorAll<HTMLElement>('.react-flow__node[data-id]').forEach((element) => {
-        const nodeId = element.getAttribute('data-id');
-        if (!nodeId || !graphNodeIds.has(nodeId)) {
-          return;
-        }
-
-        const bounds = element.getBoundingClientRect();
-        if (bounds.width <= 0 || bounds.height <= 0) {
-          return;
-        }
-
-        const nodeRect = {
-          bottom: bounds.bottom,
-          left: bounds.left,
-          right: bounds.right,
-          top: bounds.top,
-        };
+      selectionDrag.nodeRects.forEach(({ nodeId, rect: nodeRect }) => {
         const isHit = requiresFullContainment
           ? containsRect(selectionRect, nodeRect)
           : intersectsRect(selectionRect, nodeRect);
@@ -88,11 +113,20 @@ export function useGraphCanvasMarqueeSelection({
     [containerRef, graphNodes]
   );
 
+  const selectionRect =
+    selectionDragRef.current?.active &&
+    selectionDragRef.current.currentX !== selectionDragRef.current.startX
+      ? getScreenRect(
+          { x: selectionDragRef.current.startX, y: selectionDragRef.current.startY },
+          { x: selectionDragRef.current.currentX, y: selectionDragRef.current.currentY }
+        )
+      : null;
+
   const commitSelectionDrag = useCallback(() => {
     const selectionDrag = selectionDragRef.current;
     if (!selectionDrag?.active) {
       selectionDragRef.current = null;
-      setSelectionMode(SelectionMode.Full);
+      setIsMarqueeSelectionActive?.(false);
       return;
     }
 
@@ -105,8 +139,8 @@ export function useGraphCanvasMarqueeSelection({
     }
 
     selectionDragRef.current = null;
-    setSelectionMode(SelectionMode.Full);
-  }, [getMarqueeSelectedNodeIds, onEdgeSelect, onSelectNodeIds]);
+    setIsMarqueeSelectionActive?.(false);
+  }, [getMarqueeSelectedNodeIds, onEdgeSelect, onSelectNodeIds, setIsMarqueeSelectionActive]);
 
   const updateSelectionDragPoint = (point: ScreenPoint) => {
     const selectionDrag = selectionDragRef.current;
@@ -135,6 +169,7 @@ export function useGraphCanvasMarqueeSelection({
         baseSelectedNodeIds: selectedNodeIds,
         currentX: event.clientX,
         currentY: event.clientY,
+        nodeRects: [],
         startX: event.clientX,
         startY: event.clientY,
       };
@@ -154,34 +189,31 @@ export function useGraphCanvasMarqueeSelection({
     if (distanceX < 4 && distanceY < 4) {
       return;
     }
-
-    setSelectionMode(
-      event.clientX >= selectionDrag.startX ? SelectionMode.Full : SelectionMode.Partial
-    );
   }, []);
 
-  const handleMouseUpCapture = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
-    updateSelectionDragPoint({ x: event.clientX, y: event.clientY });
-    const selectionDrag = selectionDragRef.current;
-    if (!selectionDrag) {
-      return;
-    }
+  const handleMouseUpCapture = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      updateSelectionDragPoint({ x: event.clientX, y: event.clientY });
+      const selectionDrag = selectionDragRef.current;
+      if (!selectionDrag) {
+        return;
+      }
 
-    if (!selectionDrag.active) {
-      selectionDragRef.current = null;
-      setSelectionMode(SelectionMode.Full);
-    }
-  }, []);
+      if (!selectionDrag.active) {
+        selectionDragRef.current = null;
+        setIsMarqueeSelectionActive?.(false);
+      }
+    },
+    [setIsMarqueeSelectionActive]
+  );
 
   const handleSelectionStart = useCallback(() => {
     if (selectionDragRef.current) {
       selectionDragRef.current.active = true;
-      if (!selectionDragRef.current.additive) {
-        onEdgeSelect(null);
-        onSelectNodeIds([]);
-      }
+      selectionDragRef.current.nodeRects = snapshotNodeRects();
+      setIsMarqueeSelectionActive?.(true);
     }
-  }, [onEdgeSelect, onSelectNodeIds]);
+  }, [setIsMarqueeSelectionActive, snapshotNodeRects]);
 
   const handleSelectionEnd = useCallback(
     (event: ReactMouseEvent) => {
@@ -197,6 +229,8 @@ export function useGraphCanvasMarqueeSelection({
     handleMouseUpCapture,
     handleSelectionEnd,
     handleSelectionStart,
+    isMarqueeSelectionActive: Boolean(selectionDragRef.current?.active),
+    selectionRect,
     selectionDragRef,
     selectionMode,
   };

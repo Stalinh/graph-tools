@@ -9,19 +9,22 @@
   width: 24px;
   height: 24px;
   border-radius: 6px;
-  border: 2px solid transparent;
+  border: 1px solid color-mix(in srgb, var(--color-workbench-line) 82%, transparent);
   cursor: pointer;
   padding: 0;
   background: var(--swatch-color);
+  box-shadow: 0 4px 10px rgba(15, 36, 63, 0.04);
 }
 
 .color-swatch.is-active {
-  border-color: var(--color-text);
-  box-shadow: 0 0 0 1px var(--color-bg);
+  border-color: color-mix(in srgb, var(--color-primary) 52%, var(--color-workbench-line) 48%);
+  box-shadow:
+    0 4px 10px rgba(15, 36, 63, 0.04),
+    0 0 0 2px color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 
 .color-swatch[aria-checked='true'] {
-  border-color: var(--color-text);
+  border-color: color-mix(in srgb, var(--color-primary) 52%, var(--color-workbench-line) 48%);
 }
 
 .color-swatch--default {

@@ -5,6 +5,7 @@ import type { EdgeDirection, EdgeStyle } from '../../types';
 
 type CitationEdgeData = Record<string, unknown> & {
   direction?: EdgeDirection;
+  isInteractionActive?: boolean;
   selected?: boolean;
   style?: EdgeStyle;
   color?: string;
@@ -81,6 +82,20 @@ const ARROW_NODE_GAP = 1;
 const ARROW_LENGTH = ARROW_SIZE * 1.4;
 const ARROW_LINE_GAP = 2;
 const DEFAULT_STROKE_WIDTH = 1.8;
+
+const domNodeSizeCache = new Map<string, { width: number; height: number }>();
+const MAX_CACHE_SIZE = 1000;
+
+function updateCache(nodeId: string, size: { width: number; height: number }) {
+  if (domNodeSizeCache.size >= MAX_CACHE_SIZE && !domNodeSizeCache.has(nodeId)) {
+    const firstKey = domNodeSizeCache.keys().next().value;
+    if (firstKey !== undefined) {
+      domNodeSizeCache.delete(firstKey);
+    }
+  }
+  domNodeSizeCache.set(nodeId, size);
+}
+
 export function CitationEdge({
   id,
   source,
@@ -99,7 +114,9 @@ export function CitationEdge({
 
   const edgeData = toCitationEdgeData(data);
   const direction: EdgeDirection = edgeData.direction ?? 'unidirectional';
+  const isInteractionActive = Boolean(edgeData.isInteractionActive);
   const edgeStyle = normalizeEdgeStyle(edgeData.style);
+  const renderedEdgeStyle = isInteractionActive && edgeStyle === 'sketch' ? 'solid' : edgeStyle;
   const isSelected = Boolean(edgeData.selected);
   const sourceBox = getCitationNodeBox(sourceNode, source, store);
   const targetBox = getCitationNodeBox(targetNode, target, store);
@@ -136,28 +153,32 @@ export function CitationEdge({
   const visiblePath =
     `M${visibleSource.x},${visibleSource.y} C${control1.x},${control1.y} ` +
     `${control2.x},${control2.y} ${targetLineEnd.x},${targetLineEnd.y}`;
-  const sketchPaths = getSketchPaths(id, visiblePath);
-  const strokeDasharray = edgeStyle === 'note-dash' ? '15 7 3 6' : undefined;
+  const sketchPaths =
+    renderedEdgeStyle === 'sketch' && !isInteractionActive ? getSketchPaths(id, visiblePath) : [];
+  const strokeDasharray = renderedEdgeStyle === 'note-dash' ? '15 7 3 6' : undefined;
+  const shouldRenderSelectionHalo = !isInteractionActive;
 
   return (
     <>
       <g
         className={
-          `react-flow__edge graph-edge graph-edge--citation graph-edge--style-${edgeStyle}` +
+          `react-flow__edge graph-edge graph-edge--citation graph-edge--style-${renderedEdgeStyle}` +
           `${direction === 'bidirectional' ? ' graph-edge--bidirectional' : ''}`
         }
         opacity={opacity}
       >
-        <path
-          d={visiblePath}
-          fill="none"
-          stroke={edgeColor}
-          strokeWidth={Math.max(strokeWidth * 4, 10)}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="edge-selected-halo"
-          style={{ pointerEvents: 'none' }}
-        />
+        {shouldRenderSelectionHalo ? (
+          <path
+            d={visiblePath}
+            fill="none"
+            stroke={edgeColor}
+            strokeWidth={Math.max(strokeWidth * 4, 10)}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="edge-selected-halo"
+            style={{ pointerEvents: 'none' }}
+          />
+        ) : null}
         <path
           d={visiblePath}
           fill="none"
@@ -169,7 +190,7 @@ export function CitationEdge({
           strokeDasharray={strokeDasharray}
           style={{ pointerEvents: 'none' }}
         />
-        {edgeStyle === 'sketch' ? (
+        {renderedEdgeStyle === 'sketch' ? (
           <>
             {sketchPaths.map((path, index) => (
               <path
@@ -234,6 +255,7 @@ function getCitationNodeBox(
   const width = getNodeDimension(node, 'width');
   const height = getNodeDimension(node, 'height');
   if (width !== null && height !== null) {
+    updateCache(nodeId, { width, height });
     return {
       x: node.internals.positionAbsolute.x,
       y: node.internals.positionAbsolute.y,
@@ -265,6 +287,10 @@ function toCitationEdgeData(value: unknown): CitationEdgeData {
       candidate.direction === 'bidirectional' || candidate.direction === 'unidirectional'
         ? candidate.direction
         : undefined,
+    isInteractionActive:
+      typeof candidate.isInteractionActive === 'boolean'
+        ? candidate.isInteractionActive
+        : undefined,
     selected: typeof candidate.selected === 'boolean' ? candidate.selected : undefined,
     style: isEdgeStyle(candidate.style) ? candidate.style : undefined,
   };
@@ -286,6 +312,11 @@ function getNodeDimension(node: CitationNodeLike, axis: 'width' | 'height') {
 }
 
 function getDomNodeSize(nodeId: string, zoom: number) {
+  const cached = domNodeSizeCache.get(nodeId);
+  if (cached) {
+    return cached;
+  }
+
   if (typeof document === 'undefined') return null;
 
   const element = document.querySelector<HTMLElement>(
@@ -296,10 +327,13 @@ function getDomNodeSize(nodeId: string, zoom: number) {
 
   if (!rect || rect.width <= 0 || rect.height <= 0) return null;
 
-  return {
+  const size = {
     width: rect.width / scale,
     height: rect.height / scale,
   };
+
+  updateCache(nodeId, size);
+  return size;
 }
 
 function escapeCssAttributeValue(value: string) {

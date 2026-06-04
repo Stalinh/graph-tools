@@ -10,9 +10,11 @@ import { combineScreenRects, getAutoPanDelta, getNodeElement } from './canvasInt
 
 const DRAG_AUTO_PAN_EDGE_THRESHOLD = 24;
 const DRAG_AUTO_PAN_STEP = 24;
+const ALIGNMENT_GUIDE_DRAG_THRESHOLD = 4;
 
 interface UseGraphCanvasDragAutoPanOptions {
   containerRef: RefObject<HTMLDivElement | null>;
+  onInteractionDrag: () => void;
   reactFlowInstanceRef: RefObject<ReactFlowInstance | null>;
   selectedNodeIds: string[];
   showAlignmentGuidesForNodeIds: (nodeIds: string[]) => void;
@@ -20,17 +22,25 @@ interface UseGraphCanvasDragAutoPanOptions {
 
 export function useGraphCanvasDragAutoPan({
   containerRef,
+  onInteractionDrag,
   reactFlowInstanceRef,
   selectedNodeIds,
   showAlignmentGuidesForNodeIds,
 }: UseGraphCanvasDragAutoPanOptions) {
   const dragAutoPanFrameRef = useRef<number | null>(null);
+  const alignmentGuideFrameRef = useRef<number | null>(null);
+  const lastGuidePointRef = useRef<{ x: number; y: number } | null>(null);
 
   const stopDragAutoPan = useCallback(() => {
     if (dragAutoPanFrameRef.current !== null) {
       cancelAnimationFrame(dragAutoPanFrameRef.current);
       dragAutoPanFrameRef.current = null;
     }
+    if (alignmentGuideFrameRef.current !== null) {
+      cancelAnimationFrame(alignmentGuideFrameRef.current);
+      alignmentGuideFrameRef.current = null;
+    }
+    lastGuidePointRef.current = null;
   }, []);
 
   const handleNodeDrag = useCallback(
@@ -45,9 +55,23 @@ export function useGraphCanvasDragAutoPan({
         selectedNodeIds.length > 1 && selectedNodeIds.includes(node.id)
           ? selectedNodeIds
           : [node.id];
-      showAlignmentGuidesForNodeIds(draggedNodeIds);
-      stopDragAutoPan();
-
+      if (dragAutoPanFrameRef.current !== null) {
+        cancelAnimationFrame(dragAutoPanFrameRef.current);
+        dragAutoPanFrameRef.current = null;
+      }
+      onInteractionDrag();
+      const lastGuidePoint = lastGuidePointRef.current;
+      const shouldRefreshGuides =
+        !lastGuidePoint ||
+        Math.abs(lastGuidePoint.x - event.clientX) >= ALIGNMENT_GUIDE_DRAG_THRESHOLD ||
+        Math.abs(lastGuidePoint.y - event.clientY) >= ALIGNMENT_GUIDE_DRAG_THRESHOLD;
+      if (shouldRefreshGuides && alignmentGuideFrameRef.current === null) {
+        lastGuidePointRef.current = { x: event.clientX, y: event.clientY };
+        alignmentGuideFrameRef.current = requestAnimationFrame(() => {
+          alignmentGuideFrameRef.current = null;
+          showAlignmentGuidesForNodeIds(draggedNodeIds);
+        });
+      }
       const bounds = container.getBoundingClientRect();
       const pointerDeltaX = getAutoPanDelta(
         event.clientX,
@@ -117,6 +141,7 @@ export function useGraphCanvasDragAutoPan({
     },
     [
       containerRef,
+      onInteractionDrag,
       reactFlowInstanceRef,
       selectedNodeIds,
       showAlignmentGuidesForNodeIds,

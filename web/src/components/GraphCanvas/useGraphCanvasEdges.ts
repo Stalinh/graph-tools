@@ -12,6 +12,7 @@ interface UseGraphCanvasEdgesOptions {
   connectedNodeIds: Set<string>;
   graphEdges: GraphData['edges'];
   graphNodes: GraphNode[];
+  isInteractionActive: boolean;
   matchingNodeIds: Set<string> | null;
   nodeFilter: WorkspaceNodeFilter;
   selectedEdgeId: string | null;
@@ -21,6 +22,7 @@ export function useGraphCanvasEdges({
   connectedNodeIds,
   graphEdges,
   graphNodes,
+  isInteractionActive,
   matchingNodeIds,
   nodeFilter,
   selectedEdgeId,
@@ -57,6 +59,7 @@ export function useGraphCanvasEdges({
         data: {
           direction: edge.direction ?? 'unidirectional',
           selected: visualStyle.isSelected,
+          isInteractionActive,
           color: edge.color,
           style: normalizeEdgeStyle(edge.style),
         },
@@ -67,5 +70,13 @@ export function useGraphCanvasEdges({
         },
       };
     });
-  }, [connectedNodeIds, graphEdges, graphNodes, matchingNodeIds, nodeFilter, selectedEdgeId]);
+  }, [
+    connectedNodeIds,
+    graphEdges,
+    graphNodes,
+    isInteractionActive,
+    matchingNodeIds,
+    nodeFilter,
+    selectedEdgeId,
+  ]);
 }

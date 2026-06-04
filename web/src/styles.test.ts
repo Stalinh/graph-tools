@@ -78,6 +78,10 @@ describe('styles entrypoint', () => {
       new URL('./styles/graph-canvas.css', import.meta.url),
       'utf8'
     );
+    const filterStyles = readFileSync(
+      new URL('./styles/search-filters.css', import.meta.url),
+      'utf8'
+    );
 
     const statusPanel = cssBlock(graphCanvasStyles, '.graph-canvas-panel--executive-status');
     expect(statusPanel).toContain('display: grid;');
@@ -113,7 +117,111 @@ describe('styles entrypoint', () => {
       'background: var(--color-node-bg-selected, var(--color-node-bg));'
     );
     expect(selectedNode).toContain(
-      '0 0 0 3px color-mix(in srgb, var(--color-primary) 24%, transparent)'
+      '0 0 0 2px color-mix(in srgb, var(--color-primary) 18%, transparent)'
+    );
+
+    const graphNode = cssBlock(graphCanvasStyles, '.graph-node');
+    expect(graphNode).toContain(
+      'background: color-mix(in srgb, var(--color-workbench-panel) 96%, var(--color-workbench-bg) 4%);'
+    );
+    expect(graphNode).toContain('box-shadow: 0 10px 22px rgba(15, 36, 63, 0.08);');
+
+    const graphNodeHover = cssBlock(graphCanvasStyles, '.graph-node:hover');
+    expect(graphNodeHover).toContain('translate: 0 -0.5px;');
+    expect(graphNodeHover).toContain('scale: 1;');
+
+    const searchMatch = cssBlock(graphCanvasStyles, '.graph-node.is-search-match');
+    expect(searchMatch).toContain(
+      'border-color: color-mix(in srgb, var(--color-executive-teal) 32%, var(--color-workbench-line) 68%);'
+    );
+    expect(searchMatch).toContain(
+      'background: color-mix(in srgb, var(--color-executive-teal) 4%, var(--color-workbench-panel) 96%);'
+    );
+    expect(searchMatch).toContain(
+      '0 0 0 1px color-mix(in srgb, var(--color-executive-teal) 14%, transparent)'
+    );
+
+    const edgeConnected = cssBlock(graphCanvasStyles, '.graph-node.is-edge-connected');
+    expect(edgeConnected).toContain(
+      'border-color: color-mix(in srgb, var(--color-primary) 36%, var(--color-workbench-line) 64%);'
+    );
+    expect(edgeConnected).toContain(
+      '0 0 0 1px color-mix(in srgb, var(--color-primary) 16%, transparent)'
+    );
+
+    const lockedNode = cssBlock(graphCanvasStyles, '.graph-node.is-locked');
+    expect(lockedNode).toContain(
+      'border-color: color-mix(in srgb, var(--color-workbench-muted) 42%, var(--color-workbench-line) 58%);'
+    );
+    expect(lockedNode).toContain(
+      '0 0 0 1px color-mix(in srgb, var(--color-workbench-muted) 10%, transparent)'
+    );
+    expect(lockedNode).toContain('background: color-mix(');
+    expect(lockedNode).toContain('var(--color-workbench-panel-muted) 52%,');
+    expect(lockedNode).toContain('var(--color-workbench-panel) 48%');
+
+    const labelBar = cssBlock(graphCanvasStyles, '.graph-node__label::before');
+    expect(labelBar).toContain('opacity: 0.78;');
+
+    expect(graphCanvasStyles).toContain(
+      '--graph-node-color-bar: color-mix(in srgb, var(--color-card-amber) 72%, var(--color-workbench-ink) 28%);'
+    );
+    expect(graphCanvasStyles).toContain(
+      '--graph-node-color-bar: color-mix(in srgb, var(--color-card-purple) 58%, var(--color-workbench-ink) 42%);'
+    );
+
+    const nodeType = cssBlock(graphCanvasStyles, '.graph-node__type');
+    expect(nodeType).toContain(
+      'color: color-mix(in srgb, var(--color-workbench-muted) 88%, var(--color-workbench-ink) 12%);'
+    );
+    expect(nodeType).toContain('font-size: 10px;');
+    expect(nodeType).toContain('font-weight: 850;');
+
+    const nodeTitle = cssBlockAtLineStart(graphCanvasStyles, '.graph-node__label strong');
+    expect(nodeTitle).toContain('font-size: 14px;');
+    expect(nodeTitle).toContain('font-weight: 780;');
+    expect(nodeTitle).toContain('line-height: 1.28;');
+    expect(nodeTitle).toContain('letter-spacing: 0;');
+
+    const nodeContent = cssBlockAtLineStart(graphCanvasStyles, '.graph-node__content');
+    expect(nodeContent).toContain('gap: 5px;');
+    expect(nodeContent).toContain(
+      'color: color-mix(in srgb, var(--color-text) 90%, var(--color-workbench-ink) 10%);'
+    );
+    expect(nodeContent).toContain('font-size: 11px;');
+    expect(nodeContent).toContain('line-height: 1.45;');
+
+    const nodeContentStrong = cssBlockAtLineStart(graphCanvasStyles, '.graph-node__content strong');
+    expect(nodeContentStrong).toContain('font-weight: 760;');
+
+    const nodeMeta = cssBlockAtLineStart(graphCanvasStyles, '.graph-node__label small');
+    expect(nodeMeta).toContain(
+      'color: color-mix(in srgb, var(--color-workbench-muted) 92%, var(--color-workbench-ink) 8%);'
+    );
+    expect(nodeMeta).toContain('font-size: 10px;');
+
+    const imageTitle = cssBlockAtLineStart(graphCanvasStyles, '.graph-node__image-title');
+    expect(imageTitle).toContain('font-size: 13px;');
+    expect(imageTitle).toContain('font-weight: 760;');
+    expect(imageTitle).toContain('line-height: 1.3;');
+
+    const tagPill = cssBlock(filterStyles, '.graph-node__tag-pill');
+    expect(tagPill).toContain(
+      'border: 1px solid color-mix(in srgb, var(--color-workbench-line) 88%, transparent);'
+    );
+    expect(tagPill).toContain('border-radius: 999px;');
+    expect(tagPill).toContain('background: color-mix(');
+    expect(tagPill).toContain('var(--color-workbench-panel-muted) 74%,');
+    expect(tagPill).toContain('var(--color-workbench-panel) 26%');
+    expect(tagPill).toContain('font-size: 10px;');
+    expect(tagPill).toContain('font-weight: 700;');
+
+    const titleInput = cssBlock(graphCanvasStyles, '.graph-node__title-input');
+    expect(titleInput).toContain(
+      'background: color-mix(in srgb, var(--color-workbench-panel) 94%, var(--color-workbench-bg) 6%);'
+    );
+    expect(titleInput).toContain(
+      'box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 14%, transparent);'
     );
 
     const alignmentGuide = cssBlock(graphCanvasStyles, '.alignment-guide');
@@ -166,5 +274,41 @@ describe('styles entrypoint', () => {
 
     const footerHint = cssBlock(sidebarStyles, '.sidebar__footer-hint');
     expect(footerHint).toContain('color: rgba(255, 255, 255, 0.58);');
+  });
+
+  it('keeps inspector controls aligned with the executive workbench style', async () => {
+    // @ts-expect-error Vitest runs this structural test in Node, while app types stay browser-only.
+    const { readFileSync } = (await import('node:fs')) as FileSystemModule;
+    const inspectorStyles = readFileSync(
+      new URL('./styles/inspector.css', import.meta.url),
+      'utf8'
+    );
+    const referenceStyles = readFileSync(
+      new URL('./styles/references.css', import.meta.url),
+      'utf8'
+    );
+
+    expect(inspectorStyles).toContain('.field-input,');
+    expect(inspectorStyles).toContain('.field-textarea,');
+    expect(inspectorStyles).toContain('.field-select {');
+    expect(inspectorStyles).toContain(
+      'background: color-mix(in srgb, var(--color-workbench-panel) 92%, var(--color-workbench-bg) 8%);'
+    );
+    expect(inspectorStyles).toContain(
+      'border: 1px solid color-mix(in srgb, var(--color-workbench-line) 88%, transparent);'
+    );
+    expect(inspectorStyles).toContain('font-size: 12px;');
+    expect(inspectorStyles).toContain('.field-input:focus,');
+    expect(inspectorStyles).toContain('.field-textarea:focus,');
+    expect(inspectorStyles).toContain('.field-select:focus {');
+    expect(inspectorStyles).toContain(
+      'box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 14%, transparent);'
+    );
+
+    const colorSwatch = cssBlock(referenceStyles, '.color-swatch');
+    expect(colorSwatch).toContain(
+      'border: 1px solid color-mix(in srgb, var(--color-workbench-line) 82%, transparent);'
+    );
+    expect(colorSwatch).toContain('box-shadow: 0 4px 10px rgba(15, 36, 63, 0.04);');
   });
 });

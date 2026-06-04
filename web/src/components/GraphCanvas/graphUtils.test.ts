@@ -166,6 +166,32 @@ describe('createGraphNodes', () => {
     expect(nextNodes[1].data.searchQuery).toBeUndefined();
   });
 
+  it('reuses nodes when only edge interaction activity changes', () => {
+    const graphNodes = [cardNode('#1', 'One'), cardNode('#2', 'Two')];
+    const savedNodePositions = createSavedPositions(graphNodes);
+    const savedNodeSizes = createSavedSizes(graphNodes);
+    const previousNodes = createCanvasNodes({
+      connectedNodeIds: new Set(['#1', '#2']),
+      graphNodes,
+      savedNodePositions,
+      savedNodeSizes,
+      selectedEdgeActive: false,
+    });
+    const previousNodesById = new Map(previousNodes.map((node) => [node.id, node]));
+
+    const nextNodes = createCanvasNodes({
+      connectedNodeIds: new Set(['#1', '#2']),
+      graphNodes,
+      previousNodesById,
+      savedNodePositions,
+      savedNodeSizes,
+      selectedEdgeActive: true,
+    });
+
+    expect(nextNodes[0]).toBe(previousNodes[0]);
+    expect(nextNodes[1]).toBe(previousNodes[1]);
+  });
+
   it('adds executive status classes for selected, locked, and matched nodes', () => {
     const graphNodes: GraphNode[] = [
       { ...cardNode('#1', 'Selected'), locked: true },
