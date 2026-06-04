@@ -152,7 +152,10 @@ export function Inspector({
       aria-label={isZh ? '检查器' : 'Inspector'}
     >
       <div className="inspector__header">
-        <span className="inspector__title">{isZh ? '检查器' : 'Inspector'}</span>
+        <div className="inspector__heading">
+          <span className="inspector__eyebrow">{isZh ? '分析面板' : 'Analysis panel'}</span>
+          <span className="inspector__title">{isZh ? '检查器' : 'Inspector'}</span>
+        </div>
         <div className="inspector__actions">
           {onCollapseToggle ? (
             <button

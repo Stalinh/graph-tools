@@ -4,10 +4,19 @@
   gap: 12px;
 }
 
+.field-section {
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+  padding: 12px;
+}
+
 .field-label {
-  color: var(--color-muted-strong);
-  font-size: 12px;
-  font-weight: 800;
+  margin: 0;
+  color: var(--color-workbench-muted);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1;
   text-transform: uppercase;
 }
 
@@ -309,9 +318,9 @@
 
 .properties-list {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(72px, 0.45fr) minmax(0, 1fr);
   margin: 0;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-workbench-line);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -321,25 +330,25 @@
 }
 
 .property dt {
-  color: var(--color-muted-strong);
+  color: var(--color-workbench-muted);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   text-align: center;
-  padding: 4px 8px;
-  background: var(--color-surface-raised);
-  border-bottom: 1px solid var(--color-border);
-  border-right: 1px solid var(--color-border);
+  padding: 7px 8px;
+  background: var(--color-workbench-panel-muted);
+  border-bottom: 1px solid var(--color-workbench-line);
+  border-right: 1px solid var(--color-workbench-line);
 }
 
 .property dd {
   margin: 0;
   min-width: 0;
-  color: var(--color-text);
+  color: var(--color-workbench-ink);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   text-align: center;
-  padding: 4px 8px;
-  border-bottom: 1px solid var(--color-border);
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--color-workbench-line);
   overflow-wrap: anywhere;
 }
 
@@ -402,6 +411,13 @@
 .property:last-child dt,
 .property:last-child dd {
   border-bottom: none;
+}
+
+.tags-editor,
+.custom-fields-list,
+.editor-panel .tags-editor {
+  border-color: var(--color-workbench-line);
+  background: var(--color-workbench-panel-muted);
 }
 
 .property--clickable {

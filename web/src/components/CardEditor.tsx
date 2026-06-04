@@ -80,7 +80,7 @@ export function CardEditor({
 
   return (
     <div className="editor-panel">
-      <section className="field-section">
+      <section className="field-section field-section--properties">
         <h3 className="field-label">{isZh ? '属性' : 'Properties'}</h3>
         <dl className="properties-list">
           <div className="property">
@@ -133,7 +133,7 @@ export function CardEditor({
         </dl>
       </section>
 
-      <section className="field-section">
+      <section className="field-section field-section--color">
         <h3 className="field-label">{isZh ? '颜色' : 'Color'}</h3>
         <div
           className="color-palette"
@@ -164,7 +164,7 @@ export function CardEditor({
         </div>
       </section>
 
-      <section className="field-section">
+      <section className="field-section field-section--tags">
         <h3 className="field-label">{isZh ? '标签' : 'Tags'}</h3>
         <div className="tags-editor">
           {node.tags.map((tag) => (
@@ -226,7 +226,7 @@ export function CardEditor({
       ) : null}
 
       {node.customFields && node.customFields.length > 0 && (
-        <section className="field-section">
+        <section className="field-section field-section--custom-fields">
           <h3 className="field-label">{isZh ? '自定义字段' : 'Custom fields'}</h3>
           <dl className="custom-fields-list">
             {node.customFields.map((field) => (
