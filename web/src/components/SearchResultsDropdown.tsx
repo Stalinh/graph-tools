@@ -70,7 +70,7 @@ export function SearchResultsDropdown({
   if (!searchQuery.trim()) return null;
 
   return (
-    <div className="search-results-dropdown" ref={listRef}>
+    <div className="search-results-dropdown search-results-dropdown--executive" ref={listRef}>
       <div className="search-results-dropdown__header">
         {isZh
           ? `找到 ${matchingResults.length} 个匹配结果`
@@ -98,6 +98,7 @@ export function SearchResultsDropdown({
                 onFocus={() => setHighlightIndex(index)}
                 onMouseEnter={() => setHighlightIndex(index)}
               >
+                <span className="search-result__accent" aria-hidden="true" />
                 <span className="search-result__type-icon">
                   {node.type === 'image' ? <Image size={14} /> : <FileText size={14} />}
                 </span>

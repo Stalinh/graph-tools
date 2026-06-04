@@ -83,6 +83,13 @@ function getHighlightedTitle(container: HTMLElement): string | null {
 }
 
 describe('SearchResultsDropdown', () => {
+  it('renders executive search dropdown chrome classes', () => {
+    const { container } = renderDropdown();
+
+    expect(container.querySelector('.search-results-dropdown--executive')).not.toBeNull();
+    expect(container.querySelector('.search-result__accent')).not.toBeNull();
+  });
+
   it('does not navigate on Enter when focus is outside the search context', () => {
     const { onNavigate, outsideButton } = renderDropdown();
 
