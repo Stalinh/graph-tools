@@ -9,9 +9,12 @@ import { useExecutiveWorkbenchMotion } from './useExecutiveWorkbenchMotion';
 type UseGSAPCallback = () => void | (() => void);
 type UseGSAPConfig = {
   dependencies?: readonly unknown[];
+  revertOnUpdate?: boolean;
+  scope?: unknown;
 };
 
 const gsapMock = vi.hoisted(() => {
+  const useGSAPConfigs: UseGSAPConfig[] = [];
   const timelineFrom = vi.fn();
   const timeline = vi.fn(() => ({
     from: timelineFrom,
@@ -30,6 +33,7 @@ const gsapMock = vi.hoisted(() => {
     registerPlugin: vi.fn(),
     timeline,
     timelineFrom,
+    useGSAPConfigs,
   };
 });
 
@@ -46,10 +50,30 @@ vi.mock('@gsap/react', async () => {
 
   return {
     useGSAP: (callback: UseGSAPCallback, config?: UseGSAPConfig) => {
+      if (config) {
+        gsapMock.useGSAPConfigs.push(config);
+      }
+
       React.useEffect(() => callback(), config?.dependencies);
     },
   };
 });
+
+function stubWindowMatchMedia() {
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    value: vi.fn((query: string) => ({
+      addEventListener: vi.fn(),
+      addListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+      matches: false,
+      media: query,
+      onchange: null,
+      removeEventListener: vi.fn(),
+      removeListener: vi.fn(),
+    })),
+  });
+}
 
 function WorkbenchMotionHarness({ enabled = true }: { enabled?: boolean }) {
   const scopeRef = useRef<HTMLDivElement | null>(null);
@@ -70,6 +94,8 @@ function WorkbenchMotionHarness({ enabled = true }: { enabled?: boolean }) {
 describe('useExecutiveWorkbenchMotion', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    gsapMock.useGSAPConfigs.length = 0;
+    stubWindowMatchMedia();
     gsapMock.matchMediaAdd.mockImplementation((_conditions, callback) => {
       callback({
         conditions: {
@@ -82,6 +108,7 @@ describe('useExecutiveWorkbenchMotion', () => {
 
   afterEach(() => {
     cleanup();
+    Reflect.deleteProperty(window, 'matchMedia');
   });
 
   it('creates a scoped entrance timeline for workbench motion regions', () => {
@@ -119,6 +146,15 @@ describe('useExecutiveWorkbenchMotion', () => {
     expect(position).toBe(0);
   });
 
+  it('cleans up GSAP context when enabled changes', () => {
+    render(<WorkbenchMotionHarness />);
+
+    expect(gsapMock.useGSAPConfigs[0]).toMatchObject({
+      dependencies: [true],
+      revertOnUpdate: true,
+    });
+  });
+
   it('skips the entrance timeline when reduced motion is preferred', () => {
     gsapMock.matchMediaAdd.mockImplementation((_conditions, callback) => {
       callback({
@@ -148,6 +184,14 @@ describe('useExecutiveWorkbenchMotion', () => {
   it('does not create match media or a timeline when disabled', () => {
     render(<WorkbenchMotionHarness enabled={false} />);
 
+    expect(gsapMock.matchMedia).not.toHaveBeenCalled();
+    expect(gsapMock.timeline).not.toHaveBeenCalled();
+  });
+
+  it('does not create match media or a timeline when browser matchMedia is unavailable', () => {
+    Reflect.deleteProperty(window, 'matchMedia');
+
+    expect(() => render(<WorkbenchMotionHarness />)).not.toThrow();
     expect(gsapMock.matchMedia).not.toHaveBeenCalled();
     expect(gsapMock.timeline).not.toHaveBeenCalled();
   });

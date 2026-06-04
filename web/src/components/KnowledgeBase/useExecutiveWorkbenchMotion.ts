@@ -20,6 +20,10 @@ export function useExecutiveWorkbenchMotion(
         return undefined;
       }
 
+      if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+        return undefined;
+      }
+
       const mm = gsap.matchMedia();
 
       mm.add(
@@ -61,6 +65,7 @@ export function useExecutiveWorkbenchMotion(
     },
     {
       dependencies: [enabled],
+      revertOnUpdate: true,
       scope: scopeRef,
     }
   );
