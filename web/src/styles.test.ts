@@ -56,4 +56,15 @@ describe('styles entrypoint', () => {
     expect(baseStyles).toContain('--shadow-workbench-panel:');
     expect(baseStyles).toContain('--shadow-workbench-node:');
   });
+
+  it('scopes sidebar icon button colors to the rail', async () => {
+    // @ts-expect-error Vitest runs this structural test in Node, while app types stay browser-only.
+    const { readFileSync } = (await import('node:fs')) as FileSystemModule;
+    const sidebarStyles = readFileSync(new URL('./styles/sidebar.css', import.meta.url), 'utf8');
+
+    expect(sidebarStyles).toContain('.sidebar .icon-button');
+    expect(sidebarStyles).not.toMatch(
+      /^\.icon-button,\s*\n\.nav-button\s*\{[^}]*color:\s*rgba\(255,\s*255,\s*255,\s*0\.78\);/mu
+    );
+  });
 });
