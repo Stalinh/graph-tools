@@ -140,7 +140,10 @@ describe('WorkspaceToolbar', () => {
     expect(workspaceStyles).toMatch(/['"]status search commands['"]/);
     expect(workspaceStyles).toMatch(/['"]filters filters filters['"]/);
     expect(workspaceStyles).toContain('.workspace-toolbar__filter-group');
-    expect(workspaceStyles).toContain('overflow-x: auto;');
+    expect(workspaceStyles).toContain('overflow: visible;');
+    expect(workspaceStyles).not.toMatch(
+      /\.workspace-toolbar__filter-group\s*\{[^}]*overflow-x:\s*auto;/u
+    );
     expect(searchFilterStyles).not.toContain('.workspace-toolbar__meta');
     expect(searchFilterStyles).not.toContain('.toolbar-divider');
 
@@ -151,5 +154,24 @@ describe('WorkspaceToolbar', () => {
     expect(executiveSearchDropdown).not.toContain('100vw');
     expect(executiveSearchDropdown).not.toContain('calc(100vw');
     expect(executiveSearchDropdown).toContain('min-width: 0;');
+  });
+
+  it('keeps search usable in narrow workbench layouts', async () => {
+    // @ts-expect-error Vitest runs this structural test in jsdom, while app types stay browser-only.
+    const { readFileSync } = (await import('node:fs')) as FileSystemModule;
+    const workspaceStyles = readFileSync('./src/styles/workspace.css', 'utf8');
+
+    expect(workspaceStyles).toContain('@media (max-width: 640px)');
+    expect(workspaceStyles).toMatch(/['"]status status['"]/);
+    expect(workspaceStyles).toMatch(/['"]search search['"]/);
+    expect(workspaceStyles).toMatch(/['"]commands commands['"]/);
+    expect(workspaceStyles).toContain('.workspace-toolbar__search-input');
+    expect(workspaceStyles).toContain('min-width: 0;');
+
+    const narrowSearchDropdown = cssBlock(
+      workspaceStyles,
+      '.workspace-toolbar__search .search-results-dropdown'
+    );
+    expect(narrowSearchDropdown).toContain('position: static;');
   });
 });

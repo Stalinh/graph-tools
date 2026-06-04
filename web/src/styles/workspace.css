@@ -193,7 +193,7 @@
 
   .workspace-toolbar__filter-group {
     grid-area: filters;
-    overflow-x: auto;
+    overflow: visible;
     padding-bottom: 1px;
   }
 
@@ -204,6 +204,37 @@
   .workspace-toolbar__command-group {
     grid-area: commands;
     align-self: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .workspace-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'status status'
+      'search search'
+      'commands commands'
+      'filters filters';
+  }
+
+  .workspace-toolbar__command-group {
+    justify-self: stretch;
+    overflow-x: auto;
+    padding-bottom: 1px;
+  }
+
+  .workspace-toolbar__search {
+    flex-wrap: wrap;
+  }
+
+  .workspace-toolbar__search-input {
+    min-width: 0;
+  }
+
+  .workspace-toolbar__search .search-results-dropdown {
+    position: static;
+    flex-basis: 100%;
+    margin-top: 4px;
   }
 }
 
