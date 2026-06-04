@@ -11,6 +11,14 @@ function cssBlock(styles: string, selector: string) {
   return match?.groups?.body ?? '';
 }
 
+function cssBlockAtLineStart(styles: string, selector: string) {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = styles.match(
+    new RegExp(`(?:^|\\n)${escapedSelector}\\s*\\{(?<body>[^}]*)\\}`, 'u')
+  );
+  return match?.groups?.body ?? '';
+}
+
 const stylePaths = [
   './styles/base.css',
   './styles/sidebar.css',
@@ -118,5 +126,23 @@ describe('styles entrypoint', () => {
     expect(sidebarStyles).not.toMatch(
       /^\.icon-button,\s*\n\.nav-button\s*\{[^}]*color:\s*rgba\(255,\s*255,\s*255,\s*0\.78\);/mu
     );
+  });
+
+  it('keeps sidebar footer controls integrated with the dark rail', async () => {
+    // @ts-expect-error Vitest runs this structural test in Node, while app types stay browser-only.
+    const { readFileSync } = (await import('node:fs')) as FileSystemModule;
+    const sidebarStyles = readFileSync(new URL('./styles/sidebar.css', import.meta.url), 'utf8');
+
+    const footer = cssBlockAtLineStart(sidebarStyles, '.sidebar__footer');
+    expect(footer).toContain('background: rgba(255, 255, 255, 0.07);');
+    expect(footer).toContain('border: 1px solid rgba(255, 255, 255, 0.14);');
+    expect(footer).not.toContain('var(--color-surface)');
+    expect(footer).not.toContain('var(--color-surface-muted)');
+
+    const footerLabel = cssBlock(sidebarStyles, '.sidebar__footer-label');
+    expect(footerLabel).toContain('color: rgba(255, 255, 255, 0.92);');
+
+    const footerHint = cssBlock(sidebarStyles, '.sidebar__footer-hint');
+    expect(footerHint).toContain('color: rgba(255, 255, 255, 0.58);');
   });
 });
