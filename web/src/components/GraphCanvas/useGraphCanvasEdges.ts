@@ -13,6 +13,7 @@ interface UseGraphCanvasEdgesOptions {
   graphEdges: GraphData['edges'];
   graphNodes: GraphNode[];
   isInteractionActive: boolean;
+  interactionNodeIds: ReadonlySet<string>;
   matchingNodeIds: Set<string> | null;
   nodeFilter: WorkspaceNodeFilter;
   selectedEdgeId: string | null;
@@ -53,6 +54,7 @@ export function useGraphCanvasEdges({
   graphEdges,
   graphNodes,
   isInteractionActive,
+  interactionNodeIds,
   matchingNodeIds,
   nodeFilter,
   selectedEdgeId,
@@ -74,6 +76,11 @@ export function useGraphCanvasEdges({
         !matchingNodeIds.has(edge.sourceId) &&
         !matchingNodeIds.has(edge.targetId);
       const isHiddenByFilter = shouldDimEdgeByFilter(edge, visibleNodeIds);
+      const isEdgeInteractionActive =
+        isInteractionActive &&
+        (interactionNodeIds.size === 0 ||
+          interactionNodeIds.has(edge.sourceId) ||
+          interactionNodeIds.has(edge.targetId));
       const visualStyle = getEdgeVisualStyle({
         edgeId: edge.id,
         selectedEdgeId,
@@ -92,7 +99,7 @@ export function useGraphCanvasEdges({
         data: {
           direction: edge.direction ?? 'unidirectional',
           selected: visualStyle.isSelected,
-          isInteractionActive,
+          isInteractionActive: isEdgeInteractionActive,
           color: edge.color,
           style: normalizeEdgeStyle(edge.style),
         },
@@ -127,6 +134,7 @@ export function useGraphCanvasEdges({
     graphEdges,
     graphNodes,
     isInteractionActive,
+    interactionNodeIds,
     matchingNodeIds,
     nodeFilter,
     selectedEdgeId,

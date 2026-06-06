@@ -14,7 +14,7 @@ const ALIGNMENT_GUIDE_DRAG_THRESHOLD = 4;
 
 interface UseGraphCanvasDragAutoPanOptions {
   containerRef: RefObject<HTMLDivElement | null>;
-  onInteractionDrag: () => void;
+  onInteractionDrag: (nodeIds: string[]) => void;
   reactFlowInstanceRef: RefObject<ReactFlowInstance | null>;
   selectedNodeIds: string[];
   showAlignmentGuidesForNodeIds: (nodeIds: string[]) => void;
@@ -63,7 +63,7 @@ export function useGraphCanvasDragAutoPan({
       }
       if (!hasNotifiedInteractionDragRef.current) {
         hasNotifiedInteractionDragRef.current = true;
-        onInteractionDrag();
+        onInteractionDrag(draggedNodeIds);
       }
       const lastGuidePoint = lastGuidePointRef.current;
       const shouldRefreshGuides =

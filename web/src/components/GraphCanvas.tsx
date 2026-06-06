@@ -65,6 +65,7 @@ export function GraphCanvas({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const [isMarqueeSelectionActive, setIsMarqueeSelectionActive] = useState(false);
+  const [interactionNodeIds, setInteractionNodeIds] = useState<ReadonlySet<string>>(new Set());
   const handleNodeMouseDownRef = useRef<
     ((event: ReactMouseEvent<Element>, nodeId: string) => void) | null
   >(null);
@@ -102,7 +103,8 @@ export function GraphCanvas({
   });
   const { handleNodeDrag, stopDragAutoPan } = useGraphCanvasDragAutoPan({
     containerRef,
-    onInteractionDrag: () => {
+    onInteractionDrag: (nodeIds) => {
+      setInteractionNodeIds(new Set(nodeIds));
       setIsDraggingNodes(true);
     },
     reactFlowInstanceRef,
@@ -161,6 +163,9 @@ export function GraphCanvas({
     nodesRef,
     onNodeDragEnd,
     onNodesDragEnd,
+    onNodeInteractionEnd: () => {
+      setInteractionNodeIds(new Set());
+    },
     selectedNodeIds,
     stopDragAutoPan,
   });
@@ -177,6 +182,7 @@ export function GraphCanvas({
     graphEdges: graph.edges,
     graphNodes: graph.nodes,
     isInteractionActive: isDraggingNodes || isMarqueeSelectionActive,
+    interactionNodeIds,
     matchingNodeIds: interactionModel.matchingNodeIds,
     nodeFilter,
     selectedEdgeId,
@@ -236,7 +242,7 @@ export function GraphCanvas({
         autoPanOnNodeDrag={false}
         panOnDrag={[1]}
         selectionMode={selectionMode}
-        selectionOnDrag={false}
+        selectionOnDrag
         onAuxClick={interactionHandlers.handleCanvasAuxClick}
         onInit={(instance) => {
           reactFlowInstanceRef.current = instance;

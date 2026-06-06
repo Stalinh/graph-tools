@@ -16,6 +16,7 @@ interface UseGraphCanvasNodeDragLifecycleOptions {
   nodesRef: RefObject<Node[]>;
   onNodeDragEnd?: (nodeId: string, from: CanvasPosition, to: CanvasPosition) => void;
   onNodesDragEnd?: (moves: GraphNodeMove[]) => void;
+  onNodeInteractionEnd?: () => void;
   selectedNodeIds: string[];
   stopDragAutoPan: () => void;
 }
@@ -25,6 +26,7 @@ export function useGraphCanvasNodeDragLifecycle({
   nodesRef,
   onNodeDragEnd,
   onNodesDragEnd,
+  onNodeInteractionEnd,
   selectedNodeIds,
   stopDragAutoPan,
 }: UseGraphCanvasNodeDragLifecycleOptions) {
@@ -62,6 +64,7 @@ export function useGraphCanvasNodeDragLifecycle({
       stopDragAutoPan();
       clearAlignmentGuides();
       setIsDraggingNodes(false);
+      onNodeInteractionEnd?.();
       const from = nodeDragStartPositions.current[node.id] ?? node.position;
       const currentNodes = nodesRef.current ?? [];
       const currentNodeById = new Map(
@@ -109,6 +112,7 @@ export function useGraphCanvasNodeDragLifecycle({
       clearAlignmentGuides,
       nodesRef,
       onNodeDragEnd,
+      onNodeInteractionEnd,
       onNodesDragEnd,
       selectedNodeIds,
       stopDragAutoPan,

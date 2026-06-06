@@ -171,6 +171,9 @@ export function createAlignmentGuides(
   if (!alignmentNodeType) {
     return [];
   }
+  if (alignmentNodeType !== 'group') {
+    return [];
+  }
 
   const draggedIdSet = new Set(draggedNodeIds);
   const draggedElements = draggedNodeIds

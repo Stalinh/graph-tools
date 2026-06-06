@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 // charset: utf-8
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Node, NodeChange } from '@xyflow/react';
 import type { GraphNode, NodeSize } from '../../types';
 import {
@@ -97,7 +97,62 @@ describe('canvasInteractionUtils', () => {
       expect(guides).toEqual([]);
     });
 
-    it('generates vertical and horizontal alignment guides when coordinates are within threshold', () => {
+    it('skips card alignment guides without measuring other cards', () => {
+      const container = document.createElement('div');
+      container.getBoundingClientRect = vi.fn(() => ({
+        left: 0,
+        right: 1000,
+        top: 0,
+        bottom: 1000,
+        width: 1000,
+        height: 1000,
+        x: 0,
+        y: 0,
+        toJSON: () => {},
+      }));
+
+      const draggedCard = document.createElement('div');
+      draggedCard.className = 'react-flow__node';
+      draggedCard.setAttribute('data-id', 'card-1');
+      draggedCard.getBoundingClientRect = vi.fn(() => ({
+        left: 102,
+        right: 202,
+        top: 202,
+        bottom: 302,
+        width: 100,
+        height: 100,
+        x: 102,
+        y: 202,
+        toJSON: () => {},
+      }));
+      container.appendChild(draggedCard);
+
+      const targetCard = document.createElement('div');
+      targetCard.className = 'react-flow__node';
+      targetCard.setAttribute('data-id', 'card-2');
+      targetCard.getBoundingClientRect = vi.fn(() => ({
+        left: 100,
+        right: 200,
+        top: 400,
+        bottom: 500,
+        width: 100,
+        height: 100,
+        x: 100,
+        y: 400,
+        toJSON: () => {},
+      }));
+      container.appendChild(targetCard);
+
+      const nodeTypeById = new Map<string, GraphNode['type']>([
+        ['card-1', 'card'],
+        ['card-2', 'card'],
+      ]);
+
+      expect(createAlignmentGuides(container, ['card-1'], nodeTypeById)).toEqual([]);
+      expect(targetCard.getBoundingClientRect).not.toHaveBeenCalled();
+    });
+
+    it('generates group alignment guides when coordinates are within threshold', () => {
       const container = document.createElement('div');
       container.getBoundingClientRect = () => ({
         left: 0,
@@ -115,7 +170,7 @@ describe('canvasInteractionUtils', () => {
       // Node 1 (Dragged)
       const el1 = document.createElement('div');
       el1.className = 'react-flow__node';
-      el1.setAttribute('data-id', 'node-1');
+      el1.setAttribute('data-id', 'group-1');
       el1.getBoundingClientRect = () => ({
         left: 102, // Close to 100
         right: 202,
@@ -132,7 +187,7 @@ describe('canvasInteractionUtils', () => {
       // Node 2 (Static target for alignment)
       const el2 = document.createElement('div');
       el2.className = 'react-flow__node';
-      el2.setAttribute('data-id', 'node-2');
+      el2.setAttribute('data-id', 'group-2');
       el2.getBoundingClientRect = () => ({
         left: 100,
         right: 200,
@@ -147,11 +202,11 @@ describe('canvasInteractionUtils', () => {
       container.appendChild(el2);
 
       const nodeTypeById = new Map<string, GraphNode['type']>([
-        ['node-1', 'card'],
-        ['node-2', 'card'],
+        ['group-1', 'group'],
+        ['group-2', 'group'],
       ]);
 
-      const guides = createAlignmentGuides(container, ['node-1'], nodeTypeById);
+      const guides = createAlignmentGuides(container, ['group-1'], nodeTypeById);
 
       // Check alignment guides were generated
       expect(guides.length).toBeGreaterThan(0);

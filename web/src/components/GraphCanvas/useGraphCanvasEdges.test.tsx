@@ -45,6 +45,7 @@ describe('useGraphCanvasEdges', () => {
         graphEdges,
         graphNodes,
         isInteractionActive: false,
+        interactionNodeIds: new Set<string>(),
         matchingNodeIds: null,
         nodeFilter: 'all',
         selectedEdgeId: null,
@@ -69,6 +70,7 @@ describe('useGraphCanvasEdges', () => {
         graphEdges,
         graphNodes,
         isInteractionActive: true,
+        interactionNodeIds: new Set<string>(),
         matchingNodeIds: null,
         nodeFilter: 'all',
         selectedEdgeId: null,
@@ -110,6 +112,7 @@ describe('useGraphCanvasEdges', () => {
           graphEdges,
           graphNodes,
           isInteractionActive: false,
+          interactionNodeIds: new Set<string>(),
           matchingNodeIds: null,
           nodeFilter: 'all',
           selectedEdgeId: props.selectedEdgeId,
@@ -137,6 +140,7 @@ describe('useGraphCanvasEdges', () => {
           graphEdges,
           graphNodes,
           isInteractionActive: props.active,
+          interactionNodeIds: props.active ? new Set(['#1']) : new Set<string>(),
           matchingNodeIds: null,
           nodeFilter: 'all',
           selectedEdgeId: null,
@@ -154,5 +158,45 @@ describe('useGraphCanvasEdges', () => {
     expect(result.current[0].target).toBe(previousEdge.target);
     expect(result.current[0].type).toBe(previousEdge.type);
     expect(result.current[0].data?.style).toBe(previousEdge.data?.style);
+  });
+
+  it('only marks edges connected to dragged nodes as interaction-active', () => {
+    const graphNodes = [cardNode('#1', 'One'), cardNode('#2', 'Two'), cardNode('#3', 'Three')];
+    const graphEdges: GraphData['edges'] = [
+      {
+        ...citationEdge('edge-connected', 'sketch'),
+        sourceId: '#1',
+        targetId: '#2',
+      },
+      {
+        ...citationEdge('edge-unrelated', 'sketch'),
+        sourceId: '#2',
+        targetId: '#3',
+      },
+    ];
+
+    const { result, rerender } = renderHook(
+      (props: { interactionNodeIds: Set<string> }) =>
+        useGraphCanvasEdges({
+          connectedNodeIds: new Set<string>(),
+          graphEdges,
+          graphNodes,
+          isInteractionActive: props.interactionNodeIds.size > 0,
+          interactionNodeIds: props.interactionNodeIds,
+          matchingNodeIds: null,
+          nodeFilter: 'all',
+          selectedEdgeId: null,
+        }),
+      { initialProps: { interactionNodeIds: new Set<string>() } }
+    );
+
+    const previousEdges = result.current;
+
+    rerender({ interactionNodeIds: new Set(['#1']) });
+
+    expect(result.current[0].data?.isInteractionActive).toBe(true);
+    expect(result.current[1].data?.isInteractionActive).toBe(false);
+    expect(result.current[0]).not.toBe(previousEdges[0]);
+    expect(result.current[1]).toBe(previousEdges[1]);
   });
 });
