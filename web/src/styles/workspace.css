@@ -7,7 +7,7 @@
 
 .knowledge-base {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(190px, 20vw, 250px);
+  grid-template-columns: minmax(0, 1fr) clamp(280px, 20vw, 288px);
   height: 100vh;
   min-width: 0;
   transition: grid-template-columns 320ms ease;

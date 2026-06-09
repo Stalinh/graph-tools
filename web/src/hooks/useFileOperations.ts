@@ -192,6 +192,31 @@ export function useFileOperations({
     [applyWorkspacePackage, fileManager, locale, setErrorMessage, setStatus]
   );
 
+  const handleOpenDefaultWorkspaceFile = useCallback(
+    async (fileHandle: FileSystemFileHandle) => {
+      if (dirty) {
+        return false;
+      }
+
+      try {
+        setStatus('loading');
+        setFileStatus(null);
+        setErrorMessage(null);
+
+        const pkg = await fileManager.openWorkspaceFileFromHandle(fileHandle);
+        applyWorkspacePackage(pkg, fileManager.getCurrentFileName());
+        return true;
+      } catch (error) {
+        const message = getOpenWorkspaceErrorMessage(error, locale);
+        setStatus('ready');
+        setErrorMessage(message);
+        setFileStatus(message);
+        return false;
+      }
+    },
+    [applyWorkspacePackage, dirty, fileManager, locale, setErrorMessage, setStatus]
+  );
+
   const handleSaveAs = useCallback(async () => {
     try {
       setFileStatus(locale === 'zh-CN' ? '正在保存...' : 'Saving...');
@@ -368,6 +393,7 @@ export function useFileOperations({
     handleNew,
     handleOpen,
     handleDroppedWorkspaceFile,
+    handleOpenDefaultWorkspaceFile,
     handleSave,
     handleSaveAs,
     cancelPendingAction,

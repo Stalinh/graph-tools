@@ -248,6 +248,25 @@ describe('canvasInteractionUtils', () => {
       'group-2': { width: 100, height: 100 },
     };
 
+    it('returns original changes when dragging a card node', () => {
+      const changes: NodeChange[] = [
+        {
+          id: 'card-1',
+          type: 'position',
+          position: { x: 40, y: 20 },
+        },
+      ];
+
+      const resolved = normalizeGroupCollisionChanges(
+        changes,
+        [...graphNodes, { id: 'card-1', type: 'card', title: 'Card 1', tags: [] }],
+        currentCanvasNodes,
+        nodeSizes
+      );
+
+      expect(resolved).toBe(changes);
+    });
+
     it('allows moving group nodes without collision', () => {
       const changes: NodeChange[] = [
         {

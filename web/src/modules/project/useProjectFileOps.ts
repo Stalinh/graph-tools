@@ -154,6 +154,22 @@ export function useProjectFileOps({
     }
   };
 
+  const handleOpenDefaultProjectFile = async (fileHandle: FileSystemFileHandle) => {
+    if (dirty) {
+      return false;
+    }
+
+    try {
+      setFileStatus(isZh ? '正在打开...' : 'Opening...');
+      const openedRecords = await projectFileManager.openProjectFileFromHandle(fileHandle);
+      applyOpenedProjectRecords(openedRecords, projectFileManager.getCurrentFileName());
+      return true;
+    } catch (error) {
+      setFileStatus(getOpenErrorMessage(error, isZh));
+      return false;
+    }
+  };
+
   useEffect(() => {
     if (!droppedProjectFile) {
       return;
@@ -217,6 +233,7 @@ export function useProjectFileOps({
 
   return {
     handleNewProjectFile,
+    handleOpenDefaultProjectFile,
     handleOpenProjectFile,
     handleSaveProjectFile,
     handleSaveProjectFileAs,

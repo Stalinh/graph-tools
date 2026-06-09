@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFileOperations } from '../hooks/useFileOperations';
 import { useGraphState } from '../hooks/useGraphState';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
@@ -10,25 +10,33 @@ import { KnowledgeBaseGraphZone } from './KnowledgeBaseGraphZone';
 import { KnowledgeBaseInspectorPanel } from './KnowledgeBaseInspectorPanel';
 import { KnowledgeBaseModals } from './KnowledgeBaseModals';
 import { useKnowledgeBaseDraft } from './KnowledgeBase/useKnowledgeBaseDraft';
-
-interface DroppedWorkspaceFile {
-  file: File;
-  id: number;
-}
+import {
+  useIncomingWorkspaceFile,
+  type DefaultWorkspaceFileHandle,
+  type DroppedWorkspaceFile,
+} from './KnowledgeBase/useIncomingWorkspaceFile';
+import { useKnowledgeBaseImageImport } from './KnowledgeBase/useKnowledgeBaseImageImport';
 
 interface KnowledgeBaseProps {
+  defaultWorkspaceFileHandle?: DefaultWorkspaceFileHandle | null;
   droppedWorkspaceFile?: DroppedWorkspaceFile | null;
+  onDefaultWorkspaceFileHandleHandled?: (id: number) => void;
   onDroppedWorkspaceFileHandled?: (id: number) => void;
+  onDirtyChange?: (dirty: boolean) => void;
+  onSaveCurrentPageChange?: (saveCurrentPage: (() => Promise<boolean>) | null) => void;
 }
 
 export function KnowledgeBase({
+  defaultWorkspaceFileHandle = null,
   droppedWorkspaceFile = null,
+  onDefaultWorkspaceFileHandleHandled,
   onDroppedWorkspaceFileHandled,
+  onDirtyChange,
+  onSaveCurrentPageChange,
 }: KnowledgeBaseProps) {
   const { isZh, locale } = useI18n();
   const graphState = useGraphState({ locale });
   const { nodes, edges, selection, persistence, history, search, images, status } = graphState;
-  const handledDroppedWorkspaceFileIdRef = useRef<number | null>(null);
   const [nodeFilter, setNodeFilter] = useState<WorkspaceNodeFilter>('all');
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null);
   const [isInspectorCollapsed, setIsInspectorCollapsed] = useState(false);
@@ -80,7 +88,7 @@ export function KnowledgeBase({
       selection.setSelectedEdgeId(null);
       setFocusNodeId(nodeId);
     },
-    [selection.setSelectedNodeId, selection.setSelectedEdgeId]
+    [selection]
   );
 
   const handleDeleteSelection = useCallback(() => {
@@ -102,16 +110,7 @@ export function KnowledgeBase({
     if (selection.selectedNodeId) {
       nodes.deleteNode(selection.selectedNodeId);
     }
-  }, [
-    edges.deleteCitation,
-    selection.editingNodeId,
-    selection.selectedEdge,
-    selection.selectedNodeId,
-    selection.selectedNodeIds,
-    selection.setSelectedEdgeId,
-    nodes.deleteNode,
-    nodes.deleteNodes,
-  ]);
+  }, [edges, nodes, selection]);
 
   const handleQuickEditSubmit = useCallback(
     (nodeId: string, title: string, options?: { focusInspectorContent?: boolean }) => {
@@ -130,14 +129,7 @@ export function KnowledgeBase({
         options?.focusInspectorContent && currentNode.type === 'card' ? nodeId : null
       );
     },
-    [
-      nodes.graph.nodes,
-      nodes.updateGraphNode,
-      selection.setPendingInspectorContentFocusNodeId,
-      selection.setQuickEditingNodeId,
-      selection.setSelectedEdgeId,
-      selection.setSelectedNodeId,
-    ]
+    [nodes, selection]
   );
 
   useKeyboardShortcuts({
@@ -161,62 +153,29 @@ export function KnowledgeBase({
     setDirty: status.setDirty,
     locale,
   });
+  const { handleDroppedWorkspaceFile, handleOpenDefaultWorkspaceFile, handleSave } = files;
+  const { handleDropImages } = useKnowledgeBaseImageImport({
+    createNode: nodes.createNode,
+    setImages: images.setImages,
+  });
 
   useEffect(() => {
-    if (!droppedWorkspaceFile) {
-      return;
-    }
-    if (handledDroppedWorkspaceFileIdRef.current === droppedWorkspaceFile.id) {
-      return;
-    }
-
-    handledDroppedWorkspaceFileIdRef.current = droppedWorkspaceFile.id;
-    onDroppedWorkspaceFileHandled?.(droppedWorkspaceFile.id);
-    void files.handleDroppedWorkspaceFile(droppedWorkspaceFile.file);
-  }, [droppedWorkspaceFile, files.handleDroppedWorkspaceFile, onDroppedWorkspaceFileHandled]);
-
-  const handleDropImages = useCallback(
-    (files: File[], position: { x: number; y: number }) => {
-      files.forEach((file, index) => {
-        const ext = file.name.split('.').pop() || 'png';
-        const path = `images/img_${Date.now()}_${index}_${Math.random().toString(36).substring(2, 15)}.${ext}`;
-        images.setImages((prev) => {
-          const next = new Map(prev);
-          next.set(path, file);
-          return next;
-        });
-        const dropPos = {
-          x: position.x + index * 20,
-          y: position.y + index * 20,
-        };
-        nodes.createNode('image', dropPos, path);
-      });
-    },
-    [nodes.createNode, images.setImages]
-  );
+    onDirtyChange?.(status.dirty);
+  }, [onDirtyChange, status.dirty]);
 
   useEffect(() => {
-    const handlePaste = (event: ClipboardEvent) => {
-      const active = document.activeElement;
-      if (
-        active instanceof HTMLElement &&
-        (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)
-      ) {
-        return;
-      }
+    onSaveCurrentPageChange?.(handleSave);
+    return () => onSaveCurrentPageChange?.(null);
+  }, [handleSave, onSaveCurrentPageChange]);
 
-      const files = Array.from(event.clipboardData?.files ?? []).filter((f) =>
-        f.type.startsWith('image/')
-      );
-      if (files.length === 0) return;
-
-      event.preventDefault();
-      handleDropImages(files, { x: 0, y: 0 });
-    };
-
-    window.addEventListener('paste', handlePaste);
-    return () => window.removeEventListener('paste', handlePaste);
-  }, [handleDropImages]);
+  useIncomingWorkspaceFile({
+    defaultWorkspaceFileHandle,
+    droppedWorkspaceFile,
+    handleDroppedWorkspaceFile,
+    handleOpenDefaultWorkspaceFile,
+    onDefaultWorkspaceFileHandleHandled,
+    onDroppedWorkspaceFileHandled,
+  });
 
   return (
     <section

@@ -3,7 +3,7 @@
  */
 import { render } from '@testing-library/react';
 import type { ComponentProps } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EdgeStyle } from '../../types';
 import { CitationEdge } from './CitationEdge';
 
@@ -25,6 +25,18 @@ const { nodeLookup } = vi.hoisted(() => ({
     ],
   ]),
 }));
+
+function nodeLookupWithDefaultNodes() {
+  nodeLookup.clear();
+  nodeLookup.set('#1', {
+    measured: { width: 80, height: 80 },
+    internals: { positionAbsolute: { x: 0, y: 0 } },
+  });
+  nodeLookup.set('#2', {
+    measured: { width: 80, height: 80 },
+    internals: { positionAbsolute: { x: 160, y: 0 } },
+  });
+}
 
 vi.mock('@xyflow/react', () => ({
   useStore: (selector: (state: { nodeLookup: typeof nodeLookup }) => unknown) =>
@@ -62,6 +74,10 @@ function renderCitationEdge(style: EdgeStyle | undefined) {
 }
 
 describe('CitationEdge', () => {
+  beforeEach(() => {
+    nodeLookupWithDefaultNodes();
+  });
+
   it('renders solid edges without note dash stroke data', () => {
     const { container } = renderCitationEdge('solid');
 
@@ -112,5 +128,43 @@ describe('CitationEdge', () => {
     expect(container.querySelector('.graph-edge--style-solid')).not.toBeNull();
     expect(container.querySelectorAll('.edge-visible-path--secondary')).toHaveLength(0);
     expect(container.querySelectorAll('.edge-selected-halo')).toHaveLength(0);
+    expect(container.querySelectorAll('.edge-arrowhead')).toHaveLength(1);
+    expect(container.querySelectorAll('.react-flow__edge-interaction')).toHaveLength(1);
+  });
+
+  it('renders lightweight interaction edges without node box geometry', () => {
+    nodeLookup.clear();
+
+    const props = {
+      id: 'edge-lightweight-interaction',
+      source: '#1',
+      target: '#2',
+      sourceX: 20,
+      sourceY: 30,
+      targetX: 180,
+      targetY: 90,
+      interactionWidth: 40,
+      style: { strokeWidth: 1.8, opacity: 1 },
+      data: {
+        direction: 'unidirectional',
+        selected: false,
+        style: 'solid',
+        color: 'amber',
+        isInteractionActive: true,
+        isLightweightInteractionActive: true,
+      },
+    } as ComponentProps<typeof CitationEdge>;
+
+    const { container } = render(
+      <svg>
+        <CitationEdge {...props} />
+      </svg>
+    );
+
+    const visiblePath = container.querySelector('.graph-edge--style-solid .edge-visible-path');
+
+    expect(visiblePath?.getAttribute('d')).toBe('M20,30 C84,30 116,90 180,90');
+    expect(container.querySelectorAll('.edge-arrowhead')).toHaveLength(0);
+    expect(container.querySelectorAll('.react-flow__edge-interaction')).toHaveLength(0);
   });
 });

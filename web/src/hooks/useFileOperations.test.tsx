@@ -32,6 +32,8 @@ function createFileManagerMock(initialFileName: string | null = null) {
     }),
     openWorkspaceFile: vi.fn<() => Promise<WorkspacePackage | null>>(),
     openDroppedWorkspaceFile: vi.fn<(file: File) => Promise<WorkspacePackage>>(),
+    openWorkspaceFileFromHandle:
+      vi.fn<(fileHandle: FileSystemFileHandle) => Promise<WorkspacePackage>>(),
     saveWorkspaceFile: vi.fn<(pkg: WorkspacePackage) => Promise<SaveResult>>(),
     saveWorkspaceFileAs: vi.fn<(pkg: WorkspacePackage) => Promise<string | null>>(async () => {
       currentFileName = 'saved.graph';
@@ -164,6 +166,37 @@ describe('useFileOperations', () => {
     expect(result.current.files.globalPreviewRequestId).toBe(1);
     expect(result.current.files.fileStatus).toBe('拖入的文件已打开，保存时将另存为。');
     expect(result.current.files.pendingAction).toBeNull();
+    expect(result.current.dirty).toBe(false);
+  });
+
+  it('opens a default workspace file handle and applies it as the current file', async () => {
+    const openedState = workspace({
+      graph: {
+        nodes: [{ id: '#1', type: 'card', title: 'Default Desktop Graph', tags: [] }],
+        edges: [],
+      },
+      nodePositions: {
+        '#1': { x: 10, y: 20 },
+      },
+    });
+    const fileManager = createFileManagerMock('workspace.graph');
+    fileManager.openWorkspaceFileFromHandle.mockResolvedValue({
+      state: openedState,
+      images: new Map(),
+    });
+    const fileHandle = { name: 'workspace.graph' } as FileSystemFileHandle;
+    const { result } = renderHook(() =>
+      useFileOperationsHarness({ fileManager, initialDirty: false })
+    );
+
+    await act(async () => {
+      await result.current.files.handleOpenDefaultWorkspaceFile(fileHandle);
+    });
+
+    expect(fileManager.openWorkspaceFileFromHandle).toHaveBeenCalledWith(fileHandle);
+    expect(result.current.state.graph.nodes[0].title).toBe('Default Desktop Graph');
+    expect(result.current.files.currentFileName).toBe('workspace.graph');
+    expect(result.current.files.fileStatus).toBe('文件已打开。');
     expect(result.current.dirty).toBe(false);
   });
 

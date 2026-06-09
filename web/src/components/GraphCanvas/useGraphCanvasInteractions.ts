@@ -8,6 +8,7 @@ import {
 } from '@xyflow/react';
 import {
   useCallback,
+  useEffect,
   useRef,
   type DragEvent as ReactDragEvent,
   type MouseEvent as ReactMouseEvent,
@@ -21,6 +22,12 @@ import type { MarqueeSelectionDrag } from './useGraphCanvasMarqueeSelection';
 const MIDDLE_BUTTON = 1;
 const MIDDLE_DOUBLE_CLICK_DELAY = 400;
 const MIDDLE_DOUBLE_CLICK_DISTANCE = 8;
+
+declare global {
+  interface Window {
+    __GRAPH_CANVAS_PROFILE_NODES_CHANGE__?: boolean;
+  }
+}
 
 interface UseGraphCanvasInteractionsOptions {
   clearAlignmentGuides: () => void;
@@ -44,6 +51,76 @@ interface UseGraphCanvasInteractionsOptions {
   onSelectNodeIds: (nodeIds: string[]) => void;
 }
 
+interface NodesChangeProfile {
+  applyEndedAt: number;
+  changeTypes: string[];
+  changes: number;
+  nodes: number;
+  normalizeEndedAt: number;
+  profileStartedAt: number;
+}
+
+function isNodesChangeProfilingEnabled() {
+  return typeof window !== 'undefined' && window.__GRAPH_CANVAS_PROFILE_NODES_CHANGE__ === true;
+}
+
+function getProfilingTimestamp() {
+  if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+    return performance.now();
+  }
+
+  return Date.now();
+}
+
+function toProfilingMs(value: number) {
+  return Number(value.toFixed(3));
+}
+
+function getChangeTypes(changes: NodeChange[]) {
+  return Array.from(new Set(changes.map((change) => change.type)));
+}
+
+function isPositionChange(change: NodeChange) {
+  return change.type === 'position';
+}
+
+function requestNodesChangeFrame(callback: FrameRequestCallback) {
+  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    return window.requestAnimationFrame(callback);
+  }
+
+  return globalThis.setTimeout(() => callback(getProfilingTimestamp()), 0);
+}
+
+function cancelNodesChangeFrame(frameId: number) {
+  if (typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function') {
+    window.cancelAnimationFrame(frameId);
+    return;
+  }
+
+  globalThis.clearTimeout(frameId);
+}
+
+function logNodesChangeProfile(
+  profile: NodesChangeProfile,
+  setNodesStartedAt: number,
+  setNodesEndedAt: number,
+  deferred: boolean
+) {
+  console.debug('[GraphCanvas] nodes change', {
+    changes: profile.changes,
+    nodes: profile.nodes,
+    changeTypes: profile.changeTypes,
+    deferred,
+    normalizeGroupCollisionChangesMs: toProfilingMs(
+      profile.normalizeEndedAt - profile.profileStartedAt
+    ),
+    applyNodeChangesMs: toProfilingMs(profile.applyEndedAt - profile.normalizeEndedAt),
+    setNodesMs: toProfilingMs(setNodesEndedAt - setNodesStartedAt),
+    totalMs: toProfilingMs(setNodesEndedAt - profile.profileStartedAt),
+  });
+}
+
 export function useGraphCanvasInteractions({
   clearAlignmentGuides,
   containerRef,
@@ -65,6 +142,40 @@ export function useGraphCanvasInteractions({
 }: UseGraphCanvasInteractionsOptions) {
   const lastMiddleClickRef = useRef<{ time: number; x: number; y: number } | null>(null);
   const nodePressedRef = useRef<{ id: string; wasSelected: boolean } | null>(null);
+  const pendingNodesChangeFrameRef = useRef<number | null>(null);
+  const pendingNodesRef = useRef<Node[] | null>(null);
+  const pendingProfileRef = useRef<NodesChangeProfile | null>(null);
+
+  const cancelPendingNodesChangeFrame = useCallback(() => {
+    if (pendingNodesChangeFrameRef.current !== null) {
+      cancelNodesChangeFrame(pendingNodesChangeFrameRef.current);
+      pendingNodesChangeFrameRef.current = null;
+    }
+    pendingNodesRef.current = null;
+    pendingProfileRef.current = null;
+  }, []);
+
+  const commitPendingNodesChangeFrame = useCallback(() => {
+    const pendingNodes = pendingNodesRef.current;
+    if (!pendingNodes) {
+      pendingNodesChangeFrameRef.current = null;
+      pendingProfileRef.current = null;
+      return;
+    }
+
+    const pendingProfile = pendingProfileRef.current;
+    pendingNodesChangeFrameRef.current = null;
+    pendingNodesRef.current = null;
+    pendingProfileRef.current = null;
+
+    const setNodesStartedAt = pendingProfile ? getProfilingTimestamp() : 0;
+    setNodes(pendingNodes);
+    if (pendingProfile) {
+      logNodesChangeProfile(pendingProfile, setNodesStartedAt, getProfilingTimestamp(), true);
+    }
+  }, [setNodes]);
+
+  useEffect(() => cancelPendingNodesChangeFrame, [cancelPendingNodesChangeFrame]);
 
   const handleNodeMouseDown = useCallback(
     (event: ReactMouseEvent<Element>, nodeId: string) => {
@@ -160,17 +271,56 @@ export function useGraphCanvasInteractions({
         return;
       }
 
+      const shouldProfile = isNodesChangeProfilingEnabled();
+      const profileStartedAt = shouldProfile ? getProfilingTimestamp() : 0;
       const normalizedChanges = normalizeGroupCollisionChanges(
         stableChanges,
         graph.nodes,
         nodesRef.current,
         nodeSizes
       );
+      const normalizeEndedAt = shouldProfile ? getProfilingTimestamp() : 0;
       const nextNodes = applyNodeChanges(normalizedChanges, nodesRef.current);
+      const applyEndedAt = shouldProfile ? getProfilingTimestamp() : 0;
       nodesRef.current = nextNodes;
+      const profile = shouldProfile
+        ? {
+            applyEndedAt,
+            changeTypes: getChangeTypes(stableChanges),
+            changes: stableChanges.length,
+            nodes: nextNodes.length,
+            normalizeEndedAt,
+            profileStartedAt,
+          }
+        : null;
+      if (stableChanges.every(isPositionChange)) {
+        pendingNodesRef.current = nextNodes;
+        pendingProfileRef.current = profile;
+        if (pendingNodesChangeFrameRef.current === null) {
+          pendingNodesChangeFrameRef.current = requestNodesChangeFrame(() => {
+            commitPendingNodesChangeFrame();
+          });
+        }
+        return;
+      }
+
+      cancelPendingNodesChangeFrame();
+      const setNodesStartedAt = shouldProfile ? getProfilingTimestamp() : 0;
       setNodes(nextNodes);
+      if (profile) {
+        const setNodesEndedAt = getProfilingTimestamp();
+        logNodesChangeProfile(profile, setNodesStartedAt, setNodesEndedAt, false);
+      }
     },
-    [graph.nodes, nodeSizes, nodesRef, selectionDragRef, setNodes]
+    [
+      cancelPendingNodesChangeFrame,
+      commitPendingNodesChangeFrame,
+      graph.nodes,
+      nodeSizes,
+      nodesRef,
+      selectionDragRef,
+      setNodes,
+    ]
   );
 
   const handleCanvasAuxClick = useCallback(

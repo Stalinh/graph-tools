@@ -10,7 +10,11 @@ afterEach(() => {
   cleanup();
 });
 
-function renderTable(records = [createProjectRecord({ projectName: 'P1' })], isEditMode = false) {
+function renderTable(
+  records = [createProjectRecord({ projectName: 'P1' })],
+  isEditMode = false,
+  onDownloadProject = vi.fn()
+) {
   return render(
     <ProjectSheetTable
       expandedProjectIds={new Set(records.map((r) => r.id))}
@@ -22,6 +26,7 @@ function renderTable(records = [createProjectRecord({ projectName: 'P1' })], isE
       onToggleProjectExpanded={vi.fn()}
       onUpdateProjectField={vi.fn()}
       onUpdateSubLineField={vi.fn()}
+      onDownloadProject={onDownloadProject}
     />
   );
 }
@@ -109,5 +114,20 @@ describe('ProjectSheetTable action buttons', () => {
     expect(downloadBtn.className).not.toContain('is-downloaded');
 
     vi.useRealTimers();
+  });
+
+  it('sends the selected project to the download handler', () => {
+    const record = createProjectRecord({
+      contractNo: 'HT-2026',
+      projectName: 'Alpha 项目',
+      projectNo: 'P-1001',
+    });
+    const onDownloadProject = vi.fn();
+    renderTable([record], false, onDownloadProject);
+
+    fireEvent.click(screen.getByRole('button', { name: '下载项目' }));
+
+    expect(onDownloadProject).toHaveBeenCalledTimes(1);
+    expect(onDownloadProject).toHaveBeenCalledWith(record);
   });
 });

@@ -60,6 +60,7 @@ vi.mock('./GraphCanvas', () => {
 
 // Spy and mock useFileOperations to capture dropped workspace files
 const mockHandleDroppedWorkspaceFile = vi.fn().mockResolvedValue(undefined);
+const mockHandleOpenDefaultWorkspaceFile = vi.fn().mockResolvedValue(undefined);
 
 vi.spyOn(useFileOperationsModule, 'useFileOperations').mockImplementation(() => {
   return {
@@ -68,6 +69,7 @@ vi.spyOn(useFileOperationsModule, 'useFileOperations').mockImplementation(() => 
     handleSave: vi.fn(),
     handleSaveAs: vi.fn(),
     handleDroppedWorkspaceFile: mockHandleDroppedWorkspaceFile,
+    handleOpenDefaultWorkspaceFile: mockHandleOpenDefaultWorkspaceFile,
     currentFileName: 'test.graph',
     fileStatus: 'saved',
     globalPreviewRequestId: 0,
@@ -170,6 +172,30 @@ describe('KnowledgeBase Component', () => {
 
     expect(mockFileHandledCallback).toHaveBeenCalledWith(999);
     expect(mockHandleDroppedWorkspaceFile).toHaveBeenCalledWith(dummyFile);
+  });
+
+  it('opens a provided default workspace handle once and marks it handled', () => {
+    const mockFileHandledCallback = vi.fn();
+    const handle = { name: 'workspace.graph' } as FileSystemFileHandle;
+
+    const { rerender } = render(
+      <KnowledgeBase
+        defaultWorkspaceFileHandle={null}
+        onDefaultWorkspaceFileHandleHandled={mockFileHandledCallback}
+      />
+    );
+
+    expect(mockHandleOpenDefaultWorkspaceFile).not.toHaveBeenCalled();
+
+    rerender(
+      <KnowledgeBase
+        defaultWorkspaceFileHandle={{ id: 7, handle }}
+        onDefaultWorkspaceFileHandleHandled={mockFileHandledCallback}
+      />
+    );
+
+    expect(mockFileHandledCallback).toHaveBeenCalledWith(7);
+    expect(mockHandleOpenDefaultWorkspaceFile).toHaveBeenCalledWith(handle);
   });
 
   it('supports image dropping via canvas callback', () => {

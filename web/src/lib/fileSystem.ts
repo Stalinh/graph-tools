@@ -172,6 +172,13 @@ export class WorkspaceFileManager {
     return pkg;
   }
 
+  async openWorkspaceFileFromHandle(fileHandle: FileSystemFileHandle): Promise<WorkspacePackage> {
+    const file = await fileHandle.getFile();
+    const pkg = await this.readWorkspaceFile(file);
+    this.currentFileHandle = fileHandle;
+    return pkg;
+  }
+
   async saveWorkspaceFile(pkg: WorkspacePackage): Promise<SaveResult> {
     if (!this.currentFileHandle) {
       return { success: false, error: 'No active workspace file.' };

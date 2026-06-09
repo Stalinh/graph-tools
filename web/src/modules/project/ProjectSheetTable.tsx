@@ -12,6 +12,7 @@ interface ProjectSheetTableProps {
   isZh: boolean;
   records: ProjectRecord[];
   onCommitProjectField: (recordId: string, field: ProjectRecordField) => void;
+  onDownloadProject?: (record: ProjectRecord) => Promise<void> | void;
   onRemoveRecord: (recordId: string) => void;
   onToggleProjectExpanded: (recordId: string) => void;
   onUpdateProjectField: (recordId: string, field: ProjectRecordField, value: string) => void;
@@ -29,6 +30,7 @@ export function ProjectSheetTable({
   isZh,
   records,
   onCommitProjectField,
+  onDownloadProject = () => undefined,
   onRemoveRecord,
   onToggleProjectExpanded,
   onUpdateProjectField,
@@ -56,6 +58,17 @@ export function ProjectSheetTable({
   };
 
   const handleDownload = (recordId: string) => {
+    const record = records.find((r) => r.id === recordId);
+    if (record) {
+      try {
+        void Promise.resolve(onDownloadProject(record)).catch((error: unknown) => {
+          console.error('Failed to download FPDS upload template.', error);
+        });
+      } catch (error) {
+        console.error('Failed to download FPDS upload template.', error);
+      }
+    }
+
     setDownloadedRecordId(recordId);
     setTimeout(() => {
       setDownloadedRecordId((current) => (current === recordId ? null : current));

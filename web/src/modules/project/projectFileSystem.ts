@@ -79,6 +79,13 @@ export class ProjectFileManager {
     return records;
   }
 
+  async openProjectFileFromHandle(fileHandle: FileSystemFileHandle): Promise<ProjectRecord[]> {
+    const file = await fileHandle.getFile();
+    const records = await this.readProjectFile(file);
+    this.currentFileHandle = fileHandle;
+    return records;
+  }
+
   async saveProjectFile(records: ProjectRecord[]): Promise<boolean> {
     if (!this.currentFileHandle) {
       return false;

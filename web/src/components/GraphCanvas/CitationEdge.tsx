@@ -6,6 +6,7 @@ import type { EdgeDirection, EdgeStyle } from '../../types';
 type CitationEdgeData = Record<string, unknown> & {
   direction?: EdgeDirection;
   isInteractionActive?: boolean;
+  isLightweightInteractionActive?: boolean;
   selected?: boolean;
   style?: EdgeStyle;
   color?: string;
@@ -108,16 +109,99 @@ export function CitationEdge({
   style,
   data,
 }: EdgeProps<CitationFlowEdge>) {
+  const edgeData = toCitationEdgeData(data);
+  const edgeStyle = normalizeEdgeStyle(edgeData.style);
+  const renderedEdgeStyle =
+    edgeData.isInteractionActive && edgeStyle === 'sketch' ? 'solid' : edgeStyle;
+  const isLightweightInteractionActive = Boolean(edgeData.isLightweightInteractionActive);
+  const isSelected = Boolean(edgeData.selected);
+  const strokeWidth =
+    !isSelected && typeof style?.strokeWidth === 'number'
+      ? style.strokeWidth
+      : DEFAULT_STROKE_WIDTH;
+  const opacity = typeof style?.opacity === 'number' ? style.opacity : 1;
+  const edgeColor = getNodeColorCssVar(edgeData.color, true);
+
+  if (isLightweightInteractionActive) {
+    const visiblePath = getLightweightInteractionPath(sourceX, sourceY, targetX, targetY);
+
+    return (
+      <g
+        className={
+          `react-flow__edge graph-edge graph-edge--citation graph-edge--style-${renderedEdgeStyle}` +
+          `${edgeData.direction === 'bidirectional' ? ' graph-edge--bidirectional' : ''}`
+        }
+        opacity={opacity}
+      >
+        <path
+          d={visiblePath}
+          fill="none"
+          stroke={edgeColor}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="edge-visible-path"
+          style={{ pointerEvents: 'none' }}
+        />
+      </g>
+    );
+  }
+
+  return (
+    <DetailedCitationEdge
+      id={id}
+      source={source}
+      target={target}
+      sourceX={sourceX}
+      sourceY={sourceY}
+      targetX={targetX}
+      targetY={targetY}
+      interactionWidth={interactionWidth}
+      edgeData={edgeData}
+      renderedEdgeStyle={renderedEdgeStyle}
+      strokeWidth={strokeWidth}
+      opacity={opacity}
+      edgeColor={edgeColor}
+    />
+  );
+}
+
+interface DetailedCitationEdgeProps {
+  id: string;
+  source: string;
+  target: string;
+  sourceX: number;
+  sourceY: number;
+  targetX: number;
+  targetY: number;
+  interactionWidth?: number;
+  edgeData: CitationEdgeData;
+  renderedEdgeStyle: EdgeStyle;
+  strokeWidth: number;
+  opacity: number;
+  edgeColor: string;
+}
+
+function DetailedCitationEdge({
+  id,
+  source,
+  target,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  interactionWidth,
+  edgeData,
+  renderedEdgeStyle,
+  strokeWidth,
+  opacity,
+  edgeColor,
+}: DetailedCitationEdgeProps) {
   const sourceNode = useStore((s) => s.nodeLookup.get(source));
   const targetNode = useStore((s) => s.nodeLookup.get(target));
   const store = useStoreApi();
 
-  const edgeData = toCitationEdgeData(data);
   const direction: EdgeDirection = edgeData.direction ?? 'unidirectional';
-  const isInteractionActive = Boolean(edgeData.isInteractionActive);
-  const edgeStyle = normalizeEdgeStyle(edgeData.style);
-  const renderedEdgeStyle = isInteractionActive && edgeStyle === 'sketch' ? 'solid' : edgeStyle;
-  const isSelected = Boolean(edgeData.selected);
   const sourceBox = getCitationNodeBox(sourceNode, source, store);
   const targetBox = getCitationNodeBox(targetNode, target, store);
   const geometry =
@@ -133,15 +217,8 @@ export function CitationEdge({
   const { control1, control2, edgeAngle, hitPath, startArrowTip, targetLineEnd, visibleSource } =
     geometry;
 
-  const strokeWidth =
-    !isSelected && typeof style?.strokeWidth === 'number'
-      ? style.strokeWidth
-      : DEFAULT_STROKE_WIDTH;
   const interactionStrokeWidth =
     typeof interactionWidth === 'number' && interactionWidth > 0 ? interactionWidth : 40;
-  const opacity = typeof style?.opacity === 'number' ? style.opacity : 1;
-
-  const edgeColor = getNodeColorCssVar(edgeData.color, true);
 
   const endArrowPath = geometry.endArrowTip
     ? createArrowheadPath(geometry.endArrowTip.x, geometry.endArrowTip.y, edgeAngle, ARROW_SIZE)
@@ -154,9 +231,11 @@ export function CitationEdge({
     `M${visibleSource.x},${visibleSource.y} C${control1.x},${control1.y} ` +
     `${control2.x},${control2.y} ${targetLineEnd.x},${targetLineEnd.y}`;
   const sketchPaths =
-    renderedEdgeStyle === 'sketch' && !isInteractionActive ? getSketchPaths(id, visiblePath) : [];
+    renderedEdgeStyle === 'sketch' && !edgeData.isInteractionActive
+      ? getSketchPaths(id, visiblePath)
+      : [];
   const strokeDasharray = renderedEdgeStyle === 'note-dash' ? '15 7 3 6' : undefined;
-  const shouldRenderSelectionHalo = !isInteractionActive;
+  const shouldRenderSelectionHalo = !edgeData.isInteractionActive;
 
   return (
     <>
@@ -245,6 +324,18 @@ export function CitationEdge({
   );
 }
 
+function getLightweightInteractionPath(
+  sourceX: number,
+  sourceY: number,
+  targetX: number,
+  targetY: number
+) {
+  const controlOffset = Math.abs(targetX - sourceX) * 0.4;
+  return `M${sourceX},${sourceY} C${sourceX + controlOffset},${sourceY} ${
+    targetX - controlOffset
+  },${targetY} ${targetX},${targetY}`;
+}
+
 function getCitationNodeBox(
   node: CitationNodeLike | undefined,
   nodeId: string,
@@ -290,6 +381,10 @@ function toCitationEdgeData(value: unknown): CitationEdgeData {
     isInteractionActive:
       typeof candidate.isInteractionActive === 'boolean'
         ? candidate.isInteractionActive
+        : undefined,
+    isLightweightInteractionActive:
+      typeof candidate.isLightweightInteractionActive === 'boolean'
+        ? candidate.isLightweightInteractionActive
         : undefined,
     selected: typeof candidate.selected === 'boolean' ? candidate.selected : undefined,
     style: isEdgeStyle(candidate.style) ? candidate.style : undefined,

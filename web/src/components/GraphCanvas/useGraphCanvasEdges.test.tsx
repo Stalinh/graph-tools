@@ -78,6 +78,7 @@ describe('useGraphCanvasEdges', () => {
     );
 
     expect(result.current[0].data?.isInteractionActive).toBe(true);
+    expect(result.current[0].data?.isLightweightInteractionActive).toBe(false);
   });
 
   it('reuses edges whose visual state does not change when selection moves', () => {
@@ -195,7 +196,9 @@ describe('useGraphCanvasEdges', () => {
     rerender({ interactionNodeIds: new Set(['#1']) });
 
     expect(result.current[0].data?.isInteractionActive).toBe(true);
+    expect(result.current[0].data?.isLightweightInteractionActive).toBe(true);
     expect(result.current[1].data?.isInteractionActive).toBe(false);
+    expect(result.current[1].data?.isLightweightInteractionActive).toBe(false);
     expect(result.current[0]).not.toBe(previousEdges[0]);
     expect(result.current[1]).toBe(previousEdges[1]);
   });

@@ -32,6 +32,7 @@ function areEdgeDataEqual(left: Edge['data'], right: Edge['data']) {
     left?.direction === right?.direction &&
     left?.selected === right?.selected &&
     left?.isInteractionActive === right?.isInteractionActive &&
+    left?.isLightweightInteractionActive === right?.isLightweightInteractionActive &&
     left?.color === right?.color &&
     left?.style === right?.style
   );
@@ -100,6 +101,7 @@ export function useGraphCanvasEdges({
           direction: edge.direction ?? 'unidirectional',
           selected: visualStyle.isSelected,
           isInteractionActive: isEdgeInteractionActive,
+          isLightweightInteractionActive: isEdgeInteractionActive && interactionNodeIds.size > 0,
           color: edge.color,
           style: normalizeEdgeStyle(edge.style),
         },

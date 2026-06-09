@@ -292,6 +292,10 @@ describe('styles entrypoint', () => {
   it('keeps inspector controls aligned with the executive workbench style', async () => {
     // @ts-expect-error Vitest runs this structural test in Node, while app types stay browser-only.
     const { readFileSync } = (await import('node:fs')) as FileSystemModule;
+    const workspaceStyles = readFileSync(
+      new URL('./styles/workspace.css', import.meta.url),
+      'utf8'
+    );
     const inspectorStyles = readFileSync(
       new URL('./styles/inspector.css', import.meta.url),
       'utf8'
@@ -323,5 +327,15 @@ describe('styles entrypoint', () => {
       'border: 1px solid color-mix(in srgb, var(--color-workbench-line) 82%, transparent);'
     );
     expect(colorSwatch).toContain('box-shadow: 0 4px 10px rgba(15, 36, 63, 0.04);');
+
+    const colorPalette = cssBlock(referenceStyles, '.color-palette');
+    expect(colorPalette).toContain('display: grid;');
+    expect(colorPalette).toContain('grid-template-columns: repeat(7, 24px);');
+    expect(colorPalette).not.toContain('flex-wrap: wrap;');
+
+    const knowledgeBase = cssBlock(workspaceStyles, '.knowledge-base');
+    expect(knowledgeBase).toContain(
+      'grid-template-columns: minmax(0, 1fr) clamp(280px, 20vw, 288px);'
+    );
   });
 });

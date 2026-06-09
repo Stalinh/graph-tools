@@ -476,6 +476,22 @@ export function normalizeGroupCollisionChanges(
   currentCanvasNodes: Node[],
   nodeSizes: Record<string, NodeSize>
 ) {
+  const hasGroupCollisionChange = changes.some((change) => {
+    if (
+      !('id' in change) ||
+      typeof change.id !== 'string' ||
+      (change.type !== 'dimensions' && (change.type !== 'position' || !change.position))
+    ) {
+      return false;
+    }
+
+    return graphNodes.some((node) => node.id === change.id && node.type === 'group');
+  });
+
+  if (!hasGroupCollisionChange) {
+    return changes;
+  }
+
   const graphNodeMap = new Map(graphNodes.map((node) => [node.id, node]));
   const currentCanvasNodeMap = new Map(currentCanvasNodes.map((node) => [node.id, node]));
   const movingGroupIds = new Set(
