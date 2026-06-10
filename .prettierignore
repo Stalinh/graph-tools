@@ -1,5 +1,7 @@
 node_modules/
 dist/
+build/
+release/
 .codegraph/
 package-lock.json
 *.db
