@@ -4,8 +4,18 @@ node_modules/
 ## Build outputs
 dist/
 build/
+release/
 coverage/
 *.tsbuildinfo
+
+## Desktop packaging outputs
+*.app
+*.dmg
+build/macos/
+build/macos/*.tmp.dmg
+build/macos/dmg-root/
+desktop/macos/AppIcon.iconset/
+release/mac/
 
 ## Logs
 *.log
