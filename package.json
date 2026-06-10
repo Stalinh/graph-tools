@@ -15,7 +15,8 @@
     "format:write": "prettier --write .",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build",
     "test": "npm run test -w web",
-    "prepare": "husky"
+    "prepare": "husky",
+    "build:mac": "npm run build && node scripts/build-macos-dmg.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.16.0",
@@ -37,5 +38,6 @@
     "*.{js,json,css,md}": [
       "prettier --write"
     ]
-  }
+  },
+  "version": "1.0.1"
 }

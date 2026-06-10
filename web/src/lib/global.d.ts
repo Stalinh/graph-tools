@@ -2,6 +2,21 @@ interface FileSystemHandlePermissionDescriptor {
   mode?: 'read' | 'readwrite';
 }
 
+interface NativeSerializedFileHandle {
+  provider: 'native-file-system';
+  kind: 'file';
+  id: string;
+  name: string;
+  bookmark?: string;
+}
+
+interface NativeFileSystemAdapter {
+  findDefaultFileHandle(fileName: string): Promise<FileSystemFileHandle | null>;
+  isNativeFileHandle(handle: unknown): handle is FileSystemFileHandle;
+  restoreFileHandle(serialized: NativeSerializedFileHandle): FileSystemFileHandle | null;
+  serializeFileHandle(handle: FileSystemFileHandle): NativeSerializedFileHandle | null;
+}
+
 interface FileSystemCreateWritableOptions {
   keepExistingData?: boolean;
 }
@@ -65,6 +80,7 @@ interface SaveFilePickerOptions {
 }
 
 interface Window {
+  __nativeFileSystem?: NativeFileSystemAdapter;
   showOpenFilePicker(options?: OpenFilePickerOptions): Promise<FileSystemFileHandle[]>;
   showSaveFilePicker(options?: SaveFilePickerOptions): Promise<FileSystemFileHandle>;
 }

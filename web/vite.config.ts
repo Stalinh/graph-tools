@@ -54,6 +54,7 @@ export function manualChunks(id: string): string | undefined {
 }
 
 export default defineConfig({
+  base: './',
   server: {
     headers: {
       'Content-Security-Policy': CONTENT_SECURITY_POLICY,

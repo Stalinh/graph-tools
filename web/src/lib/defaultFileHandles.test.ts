@@ -3,6 +3,8 @@ import {
   DefaultFileNameMismatchError,
   getDefaultPageFileConfig,
   resolveDefaultPageFileHandle,
+  restoreDefaultFileHandleRecord,
+  serializeDefaultFileHandleRecord,
   type DefaultPageFileHandleStore,
 } from './defaultFileHandles';
 
@@ -71,6 +73,33 @@ describe('default file handles', () => {
     expect(handle.requestPermission).toHaveBeenCalledWith({ mode: 'read' });
   });
 
+  it('uses the native desktop fixed-path handle before opening the picker', async () => {
+    const handle = createFileHandle('workspace.graph', 'granted');
+    const store = createMemoryStore();
+    const showOpenFilePicker = vi.fn();
+    const nativeFileSystem: NativeFileSystemAdapter = {
+      findDefaultFileHandle: vi.fn(async (fileName) =>
+        fileName === 'workspace.graph' ? handle : null
+      ),
+      isNativeFileHandle(_candidate): _candidate is FileSystemFileHandle {
+        return false;
+      },
+      restoreFileHandle: vi.fn(),
+      serializeFileHandle: vi.fn(),
+    };
+
+    const resolved = await resolveDefaultPageFileHandle('workspace', {
+      store,
+      showOpenFilePicker,
+      nativeFileSystem,
+    });
+
+    expect(resolved).toBe(handle);
+    expect(nativeFileSystem.findDefaultFileHandle).toHaveBeenCalledWith('workspace.graph');
+    expect(showOpenFilePicker).not.toHaveBeenCalled();
+    expect(store.save).toHaveBeenCalledWith('workspace', handle);
+  });
+
   it('picks from the desktop and stores the selected handle when no stored handle exists', async () => {
     const handle = createFileHandle('workspace.graph', 'granted');
     const store = createMemoryStore();
@@ -116,5 +145,64 @@ describe('default file handles', () => {
         showOpenFilePicker,
       })
     ).resolves.toBeNull();
+  });
+
+  it('serializes native desktop handles into IndexedDB-safe records', () => {
+    const handle = createFileHandle('workspace.graph', 'granted') as FileSystemFileHandle;
+    const nativeFileSystem: NativeFileSystemAdapter = {
+      findDefaultFileHandle: vi.fn(),
+      isNativeFileHandle(candidate): candidate is FileSystemFileHandle {
+        return candidate === handle;
+      },
+      restoreFileHandle: vi.fn(),
+      serializeFileHandle: vi.fn(() => ({
+        provider: 'native-file-system' as const,
+        kind: 'file' as const,
+        id: 'native-workspace-handle',
+        name: 'workspace.graph',
+        bookmark: 'bookmark-token',
+      })),
+    };
+
+    expect(serializeDefaultFileHandleRecord(handle, nativeFileSystem)).toEqual({
+      provider: 'native-file-system',
+      kind: 'file',
+      id: 'native-workspace-handle',
+      name: 'workspace.graph',
+      bookmark: 'bookmark-token',
+    });
+    expect(nativeFileSystem.serializeFileHandle).toHaveBeenCalledWith(handle);
+  });
+
+  it('restores native desktop handles from serialized records', () => {
+    const restoredHandle = createFileHandle('project-management.project', 'granted');
+    const nativeFileSystem: NativeFileSystemAdapter = {
+      findDefaultFileHandle: vi.fn(),
+      isNativeFileHandle(_candidate): _candidate is FileSystemFileHandle {
+        return false;
+      },
+      restoreFileHandle: vi.fn(() => restoredHandle),
+      serializeFileHandle: vi.fn(),
+    };
+
+    expect(
+      restoreDefaultFileHandleRecord(
+        {
+          provider: 'native-file-system',
+          kind: 'file',
+          id: 'native-project-handle',
+          name: 'project-management.project',
+          bookmark: 'bookmark-token',
+        },
+        nativeFileSystem
+      )
+    ).toBe(restoredHandle);
+    expect(nativeFileSystem.restoreFileHandle).toHaveBeenCalledWith({
+      provider: 'native-file-system',
+      kind: 'file',
+      id: 'native-project-handle',
+      name: 'project-management.project',
+      bookmark: 'bookmark-token',
+    });
   });
 });

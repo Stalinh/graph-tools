@@ -27,6 +27,14 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ['node_modules/', 'dist/', '.codegraph/', 'packages/shared/dist/', 'web/dist/'],
+    ignores: [
+      'node_modules/',
+      'dist/',
+      'build/',
+      'release/',
+      '.codegraph/',
+      'packages/shared/dist/',
+      'web/dist/',
+    ],
   }
 );

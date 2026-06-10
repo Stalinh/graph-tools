@@ -23,8 +23,22 @@ export interface DefaultPageFileHandleStore {
   remove: (kind: DefaultPageFileKind) => Promise<void>;
 }
 
+type StoredDefaultPageFileHandleRecord = FileSystemFileHandle | NativeSerializedFileHandle;
+
+function isNativeSerializedFileHandle(
+  record: StoredDefaultPageFileHandleRecord | null
+): record is NativeSerializedFileHandle {
+  return Boolean(
+    record &&
+    typeof record === 'object' &&
+    'provider' in record &&
+    record.provider === 'native-file-system'
+  );
+}
+
 interface ResolveDefaultPageFileHandleOptions {
   allowPicker?: boolean;
+  nativeFileSystem?: NativeFileSystemAdapter;
   showOpenFilePicker?: Window['showOpenFilePicker'];
   store?: DefaultPageFileHandleStore;
 }
@@ -54,12 +68,50 @@ export class DefaultFileNameMismatchError extends Error {
   }
 }
 
+export function serializeDefaultFileHandleRecord(
+  handle: FileSystemFileHandle,
+  nativeFileSystem: NativeFileSystemAdapter | undefined = window.__nativeFileSystem
+): StoredDefaultPageFileHandleRecord {
+  if (nativeFileSystem?.isNativeFileHandle(handle)) {
+    return nativeFileSystem.serializeFileHandle(handle) ?? handle;
+  }
+
+  return handle;
+}
+
+export function restoreDefaultFileHandleRecord(
+  record: StoredDefaultPageFileHandleRecord | null,
+  nativeFileSystem: NativeFileSystemAdapter | undefined = window.__nativeFileSystem
+): FileSystemFileHandle | null {
+  if (!record) {
+    return null;
+  }
+
+  if (isNativeSerializedFileHandle(record)) {
+    return nativeFileSystem?.restoreFileHandle(record) ?? null;
+  }
+
+  return record;
+}
+
 function isAbortError(error: unknown) {
   return error instanceof DOMException && error.name === 'AbortError';
 }
 
 function isExpectedDefaultFileName(kind: DefaultPageFileKind, fileName: string) {
   return fileName.toLowerCase() === DEFAULT_PAGE_FILE_CONFIG[kind].expectedFileName.toLowerCase();
+}
+
+function getNativeFileSystemAdapter() {
+  return typeof window === 'undefined' ? undefined : window.__nativeFileSystem;
+}
+
+function getShowOpenFilePicker() {
+  if (typeof window === 'undefined') {
+    throw new Error('showOpenFilePicker is unavailable in this environment.');
+  }
+
+  return window.showOpenFilePicker.bind(window);
 }
 
 function openDefaultFileHandleDatabase(): Promise<IDBDatabase | null> {
@@ -118,14 +170,15 @@ async function runDefaultFileHandleTransaction<T>(
 
 export const indexedDbDefaultPageFileHandleStore: DefaultPageFileHandleStore = {
   async load(kind) {
-    const handle = await runDefaultFileHandleTransaction<FileSystemFileHandle>(
+    const record = await runDefaultFileHandleTransaction<StoredDefaultPageFileHandleRecord>(
       'readonly',
       (store) => store.get(kind)
     );
-    return handle ?? null;
+    return restoreDefaultFileHandleRecord(record ?? null);
   },
   async save(kind, handle) {
-    await runDefaultFileHandleTransaction('readwrite', (store) => store.put(handle, kind));
+    const record = serializeDefaultFileHandleRecord(handle);
+    await runDefaultFileHandleTransaction('readwrite', (store) => store.put(record, kind));
   },
   async remove(kind) {
     await runDefaultFileHandleTransaction('readwrite', (store) => store.delete(kind));
@@ -169,14 +222,38 @@ async function pickDefaultPageFileHandle(
   }
 }
 
+async function resolveNativeDefaultFileHandle(
+  kind: DefaultPageFileKind,
+  nativeFileSystem: NativeFileSystemAdapter | undefined
+) {
+  if (!nativeFileSystem) {
+    return null;
+  }
+
+  const { expectedFileName } = getDefaultPageFileConfig(kind);
+  const handle = await nativeFileSystem.findDefaultFileHandle(expectedFileName);
+  if (!handle) {
+    return null;
+  }
+
+  return isExpectedDefaultFileName(kind, handle.name) ? handle : null;
+}
+
 export async function resolveDefaultPageFileHandle(
   kind: DefaultPageFileKind,
   {
     allowPicker = true,
-    showOpenFilePicker = window.showOpenFilePicker.bind(window),
+    nativeFileSystem = getNativeFileSystemAdapter(),
+    showOpenFilePicker = getShowOpenFilePicker(),
     store = indexedDbDefaultPageFileHandleStore,
   }: ResolveDefaultPageFileHandleOptions = {}
 ) {
+  const nativeDefaultHandle = await resolveNativeDefaultFileHandle(kind, nativeFileSystem);
+  if (nativeDefaultHandle) {
+    await store.save(kind, nativeDefaultHandle);
+    return nativeDefaultHandle;
+  }
+
   const storedHandle = await store.load(kind);
   if (storedHandle) {
     if (isExpectedDefaultFileName(kind, storedHandle.name)) {
